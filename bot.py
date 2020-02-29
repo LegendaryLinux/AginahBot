@@ -2,13 +2,11 @@ import os
 from discord.ext import commands
 from dotenv import load_dotenv
 
-# Import commands
-from Commands import Amusing
-
 # Load environment variables
 load_dotenv()
 AGINAHBOT_TOKEN = os.getenv('AGINAHBOT_TOKEN')
 
+# Instantiate bot
 aginahBot = commands.Bot(command_prefix='!aginah ')
 
 
@@ -18,9 +16,17 @@ async def on_ready():
     print(f'{aginahBot.user} has connected to Discord and has joined {len(aginahBot.guilds)} server(s).')
 
 
-@aginahBot.command(name='hello', help="Say hi to Aginah!")
-async def do_be_crotchety(ctx):
-    await Amusing.Commands.be_crotchety(ctx, aginahBot)
+@aginahBot.event
+async def on_voice_state_update(member, before, after):
+    if after.channel:
+        print(f'{member.name} has connected to {after.channel}')
+    else:
+        print(f'{member.name} has disconnected from {before.channel}')
+
+# Load commands and event responses from Cogs
+aginahBot.load_extension("Cogs.Amusing")
+aginahBot.load_extension("Cogs.ChannelControl")
+aginahBot.load_extension("Cogs.Randomizer")
 
 
 @aginahBot.event
