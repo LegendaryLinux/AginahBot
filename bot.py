@@ -25,7 +25,8 @@ async def on_voice_state_update(member, before, after):
 
 # Load commands and event responses from Cogs
 aginahBot.load_extension("Cogs.Amusing")
-aginahBot.load_extension("Cogs.ChannelControl")
+aginahBot.load_extension("Cogs.Casual")
+aginahBot.load_extension("Cogs.Racing")
 aginahBot.load_extension("Cogs.Randomizer")
 
 
