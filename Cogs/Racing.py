@@ -5,6 +5,7 @@ RACING_CATEGORY_NAME = 'Multiworld Races'
 RACING_BASE_VOICE_CHANNEL_NAME = 'Start Race'
 RACING_VOICE_CHANNEL_NAME = 'Racing Channel '
 RACING_TEXT_CHANNEL_NAME = 'racing-channel-'
+RACING_ADMIN_ROLE_NAME = 'Tournament Admin'
 
 
 class Racing(commands.Cog):
@@ -29,6 +30,12 @@ class Racing(commands.Cog):
         category = await ctx.guild.create_category_channel(RACING_CATEGORY_NAME)
         await category.create_voice_channel(RACING_BASE_VOICE_CHANNEL_NAME)
 
+        # Create a racing admin role
+        await ctx.guild.create_role(
+            name=RACING_ADMIN_ROLE_NAME,
+            permissions=discord.Permissions.none(),
+        )
+
     @commands.command(
         name='destroy-race-channels',
         brief="Delete racing category and channels.",
@@ -51,21 +58,27 @@ class Racing(commands.Cog):
         # Delete the racing category
         await race_category.delete()
 
+        # Delete the racing admin role
+        admin_role = discord.utils.get(ctx.guild.roles, name=RACING_ADMIN_ROLE_NAME)
+        if admin_role:
+            await admin_role.delete()
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.member, before: discord.VoiceState,
                                     after: discord.VoiceState):
-        if after:
-            # Gather current user state info
+        if after and after.channel:
+            # Operations for when a user has entered a voice channel
             voice_channel = after.channel
             category = after.channel.category
             guild = after.channel.guild
 
             # If a user enters the initial voice channel, create two new voice and text channels and move the user
             # into the first racing channel
-            if after and (after.channel.name == RACING_BASE_VOICE_CHANNEL_NAME):
+            if after.channel.name == RACING_BASE_VOICE_CHANNEL_NAME:
                 category = discord.utils.get(after.channel.guild.categories, name=RACING_CATEGORY_NAME)
 
                 # Used to create Voice Channel 1A, text-channel-1a, etc
+                # TODO: Ensure the chosen number is not in use
                 channel_number = len(category.voice_channels)
 
                 # Create new voice channels
@@ -73,11 +86,31 @@ class Racing(commands.Cog):
                 voice_channel_a = await category.create_voice_channel(name=voice_channel_name + 'A')
                 await category.create_voice_channel(name=voice_channel_name + 'B')
 
-                # Create new text channels, disallow reading
+                # Create new text channels with no permissions for normal users, add permission
+                # overwrites for racing admins
                 text_channel_name = RACING_TEXT_CHANNEL_NAME + str(channel_number)
-                permissions = discord.Permissions.none()
-                await category.create_text_channel(name=text_channel_name + 'a', permissions=permissions)
-                await category.create_text_channel(name=text_channel_name + 'b', permissions=permissions)
+                racing_admin_role = discord.utils.get(guild.roles, name=RACING_ADMIN_ROLE_NAME)
+                racing_admin_role_permission_overwrites = discord.PermissionOverwrite(
+                    read_messages=True,
+                    send_messages=True,
+                    embed_links=True,
+                    attach_files=True,
+                    read_message_history=True,
+                    add_reactions=True,
+                    external_emojis=True,
+                    manage_messages=True,
+                    move_members=True,
+                )
+                await category.create_text_channel(
+                    name=text_channel_name + 'a',
+                    permissions=discord.Permissions.none(),
+                    overwrites={racing_admin_role: racing_admin_role_permission_overwrites}
+                )
+                await category.create_text_channel(
+                    name=text_channel_name + 'b',
+                    permissions=discord.Permissions.none(),
+                    overwrites={racing_admin_role: racing_admin_role_permission_overwrites}
+                )
 
                 # Move user in initial voice channel to new voice channel a
                 await member.move_to(voice_channel_a)
@@ -94,27 +127,60 @@ class Racing(commands.Cog):
                     return
 
                 # Grant user permission to use the text channel
-                await text_channel.edit(overwrites={member: discord.PermissionOverwrite(
+                member_permission_overwrites = discord.PermissionOverwrite(
                     read_messages=True,
                     send_messages=True,
                     embed_links=True,
                     attach_files=True,
                     read_message_history=True,
+                    add_reactions=True,
                     external_emojis=True,
-                )})
+                    create_instant_invite=False
+                )
+
+                # Grant the user permissions on the corresponding text channel
+                await text_channel.edit(overwrites={member: member_permission_overwrites})
                 return
 
-        if before:
-            # Gather user state info
+        if before and before.channel:
+            # Operations for when a user has entered a voice channel
             voice_channel = before.channel  # Find voice channel
             category = before.channel.category  # Find category
             guild = before.channel.guild
 
             # If the user has left a racing voice room, revoke their permission to view the corresponding text channel
-            # TODO: Write this
-            if category.name == RACING_CATEGORY_NAME:
+            if (
+                    category
+                    and category.name == RACING_CATEGORY_NAME
+                    and voice_channel.name.find(RACING_VOICE_CHANNEL_NAME) > -1
+            ):
+                # Determine name of target text channel based on the name of the voice channel the user left
+                target_text_channel_name = RACING_TEXT_CHANNEL_NAME + voice_channel.name[-2:].lower()
 
-                return
+                # If the text channel can be found, revoke the user's permissions
+                text_channel = discord.utils.get(guild.text_channels, name=target_text_channel_name)
+                if text_channel:
+                    await text_channel.set_permissions(member, overwrite=None)
+
+            # If there are no users remaining in either voice channel, delete the voice and text channels
+            race_number = voice_channel.name[-2]
+            voice_a = discord.utils.get(guild.voice_channels, name=RACING_VOICE_CHANNEL_NAME + race_number + 'A')
+            voice_b = discord.utils.get(guild.voice_channels, name=RACING_VOICE_CHANNEL_NAME + race_number + 'B')
+
+            if len(voice_a.members) == 0 and len(voice_b.members) == 0:
+                # Delete voice channels
+                if voice_a:
+                    await voice_a.delete()
+                if voice_b:
+                    await voice_b.delete()
+
+                # Delete text channels
+                text_a = discord.utils.get(guild.text_channels, name=RACING_TEXT_CHANNEL_NAME + race_number + 'a')
+                text_b = discord.utils.get(guild.text_channels, name=RACING_TEXT_CHANNEL_NAME + race_number + 'b')
+                if text_a:
+                    await text_a.delete()
+                if text_b:
+                    await text_b.delete()
 
 
 # All cogs must have this function
