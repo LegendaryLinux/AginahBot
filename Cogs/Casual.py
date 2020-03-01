@@ -60,7 +60,8 @@ class Casual(commands.Cog):
             await casual_role.delete()
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, before: discord.VoiceState, after: discord.VoiceState):
+    async def on_voice_state_update(self, member: discord.member, before: discord.VoiceState,
+                                    after: discord.VoiceState):
         # TODO: Handle users entering and leaving multiworld voice channels
         pass
 

@@ -1,11 +1,17 @@
+import os
+from dotenv import load_dotenv
 import discord
+import sqlite3
+import re
 from discord.ext import commands
 
+load_dotenv()
 RACING_CATEGORY_NAME = 'Multiworld Races'
 RACING_BASE_VOICE_CHANNEL_NAME = 'Start Race'
 RACING_VOICE_CHANNEL_NAME = 'Racing Channel '
 RACING_TEXT_CHANNEL_NAME = 'racing-channel-'
 RACING_ADMIN_ROLE_NAME = 'Tournament Admin'
+SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
 
 
 class Racing(commands.Cog):
@@ -21,7 +27,7 @@ class Racing(commands.Cog):
     @commands.is_owner()
     async def setup_race_channels(self, ctx: commands.Context):
         # If the channel from which other channels are created already exists, do nothing
-        if discord.utils.get(ctx.guild.categories, name=RACING_CATEGORY_NAME)\
+        if discord.utils.get(ctx.guild.categories, name=RACING_CATEGORY_NAME) \
                 and discord.utils.get(ctx.guild.voice_channels, name=RACING_BASE_VOICE_CHANNEL_NAME):
             await ctx.send('It looks like your channel is already set up to support multiworld races.')
             return
@@ -63,6 +69,13 @@ class Racing(commands.Cog):
         if admin_role:
             await admin_role.delete()
 
+        # Delete race entries in local db (drop and re-create table)
+        db = sqlite3.connect(SQLITE_DB_NAME)
+        dbc = db.cursor()
+        # noinspection SqlWithoutWhere
+        dbc.execute("DELETE FROM races; VACUUM")
+        db.commit()
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.member, before: discord.VoiceState,
                                     after: discord.VoiceState):
@@ -77,9 +90,20 @@ class Racing(commands.Cog):
             if after.channel.name == RACING_BASE_VOICE_CHANNEL_NAME:
                 category = discord.utils.get(after.channel.guild.categories, name=RACING_CATEGORY_NAME)
 
-                # Used to create Voice Channel 1A, text-channel-1a, etc
-                # TODO: Ensure the chosen number is not in use
-                channel_number = len(category.voice_channels)
+                # Determine the lowest available race number which can be used to create
+                # Voice Channel 1A, text-channel-1a, etc
+                db = sqlite3.connect(SQLITE_DB_NAME)
+                dbc = db.cursor()
+                sql = "SELECT IFNULL(MIN(r1.race_number + 1), 1) AS start " \
+                      "FROM races AS r1 " \
+                      "LEFT OUTER JOIN races as r2 ON r1.race_number + 1 = r2.race_number " \
+                      "WHERE r2.race_number IS NULL " \
+                      "AND r1.guild=r2.guild"
+                channel_number = dbc.execute(sql).fetchone()[0]
+
+                # Save this back to the database as an active race channel number
+                dbc.execute("INSERT INTO races (guild, race_number) VALUES (?, ?)", (guild.name, int(channel_number)))
+                db.commit()
 
                 # Create new voice channels
                 voice_channel_name = RACING_VOICE_CHANNEL_NAME + str(channel_number)
@@ -148,6 +172,12 @@ class Racing(commands.Cog):
             category = before.channel.category  # Find category
             guild = before.channel.guild
 
+            # It's possible a user could disconnect from a custom room in this channel that doesn't match the
+            # expected regex. If that happens, do nothing
+            race_number = re.findall("(\d*)[AB]$", voice_channel.name)
+            if not race_number:
+                return
+
             # If the user has left a racing voice room, revoke their permission to view the corresponding text channel
             if (
                     category
@@ -163,11 +193,11 @@ class Racing(commands.Cog):
                     await text_channel.set_permissions(member, overwrite=None)
 
             # If there are no users remaining in either voice channel, delete the voice and text channels
-            race_number = voice_channel.name[-2]
+            race_number = race_number[0]
             voice_a = discord.utils.get(guild.voice_channels, name=RACING_VOICE_CHANNEL_NAME + race_number + 'A')
             voice_b = discord.utils.get(guild.voice_channels, name=RACING_VOICE_CHANNEL_NAME + race_number + 'B')
 
-            if len(voice_a.members) == 0 and len(voice_b.members) == 0:
+            if (voice_a and not voice_a.members) and (voice_b and not voice_b.members):
                 # Delete voice channels
                 if voice_a:
                     await voice_a.delete()
@@ -181,6 +211,13 @@ class Racing(commands.Cog):
                     await text_a.delete()
                 if text_b:
                     await text_b.delete()
+
+            # Remove the active race from the sqlite database
+            db = sqlite3.connect(SQLITE_DB_NAME)
+            dbc = db.cursor()
+            dbc.execute("DELETE FROM races WHERE guild=? and race_number=?", (guild.name, int(race_number)))
+            db.commit()
+
 
 
 # All cogs must have this function
