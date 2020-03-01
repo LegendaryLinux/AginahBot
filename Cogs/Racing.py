@@ -128,12 +128,20 @@ class Racing(commands.Cog):
                 await category.create_text_channel(
                     name=text_channel_name + 'a',
                     permissions=discord.Permissions.none(),
-                    overwrites={racing_admin_role: racing_admin_role_permission_overwrites}
+                    overwrites={
+                        racing_admin_role: racing_admin_role_permission_overwrites,
+                        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                        guild.me: discord.PermissionOverwrite(read_messages=True)
+                    }
                 )
                 await category.create_text_channel(
                     name=text_channel_name + 'b',
                     permissions=discord.Permissions.none(),
-                    overwrites={racing_admin_role: racing_admin_role_permission_overwrites}
+                    overwrites={
+                        racing_admin_role: racing_admin_role_permission_overwrites,
+                        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                        guild.me: discord.PermissionOverwrite(read_messages=True)
+                    }
                 )
 
                 # Move user in initial voice channel to new voice channel a
@@ -164,9 +172,11 @@ class Racing(commands.Cog):
 
                 # Grant the user permissions on the corresponding text channel
                 await text_channel.edit(overwrites={member: member_permission_overwrites})
-                return
 
         if before and before.channel:
+            # TODO: Entering the "New Race" voice channel from a currently existing race voice channel does not
+            # TODO: delete the previous race rooms if they are empty
+
             # Operations for when a user has entered a voice channel
             voice_channel = before.channel  # Find voice channel
             category = before.channel.category  # Find category
@@ -190,6 +200,8 @@ class Racing(commands.Cog):
                 # If the text channel can be found, revoke the user's permissions
                 text_channel = discord.utils.get(guild.text_channels, name=target_text_channel_name)
                 if text_channel:
+                    # TODO: This doesn't seem to revoke user override permissions if the user moves to another
+                    # TODO: race voice room
                     await text_channel.set_permissions(member, overwrite=None)
 
             # If there are no users remaining in either voice channel, delete the voice and text channels
