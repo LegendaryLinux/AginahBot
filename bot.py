@@ -22,7 +22,7 @@ async def on_ready():
                 'guild varchar(128) not null,'
                 'race_number integer not null'
                 ')'
-               )
+                )
     dbc.execute('CREATE TABLE IF NOT EXISTS casuals ('
                 'id integer not null primary key autoincrement,'
                 'guild varchar(128) not null,'
@@ -34,7 +34,7 @@ async def on_ready():
                 'admin_user int(32),'
                 'start_time timestamp default CURRENT_TIMESTAMP'
                 ')'
-               )
+                )
     db.commit()
 
     # Notify of ready state

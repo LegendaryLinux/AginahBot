@@ -219,7 +219,6 @@ class Racing(commands.Cog):
             db.commit()
 
 
-
 # All cogs must have this function
 def setup(bot: commands.Bot):
     bot.add_cog(Racing(bot))

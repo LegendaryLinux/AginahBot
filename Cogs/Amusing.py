@@ -17,7 +17,6 @@ class Amusing(commands.Cog):
 
         await ctx.send("I'm an old man, leave me alone!")
 
-
 # All cogs must have this function
 def setup(bot: commands.Bot):
     bot.add_cog(Amusing(bot))
