@@ -7,8 +7,9 @@ class ErrorHandler(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        await ctx.send("I'm not sure what to do here. If this looks like a problem, maybe contact Farrak.")
+        await ctx.send("Either something broke, or you gave me a command I don't recognize.")
         print(str(error))
+        print(ctx)
 
 
 def setup(bot: commands.Bot):

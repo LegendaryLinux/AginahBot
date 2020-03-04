@@ -28,14 +28,6 @@ async def on_ready():
                 'guild varchar(128) not null,'
                 'game_number integer not null'
                 ')')
-    dbc.execute('CREATE TABLE IF NOT EXISTS hosted_games ('
-                'id integer primary key autoincrement,'
-                'game_code varchar(4),'
-                'admin_user int(32),'
-                'start_time timestamp default CURRENT_TIMESTAMP'
-                ')'
-                )
-    db.commit()
 
     # Notify of ready state
     print(f'{aginahBot.user} has connected to Discord and has joined {len(aginahBot.guilds)} server(s).')
