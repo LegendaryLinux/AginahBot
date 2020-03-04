@@ -9,7 +9,7 @@ class ErrorHandler(commands.Cog):
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         await ctx.send("Either something broke, or you gave me a command I don't recognize.")
         print(str(error))
-        print(ctx)
+        raise error
 
 
 def setup(bot: commands.Bot):

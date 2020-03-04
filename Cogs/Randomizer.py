@@ -2,8 +2,6 @@ from discord.ext import commands
 import requests
 import re
 
-MULTIWORLD_HOST = requests.get('https://checkip.amazonaws.com').text.strip()
-
 
 class Randomizer(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -32,7 +30,7 @@ class Randomizer(commands.Cog):
         if post.status_code == 200:
             response = post.json()
             await ctx.send(f"I'm now hosting your game. It will be automatically closed after 24 hours.\n"
-                           f"Server: `{MULTIWORLD_HOST}:{response['port']}`\n"
+                           f"Server: `{response['host']}:{response['port']}`\n"
                            f"Token: `{response['token']}`")
         else:
             await ctx.send("🔥Something broke!🔥 I couldn't host your game. Did you attach a multidata file?")
@@ -47,20 +45,24 @@ class Randomizer(commands.Cog):
     async def resume_game(self, ctx: commands.Context):
         args = ctx.message.content.split()
 
-        if not args[2] or not len(args[3]) == 6:
+        if not args[2] or not len(args[2]) == 6:
             await ctx.send('You need to give me a token so I know which game to end. It should be six characters long.')
             return
 
         token = args[2]
-        post = requests.post(f'http://localhost:5000/game/{token}')
+        post = requests.post(f'http://localhost:5000/game/{token}', json={
+            'checkValue': args[3] if len(args) > 4 else 1,
+            'hintCost': args[4] if len(args) > 5 else 1000,
+            'allowCheats': args[5] if len(args) > 6 else 0
+        })
         response = post.json()
 
         if post.status_code != 200:
             await ctx.send("🔥Something broke!🔥 I wasn't able to host your game.")
             return
 
-        await ctx.send(f"I'm now hosting your game. It will be automatically closed after 24 hours.\n"
-                       f"Server: `{MULTIWORLD_HOST}:{response['port']}`\n"
+        await ctx.send(f"Your game has been resumed. It will be automatically closed after 24 hours.\n"
+                       f"Server: `{response['host']}:{response['port']}`\n"
                        f"Token: `{response['token']}`")
 
     @commands.command(
