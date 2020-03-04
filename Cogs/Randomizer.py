@@ -40,7 +40,7 @@ class Randomizer(commands.Cog):
         name='resume-game',
         brief='Re-host a game previously hosted by AginahBot',
         help='Re-host a timed-out or closed game previously hosted by AginahBot.\n'
-             'Usage: !aginah resume-game {token}',
+             'Usage: !aginah resume-game {token} {check_points} {hint_cost} {allow_cheats}',
     )
     async def resume_game(self, ctx: commands.Context):
         args = ctx.message.content.split()
@@ -105,13 +105,13 @@ class Randomizer(commands.Cog):
              'Usage: !aginah end-game {token}',
     )
     async def end_game(self, ctx: commands.Context):
-        args = ctx.message.content
+        args = ctx.message.content.split()
 
-        if not args[3] or not len(args[3]) == 6:
+        if not args[2] or not len(args[2]) == 6:
             await ctx.send("You need to give me a token so I know which game to end. See `!aginah end-game` for help.")
             return
 
-        token = args[3]
+        token = args[2]
         delete = requests.delete(f'localhost:5000/game/{token}')
 
         if delete.status_code == 404:
