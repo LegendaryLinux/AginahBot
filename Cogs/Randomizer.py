@@ -112,7 +112,7 @@ class Randomizer(commands.Cog):
             return
 
         token = args[2]
-        delete = requests.delete(f'localhost:5000/game/{token}')
+        delete = requests.delete(f'http://localhost:5000/game/{token}')
 
         if delete.status_code == 404:
             await ctx.send("That game doesn't exist, or it's already closed.")
