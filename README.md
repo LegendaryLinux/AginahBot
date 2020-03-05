@@ -2,15 +2,12 @@
 A Discord bot designed to help organize, host, and moderate Z3R Multiworld Tournaments.
 
 ## Current Features
-
 - Automatic creation of race voice and text channels, and automatic assignment of permissions to prevent viewing
     an opposing team's chat
+- Support casual multiworld voice and text channels, and automatic assignment of permissions on those channels
 - Host a [Berserker-style](https://github.com/Berserker66/MultiWorld-Utilities) multiworld game given 
     a `.multidata` file
 - Support sending commands to the server via the bot
-
-## Planned Features
-- Support casual multiworld voice and text channels, and automatic assignment of permissions on those channels  
 
 ## Configuration
 A `.env` file is required to be present in the base directory of the repository. This file should contain
