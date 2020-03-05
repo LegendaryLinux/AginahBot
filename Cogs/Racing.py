@@ -11,6 +11,7 @@ RACING_BASE_VOICE_CHANNEL_NAME = 'Start Race'
 RACING_VOICE_CHANNEL_NAME = 'Racing Channel '
 RACING_TEXT_CHANNEL_NAME = 'racing-channel-'
 RACING_ADMIN_ROLE_NAME = 'Tournament Admin'
+RACING_PLAYER_ROLE_NAME = 'Tournament Player Game '
 SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
 
 
@@ -130,6 +131,29 @@ class Racing(commands.Cog):
                 voice_channel_a = await category.create_voice_channel(name=voice_channel_name + 'A')
                 await category.create_voice_channel(name=voice_channel_name + 'B')
 
+                if not racing_admin_role:
+                    print(f'Unable to determine racing admin role: {RACING_ADMIN_ROLE_NAME}')
+                    raise LookupError
+
+                # Create player roles for text channels
+                racing_player_role_a = await guild.create_role(
+                    name=RACING_PLAYER_ROLE_NAME + str(channel_number) + 'A',
+                    permissions=discord.Permissions.none(),
+                )
+                racing_player_role_b = await guild.create_role(
+                    name=RACING_PLAYER_ROLE_NAME + str(channel_number) + 'B',
+                    permissions=discord.Permissions.none(),
+                )
+                racing_player_role_permission_overwrites = discord.PermissionOverwrite(
+                    read_messages=True,
+                    send_messages=True,
+                    embed_links=True,
+                    attach_files=True,
+                    read_message_history=True,
+                    add_reactions=True,
+                    external_emojis=True,
+                )
+
                 # Create new text channels viewable only by racing admins and AginahBot
                 print(f'Creating text channels for race number {channel_number}')
                 text_channel_name = RACING_TEXT_CHANNEL_NAME + str(channel_number)
@@ -137,6 +161,7 @@ class Racing(commands.Cog):
                     name=text_channel_name + 'a',
                     overwrites={
                         racing_admin_role: racing_admin_role_permission_overwrites,
+                        racing_player_role_a: racing_player_role_permission_overwrites,
                         guild.default_role: discord.PermissionOverwrite(read_messages=False),
                         guild.me: discord.PermissionOverwrite(read_messages=True)
                     }
@@ -145,6 +170,7 @@ class Racing(commands.Cog):
                     name=text_channel_name + 'b',
                     overwrites={
                         racing_admin_role: racing_admin_role_permission_overwrites,
+                        racing_player_role_b: racing_player_role_permission_overwrites,
                         guild.default_role: discord.PermissionOverwrite(read_messages=False),
                         guild.me: discord.PermissionOverwrite(read_messages=True)
                     }
@@ -163,41 +189,22 @@ class Racing(commands.Cog):
                 if race_number:
                     print(f'Determined voice channel to be part of race number {race_number[0]}')
 
-                    # Determine name of target text channel based on the name of the voice channel the user joined
-                    text_channel_name = RACING_TEXT_CHANNEL_NAME + race_number[0] + voice_channel.name[-1].lower()
-                    print(f'Attempting to look up text channel {text_channel_name}')
+                    # Determine if player is in voice channel A or B
+                    channel_letter = voice_channel.name[-1]
 
-                    # If the text channel does not exist, this is a no-op
-                    text_channel = discord.utils.get(after.channel.guild.text_channels, name=text_channel_name)
-                    if text_channel:
-                        # Grant the user permissions on the corresponding text channel
-                        print(f'Text channel located. Granting permissions')
-                        await text_channel.edit(overwrites={
-                            racing_admin_role: racing_admin_role_permission_overwrites,
-                            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                            guild.me: discord.PermissionOverwrite(read_messages=True),
-                            member: discord.PermissionOverwrite(read_messages=True)
-                        })
+                    # Find the racing player role for this channel
+                    racing_player_role = discord.utils.get(
+                        guild.roles,
+                        name=RACING_PLAYER_ROLE_NAME + str(race_number[0]) + channel_letter
+                    )
+                    if racing_player_role:
+                        await member.add_roles(racing_player_role)
 
         if before and before.channel:
             # Details about the user's connection
             voice_channel = before.channel
             category = before.channel.category
             guild = before.channel.guild
-
-            # Admin permissions for text channels
-            racing_admin_role = discord.utils.get(guild.roles, name=RACING_ADMIN_ROLE_NAME)
-            racing_admin_role_permission_overwrites = discord.PermissionOverwrite(
-                read_messages=True,
-                send_messages=True,
-                embed_links=True,
-                attach_files=True,
-                read_message_history=True,
-                add_reactions=True,
-                external_emojis=True,
-                manage_messages=True,
-                move_members=True,
-            )
 
             # If the user disconnected from a racing voice room, revoke their permissions on the corresponding
             # text channel and delete the race channels if both voice channels are empty
@@ -210,21 +217,16 @@ class Racing(commands.Cog):
                 race_number = re.findall("(\d*)[AB]$", voice_channel.name)[0]
                 print(f'User left a voice channel in race number {race_number}')
 
-                # Determine name of text channel to revoke permissions on based on the name of the voice
-                # channel the user left
-                text_channel_name = RACING_TEXT_CHANNEL_NAME + race_number + voice_channel.name[-1].lower()
-                print(f'Attempting to revoke permissions on #{text_channel_name}')
+                # Determine if player was in racing room A or B
+                channel_letter = voice_channel.name[-1]
 
-                # If the text channel can be found, revoke the user's permissions
-                text_channel = discord.utils.get(category.text_channels, name=text_channel_name)
-                print(f'Text channel located. Revoking permissions')
-                if text_channel:
-                    await text_channel.edit(overwrites={
-                        racing_admin_role: racing_admin_role_permission_overwrites,
-                        guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                        guild.me: discord.PermissionOverwrite(read_messages=True),
-                        member: discord.PermissionOverwrite(read_messages=False)
-                    }),
+                # Find the corresponding role and revoke it
+                racing_player_role = discord.utils.get(
+                    guild.roles,
+                    name=RACING_PLAYER_ROLE_NAME + str(race_number[0]) + channel_letter
+                )
+                if racing_player_role:
+                    await member.remove_roles(racing_player_role)
 
                 # If there are no users remaining in either voice channel, delete the voice and text channels
                 print(f'Checking racing voice channels for members present')
@@ -247,6 +249,14 @@ class Racing(commands.Cog):
                         await text_a.delete()
                     if text_b:
                         await text_b.delete()
+
+                    # Delete the racing player roles
+                    racing_role_a = discord.utils.get(guild.roles, name=RACING_PLAYER_ROLE_NAME + race_number + 'A')
+                    racing_role_b = discord.utils.get(guild.roles, name=RACING_PLAYER_ROLE_NAME + race_number + 'B')
+                    if racing_role_a:
+                        await racing_role_a.delete()
+                    if racing_role_b:
+                        await racing_role_b.delete()
 
                     # Remove the active race from the sqlite database
                     print(f'Deleting race {race_number} from the database')
