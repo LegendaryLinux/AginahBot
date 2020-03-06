@@ -3,7 +3,7 @@ import requests
 import re
 
 
-class Randomizer(commands.Cog):
+class MultiworldHostService(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -125,4 +125,4 @@ class Randomizer(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Randomizer(bot))
+    bot.add_cog(MultiworldHostService(bot))

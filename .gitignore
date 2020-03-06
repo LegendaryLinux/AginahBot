@@ -1,3 +1,5 @@
 .idea/
+multidata/*_multidata
+multidata/*_multisave
 *.env
 *.sqlite3

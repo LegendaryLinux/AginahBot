@@ -28,6 +28,14 @@ async def on_ready():
                 'guild varchar(128) not null,'
                 'game_number integer not null'
                 ')')
+    dbc.execute('CREATE TABLE IF NOT EXISTS hosted_games ('
+                'id integer not null primary key autoincrement,'
+                'guild varchar(128) not null,'
+                'host_user varchar(128) not null,'
+                'token varchar(4) not null,'
+                'pid integer not null,'
+                'start_time timestamp not null default current_timestamp'
+                ')')
 
     # Notify of ready state
     print(f'{aginahBot.user} has connected to Discord and has joined {len(aginahBot.guilds)} server(s).')
@@ -36,7 +44,7 @@ async def on_ready():
 # Load commands and event responses from Cogs
 aginahBot.load_extension("Cogs.Casual")
 aginahBot.load_extension("Cogs.Racing")
-aginahBot.load_extension("Cogs.Randomizer")
+aginahBot.load_extension("Cogs.Multiworld")
 aginahBot.load_extension("Cogs.ErrorHandler")
 
 # Run the bot
