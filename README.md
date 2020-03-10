@@ -17,6 +17,7 @@ Example config:
 ```.env
 AGINAHBOT_TOKEN=somereallylongsecretkeyprovidedbydiscord
 SQLITE_DB_NAME="aginahbot.db.sqlite3"
+BERSERKER_PATH=/path/to/berserker/MultiServer.py
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need

@@ -1,16 +1,30 @@
 import os
 import sqlite3
-import subprocess
 import aiohttp
 import aiofiles
+import asyncio
 import string
+import requests
+import random
+import json
+import websockets
+import functools
+import zlib
+import multiprocessing as mp
 from random import choice
 from discord.ext import commands
 from dotenv import load_dotenv
 
+# Berserker's Files
+import MultiServer
+
 # Load environment variables
 load_dotenv()
 SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
+BERSERKER_PATH = os.getenv('BERSERKER_PATH')
+
+# Find the public ip address of the current machine
+MULTIWORLD_HOST = requests.get('https://checkip.amazonaws.com').text.strip()
 
 
 class Multiworld(commands.Cog):
@@ -20,8 +34,15 @@ class Multiworld(commands.Cog):
         self.cursor = self.db.cursor()
 
     @staticmethod
-    async def gen_token():
-        return ''.join(choice(string.ascii_uppercase) for x in range(4))
+    async def gen_token(prefix: str = '') -> str:
+        return prefix.join(choice(string.ascii_uppercase) for x in range(4))
+
+    @staticmethod
+    async def server_loop(func):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(func)
+        loop.close()
+        # loop.run_forever()
 
     @commands.command(
         name='host-berserker',
@@ -34,7 +55,7 @@ class Multiworld(commands.Cog):
             await ctx.send("Did you forget to attach a multidata file?")
             return
 
-        # TODO: Parse command arguments
+        # TODO: Parse command arguments from ctx
 
         # Generate a multiworld token and ensure it is not in use already
         while True:
@@ -50,9 +71,27 @@ class Multiworld(commands.Cog):
                 async with aiofiles.open(f'multidata/{token}_multidata', 'wb') as multidata_file:
                     await multidata_file.write(await res.read())
 
-        # TODO Spawn a new multiworld host process
-        proc = subprocess.Popen(['python'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
-        print(f'Started a new multiworld-host process with pid {proc.pid}')
+        # Ensure the MultiWorld.py file exists on the local machine
+        if not os.path.exists(BERSERKER_PATH):
+            await ctx.send(
+                "It looks like your bot maintainer doesn't have his environment variables set correctly."
+                " I can't host your game until they fix that. Sorry!")
+            return
+
+        # TODO: Choose a port from 5000 to 7000 and ensure it is not in use
+        while True:
+            port = random.randrange(5000, 7000)
+            break
+
+        args = {
+            'port': port,
+            'multidata': f'multidata/{token}_multidata',
+            'hint_cost': 1,
+        }
+        server_loop = asyncio.get_event_loop().run_until_complete(MultiServer.main(args))
+
+        # mw_proc = mp.Process(target=self.start_berserker_server, args=(ctx,))
+        # mw_proc.start()
 
         # TODO: Log process info to database
 
@@ -96,6 +135,7 @@ class Multiworld(commands.Cog):
 
         # TODO: Terminate process
         pass
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Multiworld(bot))
