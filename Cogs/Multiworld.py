@@ -5,18 +5,10 @@ import aiofiles
 import asyncio
 import string
 import requests
-import random
-import json
-import websockets
-import functools
-import zlib
-import multiprocessing as mp
-from random import choice
+from subprocess import Popen, run, PIPE, DEVNULL
+from random import choice, randrange
 from discord.ext import commands
 from dotenv import load_dotenv
-
-# Berserker's Files
-import MultiServer
 
 # Load environment variables
 load_dotenv()
@@ -80,22 +72,24 @@ class Multiworld(commands.Cog):
 
         # TODO: Choose a port from 5000 to 7000 and ensure it is not in use
         while True:
-            port = random.randrange(5000, 7000)
+            port = randrange(5000, 7000)
             break
 
-        args = {
-            'port': port,
-            'multidata': f'multidata/{token}_multidata',
-            'hint_cost': 1,
-        }
-        server_loop = asyncio.get_event_loop().run_until_complete(MultiServer.main(args))
+        proc_args = [
+            'python', BERSERKER_PATH,
+            '--port', str(port),
+            '--multidata', f'multidata/{token}_multidata',
+            '--hint_cost', '1',
+            '--disable_port_forward'
+        ]
 
-        # mw_proc = mp.Process(target=self.start_berserker_server, args=(ctx,))
-        # mw_proc.start()
+        proc = Popen(proc_args, stdin=None, stdout=DEVNULL, stderr=DEVNULL)
+        print(f'Hosting multiworld server on port {port} with PID {proc.pid}.')
 
         # TODO: Log process info to database
 
-        # TODO: Send host details to client
+        # Send host details to client
+        await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
 
     @commands.command(
         name='resume-game',
