@@ -26,23 +26,19 @@ dbc.execute('CREATE TABLE IF NOT EXISTS casuals ('
             'guild varchar(128) not null,'
             'game_number integer not null'
             ')')
-dbc.execute('CREATE TABLE IF NOT EXISTS hosted_games ('
-            'id integer not null primary key autoincrement,'
-            'guild varchar(128) not null,'
-            'host_user varchar(128) not null,'
-            'token varchar(4) not null,'
-            'pid integer not null,'
-            'start_time timestamp not null default current_timestamp'
-            ')')
 
 # Instantiate bot
 aginahBot = commands.Bot(command_prefix='!aginah ')
+
+# Store multiworld server data in memory
+aginahBot.servers = {}
+aginahBot.server_pipes = {}
 
 
 @aginahBot.event
 async def on_ready():
     # Notify of ready state
-    print(f'{aginahBot.user} has connected to Discord and has joined {len(aginahBot.guilds)} server(s).')
+    print(f'{aginahBot.user} has connected to Discord and joined {len(aginahBot.guilds)} server(s).')
 
 # Load commands and event responses from Cogs
 aginahBot.load_extension("Cogs.Casual")

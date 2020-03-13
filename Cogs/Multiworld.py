@@ -2,10 +2,11 @@ import os
 import sqlite3
 import aiohttp
 import aiofiles
-import asyncio
+import socket
 import string
 import requests
-from subprocess import Popen, run, PIPE, DEVNULL
+from re import findall
+from subprocess import Popen, PIPE, DEVNULL
 from random import choice, randrange
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -30,11 +31,9 @@ class Multiworld(commands.Cog):
         return prefix.join(choice(string.ascii_uppercase) for x in range(4))
 
     @staticmethod
-    async def server_loop(func):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(func)
-        loop.close()
-        # loop.run_forever()
+    def is_port_in_use(port: int):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            return sock.connect_ex(('localhost', port)) == 0
 
     @commands.command(
         name='host-berserker',
@@ -47,13 +46,16 @@ class Multiworld(commands.Cog):
             await ctx.send("Did you forget to attach a multidata file?")
             return
 
-        # TODO: Parse command arguments from ctx
+        # Parse command arguments from ctx
+        cmd_args = ctx.message.content.split()
+        check_points = cmd_args[2] if 2 in cmd_args else 1
+        hint_cost = cmd_args[3] if 3 in cmd_args else 50
+        allow_cheats = True if 4 in cmd_args else False
 
         # Generate a multiworld token and ensure it is not in use already
         while True:
             token = await self.gen_token()
-            self.cursor.execute('SELECT 1 FROM hosted_games WHERE guild=? and token=?', (ctx.guild.name, token,))
-            if not self.cursor.fetchone():
+            if token not in ctx.bot.servers:
                 break
 
         # Save the multidata file to the /multidata folder
@@ -70,23 +72,28 @@ class Multiworld(commands.Cog):
                 " I can't host your game until they fix that. Sorry!")
             return
 
-        # TODO: Choose a port from 5000 to 7000 and ensure it is not in use
+        # Choose a port from 5000 to 7000 and ensure it is not in use
         while True:
             port = randrange(5000, 7000)
-            break
+            if not self.is_port_in_use(port):
+                break
 
         proc_args = [
             'python', BERSERKER_PATH,
             '--port', str(port),
             '--multidata', f'multidata/{token}_multidata',
-            '--hint_cost', '1',
-            '--disable_port_forward'
+            '--location_check_points', str(check_points),
+            '--hint_cost', str(hint_cost),
+            '--disable_port_forward',
         ]
+        if not allow_cheats:
+            proc_args.append('--disable_item_cheat')
 
-        proc = Popen(proc_args, stdin=None, stdout=DEVNULL, stderr=DEVNULL)
-        print(f'Hosting multiworld server on port {port} with PID {proc.pid}.')
-
-        # TODO: Log process info to database
+        # Store subprocess data in AginahBot instance dicts
+        ctx.bot.server_pipes[token] = PIPE
+        ctx.bot.servers[token] = Popen(proc_args, stdin=ctx.bot.server_pipes[token],
+                                       stdout=DEVNULL, stderr=DEVNULL)
+        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token].pid}.')
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
@@ -103,6 +110,7 @@ class Multiworld(commands.Cog):
         # TODO: Spawn a new subprocess hosting the game
 
         # TODO: Send host details to client
+        await ctx.send('This command is currently under development. Complain to Farrak.')
         pass
 
     @commands.command(
@@ -115,6 +123,7 @@ class Multiworld(commands.Cog):
         # TODO: Get existing process via token lookup
 
         # TODO: Send client message to the process via stdin
+        await ctx.send('This command is currently under development. Complain to Farrak.')
         pass
 
     @commands.command(
@@ -125,10 +134,51 @@ class Multiworld(commands.Cog):
              'Usage: !aginah end-game {token}',
     )
     async def end_game(self, ctx: commands.Context):
-        # TODO: Get existing process via token lookup
+        # Parse command arguments
+        cmd_args = ctx.message.content.split()
 
-        # TODO: Terminate process
-        pass
+        if cmd_args[2] in cmd_args:
+            # Kill the server process if it exists
+            if cmd_args[2] in ctx.bot.servers:
+                ctx.bot.servers[cmd_args[2]].kill()
+
+                # Delete the server pipe
+                if cmd_args[2] in ctx.bot.server_pipes:
+                    del ctx.bot.server_pipes[cmd_args[2]]
+
+                # Delete the multidata file
+                if os.path.exists(f'multidata/{cmd_args[2]}_multidata'):
+                    os.remove(f'multidata/{cmd_args[2]}_multidata')
+
+                # If there is a multisave, delete that too
+                if os.path.exists(f'multidata/{cmd_args[2]}_multisave'):
+                    os.remove(f'multidata/{cmd_args[2]}_multisave')
+
+            else:
+                # Warn the user if the provided token does not match a currently running game
+                await ctx.send(f"No currently running game exists with the token {cmd_args[2]}")
+
+            await ctx.send("The game has been ended.")
+
+        else:
+            await ctx.send("Did you forget to give a token?\nUse `!aginah help end-game` for more info.")
+
+    @commands.command(
+        name='purge-files',
+        brief='Delete all multidata and multisave files not currently in use',
+        help='Delete all multidata and multisave files in the ./multidata directory which are not currently '
+             'in use by an active server\n'
+             'Usage: !aginah purge-files'
+    )
+    @commands.is_owner()
+    async def purge_files(self, ctx: commands.Context):
+        # Loop over all files in the ./multidata directory
+        for file in os.scandir('./multidata'):
+            # Determine file token string
+            token = findall("^([A-Z]{4})_(multiworld|multidata)$", file.name)
+            # If a token match is found and a game with that token is not currently running, delete the file
+            if token and token[0] not in ctx.bot.servers:
+                os.remove(file.path)
 
 
 def setup(bot: commands.Bot):
