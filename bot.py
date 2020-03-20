@@ -32,7 +32,6 @@ aginahBot = commands.Bot(command_prefix='!aginah ')
 
 # Store multiworld server data in memory
 aginahBot.servers = {}
-aginahBot.server_pipes = {}
 
 
 @aginahBot.event

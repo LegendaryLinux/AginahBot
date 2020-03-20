@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import aiohttp
 import aiofiles
 import socket
@@ -23,8 +22,6 @@ MULTIWORLD_HOST = requests.get('https://checkip.amazonaws.com').text.strip()
 class Multiworld(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.db = sqlite3.connect(SQLITE_DB_NAME)
-        self.cursor = self.db.cursor()
 
     @staticmethod
     async def gen_token(prefix: str = '') -> str:
@@ -89,11 +86,13 @@ class Multiworld(commands.Cog):
         if not allow_cheats:
             proc_args.append('--disable_item_cheat')
 
-        # Store subprocess data in AginahBot instance dicts
-        ctx.bot.server_pipes[token] = PIPE
-        ctx.bot.servers[token] = Popen(proc_args, stdin=ctx.bot.server_pipes[token],
-                                       stdout=DEVNULL, stderr=DEVNULL)
-        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token].pid}.')
+        # Store subprocess data in AginahBot instance dict
+        ctx.bot.servers[token] = {
+            'host': MULTIWORLD_HOST,
+            'port': port,
+            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
+        }
+        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token].proc.pid}.')
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
@@ -105,12 +104,67 @@ class Multiworld(commands.Cog):
              'Usage: !aginah resume-game {token} {check_points} {hint_cost} {allow_cheats}',
     )
     async def resume_game(self, ctx: commands.Context):
-        # TODO: Check for presence of multidata file with given token
+        # Parse command arguments from ctx
+        cmd_args = ctx.message.content.split()
+        token = cmd_args[2] if 2 in cmd_args else None
+        check_points = cmd_args[3] if 3 in cmd_args else 1
+        hint_cost = cmd_args[4] if 4 in cmd_args else 50
+        allow_cheats = True if 5 in cmd_args else False
 
-        # TODO: Spawn a new subprocess hosting the game
+        # Ensure a token is provided
+        if not token:
+            await ctx.send('You forgot to give me a token! Use `!aginah help resume-game` for more details.')
+            return
 
-        # TODO: Send host details to client
-        await ctx.send('This command is currently under development. Complain to Farrak.')
+        # Ensure token is of correct length
+        if len(token) != 4:
+            await ctx.send("That token doesn't look right. Use `!aginah help resume-game` for more details.")
+            return
+
+        # Enforce token formatting
+        token = str(token).capitalize()
+
+        # Check if game is already running
+        if token in ctx.bot.servers:
+            await ctx.send('It looks like a game with that token is already underway!')
+            return
+
+        # Check for presence of multidata file with given token
+        if not os.path.exists(f'multidata/{token}_multidata'):
+            await ctx.send('Sorry, no previous game with that token could be found.')
+            return
+
+        # Choose a port from 5000 to 7000 and ensure it is not in use
+        while True:
+            port = randrange(5000, 7000)
+            if not self.is_port_in_use(port):
+                break
+
+        # Spawn a new subprocess hosting the game
+        proc_args = [
+            'python', BERSERKER_PATH,
+            '--port', str(port),
+            '--multidata', f'multidata/{token}_multidata',
+            '--location_check_points', str(check_points),
+            '--hint_cost', str(hint_cost),
+            '--disable_port_forward',
+        ]
+        if not allow_cheats:
+            proc_args.append('--disable_item_cheat')
+
+        if os.path.exists(f'multidata/{token}_multisave'):
+            proc_args.append('--savefile')
+            proc_args.append(f'multidata/{token}_multisave')
+
+        ctx.bot.servers[token] = {
+            'host': MULTIWORLD_HOST,
+            'port': port,
+            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
+        }
+        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token].proc.pid}.')
+
+        # Send host details to client
+        await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
         pass
 
     @commands.command(
@@ -138,25 +192,25 @@ class Multiworld(commands.Cog):
         cmd_args = ctx.message.content.split()
 
         if cmd_args[2] in cmd_args:
-            # Kill the server process if it exists
-            if cmd_args[2] in ctx.bot.servers:
-                ctx.bot.servers[cmd_args[2]].kill()
+            # Enforce token format
+            token = str(cmd_args[2]).capitalize()
 
-                # Delete the server pipe
-                if cmd_args[2] in ctx.bot.server_pipes:
-                    del ctx.bot.server_pipes[cmd_args[2]]
+            # Kill the server process if it exists
+            if token in ctx.bot.servers:
+                ctx.bot.servers[token].proc.kill()
+                del ctx.bot.servers[token]
 
                 # Delete the multidata file
-                if os.path.exists(f'multidata/{cmd_args[2]}_multidata'):
-                    os.remove(f'multidata/{cmd_args[2]}_multidata')
+                if os.path.exists(f'multidata/{token}_multidata'):
+                    os.remove(f'multidata/{token}_multidata')
 
                 # If there is a multisave, delete that too
-                if os.path.exists(f'multidata/{cmd_args[2]}_multisave'):
-                    os.remove(f'multidata/{cmd_args[2]}_multisave')
+                if os.path.exists(f'multidata/{token}_multisave'):
+                    os.remove(f'multidata/{token}_multisave')
 
             else:
                 # Warn the user if the provided token does not match a currently running game
-                await ctx.send(f"No currently running game exists with the token {cmd_args[2]}")
+                await ctx.send(f"No currently running game exists with the token {token}")
 
             await ctx.send("The game has been ended.")
 
