@@ -36,7 +36,8 @@ class Multiworld(commands.Cog):
         name='host-berserker',
         brief="Use AginahBot to host your berserker-style multiworld",
         help='Upload a .multidata file to have AginahBot host a berserker-style multiworld game.\n'
-             'Usage: !aginah host-berserker [check_points [hint_cost [allow_cheats]]]'
+             'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
+             'Usage: !aginah resume-game {check_points=1} {hint_cost=50} {allow_cheats=False}',
     )
     async def host_berserker(self, ctx: commands.Context):
         if not ctx.message.attachments:
@@ -45,9 +46,9 @@ class Multiworld(commands.Cog):
 
         # Parse command arguments from ctx
         cmd_args = ctx.message.content.split()
-        check_points = cmd_args[2] if 2 in cmd_args else 1
-        hint_cost = cmd_args[3] if 3 in cmd_args else 50
-        allow_cheats = True if 4 in cmd_args else False
+        check_points = cmd_args[2] if 0 <= 2 < len(cmd_args) else 1
+        hint_cost = cmd_args[3] if 0 <= 3 < len(cmd_args) else 50
+        allow_cheats = True if 0 <= 4 < len(cmd_args) else False
 
         # Generate a multiworld token and ensure it is not in use already
         while True:
@@ -101,15 +102,16 @@ class Multiworld(commands.Cog):
         name='resume-game',
         brief='Re-host a game previously hosted by AginahBot',
         help='Re-host a timed-out or closed game previously hosted by AginahBot.\n'
-             'Usage: !aginah resume-game {token} {check_points} {hint_cost} {allow_cheats}',
+             'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
+             'Usage: !aginah resume-game {token} {check_points=1} {hint_cost=50} {allow_cheats=False}',
     )
     async def resume_game(self, ctx: commands.Context):
         # Parse command arguments from ctx
         cmd_args = ctx.message.content.split()
-        token = cmd_args[2] if 2 in cmd_args else None
-        check_points = cmd_args[3] if 3 in cmd_args else 1
-        hint_cost = cmd_args[4] if 4 in cmd_args else 50
-        allow_cheats = True if 5 in cmd_args else False
+        token = cmd_args[2] if 0 <= 2 < len(cmd_args) else None
+        check_points = cmd_args[3] if 0 <= 3 < len(cmd_args) else 1
+        hint_cost = cmd_args[4] if 0 <= 4 < len(cmd_args) else 50
+        allow_cheats = True if 0 <= 5 < len(cmd_args) else False
 
         # Ensure a token is provided
         if not token:
@@ -117,12 +119,13 @@ class Multiworld(commands.Cog):
             return
 
         # Ensure token is of correct length
-        if len(token) != 4:
+        match = findall("^[A-z]{4}$", token)
+        if not len(match) == 1:
             await ctx.send("That token doesn't look right. Use `!aginah help resume-game` for more details.")
             return
 
         # Enforce token formatting
-        token = str(token).capitalize()
+        token = str(token).upper()
 
         # Check if game is already running
         if token in ctx.bot.servers:
@@ -174,7 +177,20 @@ class Multiworld(commands.Cog):
              'Usage: !aginah send-command {token} {command}',
     )
     async def send_command(self, ctx: commands.Context):
-        # TODO: Get existing process via token lookup
+        # Parse token and command
+        matches = findall("^\!aginah send-command ([A-z]{4}) (.*)$", ctx.message.content)
+        if not len(matches) == 1:
+            await ctx.send("Your command doesn't look right. Use `!aginah help send-command` for more info.")
+            return
+
+        # Assign arguments to variables, enforce token formatting
+        token = str(matches[0][0]).upper()
+        command = str(matches[0][1])
+
+        # Ensure token exists among running games
+        if token not in ctx.bot.servers:
+            await ctx.send("No game with that token is currently running.")
+            return
 
         # TODO: Send client message to the process via stdin
         await ctx.send('This command is currently under development. Complain to Farrak.')
@@ -183,39 +199,39 @@ class Multiworld(commands.Cog):
     @commands.command(
         name='end-game',
         brief='Close a multiworld server',
-        help='Shut down a multiworld server. Current players will be disconnected and new players will '
-             'be unable to join.\n'
+        help='Shut down a multiworld server. Current players will be disconnected, new players will '
+             'be unable to join, and the game will not be able to be resumed.\n'
              'Usage: !aginah end-game {token}',
     )
+    @commands.is_owner()
     async def end_game(self, ctx: commands.Context):
-        # Parse command arguments
-        cmd_args = ctx.message.content.split()
+        # Parse command
+        matches = findall("^\!aginah end-game ([A-z]{4})$", ctx.message.content)
+        if not len(matches) == 1:
+            await ctx.send("Your command doesn't look right. Use `!aginah help end-game` for more info.")
+            return
 
-        if cmd_args[2] in cmd_args:
-            # Enforce token format
-            token = str(cmd_args[2]).capitalize()
+        # Enforce token formatting
+        token = str(matches[0]).upper()
 
-            # Kill the server process if it exists
-            if token in ctx.bot.servers:
-                ctx.bot.servers[token].proc.kill()
-                del ctx.bot.servers[token]
+        # Kill the server process if it exists
+        if token in ctx.bot.servers:
+            ctx.bot.servers[token].proc.kill()
+            del ctx.bot.servers[token]
 
-                # Delete the multidata file
-                if os.path.exists(f'multidata/{token}_multidata'):
-                    os.remove(f'multidata/{token}_multidata')
+            # Delete the multidata file
+            if os.path.exists(f'multidata/{token}_multidata'):
+                os.remove(f'multidata/{token}_multidata')
 
-                # If there is a multisave, delete that too
-                if os.path.exists(f'multidata/{token}_multisave'):
-                    os.remove(f'multidata/{token}_multisave')
-
-            else:
-                # Warn the user if the provided token does not match a currently running game
-                await ctx.send(f"No currently running game exists with the token {token}")
+            # If there is a multisave, delete that too
+            if os.path.exists(f'multidata/{token}_multisave'):
+                os.remove(f'multidata/{token}_multisave')
 
             await ctx.send("The game has been ended.")
 
         else:
-            await ctx.send("Did you forget to give a token?\nUse `!aginah help end-game` for more info.")
+            # Warn the user if the provided token does not match a currently running game
+            await ctx.send(f"No currently running game exists with the token {token}")
 
     @commands.command(
         name='purge-files',
