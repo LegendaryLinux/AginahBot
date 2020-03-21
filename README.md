@@ -7,6 +7,8 @@ A Discord bot designed to help organize, host, and moderate Z3R Multiworld Tourn
 - Support casual multiworld voice and text channels, and automatic assignment of permissions on those channels
 - Host a [Berserker-style](https://github.com/Berserker66/MultiWorld-Utilities) multiworld game given 
     a `.multidata` file
+
+## Coming Soon™
 - Support sending commands to the server via the bot
 
 ## Configuration
