@@ -4,6 +4,7 @@ import aiofiles
 import socket
 import string
 import requests
+from shlex import quote
 from re import findall
 from subprocess import Popen, PIPE, DEVNULL
 from random import choice, randrange
@@ -80,9 +81,9 @@ class Multiworld(commands.Cog):
             'python', BERSERKER_PATH,
             '--port', str(port),
             '--multidata', f'multidata/{token}_multidata',
+            '--savefile', f'multidata/{token}_multisave',
             '--location_check_points', str(check_points),
             '--hint_cost', str(hint_cost),
-            '--disable_port_forward',
         ]
         if not allow_cheats:
             proc_args.append('--disable_item_cheat')
@@ -91,9 +92,9 @@ class Multiworld(commands.Cog):
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST,
             'port': port,
-            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
+            'proc': Popen(proc_args, stdin=PIPE, stdout=None, stderr=None)
         }
-        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token].proc.pid}.')
+        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token]["proc"].pid}.')
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
@@ -148,9 +149,9 @@ class Multiworld(commands.Cog):
             'python', BERSERKER_PATH,
             '--port', str(port),
             '--multidata', f'multidata/{token}_multidata',
+            '--savefile', f'multidata/{token}_multisave',
             '--location_check_points', str(check_points),
             '--hint_cost', str(hint_cost),
-            '--disable_port_forward',
         ]
         if not allow_cheats:
             proc_args.append('--disable_item_cheat')
@@ -162,9 +163,9 @@ class Multiworld(commands.Cog):
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST,
             'port': port,
-            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
+            'proc': Popen(proc_args, stdin=PIPE, stdout=None, stderr=DEVNULL)
         }
-        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token].proc.pid}.')
+        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token]["proc"].pid}.')
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
@@ -192,9 +193,11 @@ class Multiworld(commands.Cog):
             await ctx.send("No game with that token is currently running.")
             return
 
-        # TODO: Send client message to the process via stdin
-        await ctx.send('This command is currently under development. Complain to Farrak.')
-        pass
+        # Send client message to the process via stdin
+        # TODO: Figure out how to make the command actually stick
+        # TODO: Purify this input!
+        ctx.bot.servers[token]['proc'].communicate(f"{command}\n".encode('utf-8'))
+        await ctx.send("Okay, message is sent.")
 
     @commands.command(
         name='end-game',
@@ -216,7 +219,7 @@ class Multiworld(commands.Cog):
 
         # Kill the server process if it exists
         if token in ctx.bot.servers:
-            ctx.bot.servers[token].proc.kill()
+            ctx.bot.servers[token]['proc'].kill()
             del ctx.bot.servers[token]
 
             # Delete the multidata file
@@ -245,7 +248,7 @@ class Multiworld(commands.Cog):
         # Loop over all files in the ./multidata directory
         for file in os.scandir('./multidata'):
             # Determine file token string
-            token = findall("^([A-Z]{4})_(multiworld|multidata)$", file.name)
+            token = findall("^([A-Z]{4})_(multisave|multidata)$", file.name)
             # If a token match is found and a game with that token is not currently running, delete the file
             if token and token[0] not in ctx.bot.servers:
                 os.remove(file.path)
