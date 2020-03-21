@@ -4,7 +4,6 @@ import aiofiles
 import socket
 import string
 import requests
-from shlex import quote
 from re import findall
 from subprocess import Popen, PIPE, DEVNULL
 from random import choice, randrange
@@ -92,9 +91,8 @@ class Multiworld(commands.Cog):
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST,
             'port': port,
-            'proc': Popen(proc_args, stdin=PIPE, stdout=None, stderr=None)
+            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
         }
-        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token]["proc"].pid}.')
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
@@ -163,9 +161,8 @@ class Multiworld(commands.Cog):
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST,
             'port': port,
-            'proc': Popen(proc_args, stdin=PIPE, stdout=None, stderr=DEVNULL)
+            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
         }
-        print(f'Hosting multiworld server on port {port} with PID {ctx.bot.servers[token]["proc"].pid}.')
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
@@ -195,8 +192,7 @@ class Multiworld(commands.Cog):
 
         # Send client message to the process via stdin
         # TODO: Figure out how to make the command actually stick
-        # TODO: Purify this input!
-        ctx.bot.servers[token]['proc'].communicate(f"{command}\n".encode('utf-8'))
+        ctx.bot.servers[token]['proc'].stdin.write(bytearray(command + "\n", 'utf-8'))
         await ctx.send("Okay, message is sent.")
 
     @commands.command(
