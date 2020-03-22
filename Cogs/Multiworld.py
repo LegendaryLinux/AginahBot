@@ -1,19 +1,23 @@
-import os
 import aiohttp
 import aiofiles
+import functools
+import json
+import os
+import requests
 import socket
 import string
-import requests
-from re import findall
-from subprocess import Popen, PIPE, DEVNULL
-from random import choice, randrange
+import websockets
+import zlib
 from discord.ext import commands
-from dotenv import load_dotenv
+from re import findall
+from random import choice, randrange
 
-# Load environment variables
-load_dotenv()
-SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
-BERSERKER_PATH = os.getenv('BERSERKER_PATH')
+# Skip Berserker's automatically attempting to install requirements from a file
+import ModuleUpdate
+ModuleUpdate.update_ran = True
+
+# Import Berserker's MultiServer file
+import MultiServer
 
 # Find the public ip address of the current machine
 MULTIWORLD_HOST = requests.get('https://checkip.amazonaws.com').text.strip()
@@ -28,9 +32,41 @@ class Multiworld(commands.Cog):
         return prefix.join(choice(string.ascii_uppercase) for x in range(4))
 
     @staticmethod
-    def is_port_in_use(port: int):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            return sock.connect_ex(('localhost', port)) == 0
+    def get_open_port():
+        # Choose a port from 5000 to 7000 and ensure it is not in use
+        while True:
+            port = randrange(5000, 7000)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                if not sock.connect_ex(('localhost', port)) == 0:
+                    return port
+
+    @staticmethod
+    def create_multi_server(port: int, token: str, check_points: int, hint_cost: int, allow_cheats: bool = False):
+        # Create and configure MultiWorld server
+        multi = MultiServer.Context('0.0.0.0', port, None, check_points, hint_cost, allow_cheats)
+        multi.data_filename = f'multidata/{token}_multidata'
+        multi.save_filename = f'multidata/{token}_multisave'
+
+        # Configure multidata
+        with open(multi.data_filename, 'rb') as f:
+            json_obj = json.loads(zlib.decompress(f.read()).decode("utf-8"))
+            for team, names in enumerate(json_obj['names']):
+                for player, name in enumerate(names, 1):
+                    multi.player_names[(team, player)] = name
+            multi.rom_names = {tuple(rom): (team, slot) for slot, team, rom in json_obj['roms']}
+            multi.remote_items = set(json_obj['remote_items'])
+            multi.locations = {tuple(k): tuple(v) for k, v in json_obj['locations']}
+
+        # Configure multisave
+        # TODO: This does not seem to load save data
+        if os.path.exists(multi.save_filename):
+            with open(multi.save_filename, 'rb') as f:
+                json_obj = json.loads(zlib.decompress(f.read()).decode("utf-8"))
+                multi.set_save(json_obj)
+
+        multi.server = websockets.serve(functools.partial(MultiServer.server, ctx=multi), multi.host, multi.port,
+                                        ping_timeout=None, ping_interval=None)
+        return multi
 
     @commands.command(
         name='host-berserker',
@@ -63,39 +99,19 @@ class Multiworld(commands.Cog):
                 async with aiofiles.open(f'multidata/{token}_multidata', 'wb') as multidata_file:
                     await multidata_file.write(await res.read())
 
-        # Ensure the MultiWorld.py file exists on the local machine
-        if not os.path.exists(BERSERKER_PATH):
-            await ctx.send(
-                "It looks like your bot maintainer doesn't have his environment variables set correctly."
-                " I can't host your game until they fix that. Sorry!")
-            return
+        # Find an open port
+        port = self.get_open_port()
 
-        # Choose a port from 5000 to 7000 and ensure it is not in use
-        while True:
-            port = randrange(5000, 7000)
-            if not self.is_port_in_use(port):
-                break
-
-        proc_args = [
-            'python', BERSERKER_PATH,
-            '--port', str(port),
-            '--multidata', f'multidata/{token}_multidata',
-            '--savefile', f'multidata/{token}_multisave',
-            '--location_check_points', str(check_points),
-            '--hint_cost', str(hint_cost),
-        ]
-        if not allow_cheats:
-            proc_args.append('--disable_item_cheat')
-
-        # Store subprocess data in AginahBot instance dict
+        # Host game and store in ctx.bot.servers
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST,
             'port': port,
-            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
+            'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
         }
+        await ctx.bot.servers[token]['game'].server
 
         # Send host details to client
-        await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
+        await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
 
     @commands.command(
         name='resume-game',
@@ -128,7 +144,8 @@ class Multiworld(commands.Cog):
 
         # Check if game is already running
         if token in ctx.bot.servers:
-            await ctx.send('It looks like a game with that token is already underway!')
+            await ctx.send(f'It looks like a game with that token is already underway!\n'
+                           f'Host: {MULTIWORLD_HOST}:{ctx.bot.servers[token]["port"]}')
             return
 
         # Check for presence of multidata file with given token
@@ -136,37 +153,19 @@ class Multiworld(commands.Cog):
             await ctx.send('Sorry, no previous game with that token could be found.')
             return
 
-        # Choose a port from 5000 to 7000 and ensure it is not in use
-        while True:
-            port = randrange(5000, 7000)
-            if not self.is_port_in_use(port):
-                break
+        # Find an open port
+        port = self.get_open_port()
 
-        # Spawn a new subprocess hosting the game
-        proc_args = [
-            'python', BERSERKER_PATH,
-            '--port', str(port),
-            '--multidata', f'multidata/{token}_multidata',
-            '--savefile', f'multidata/{token}_multisave',
-            '--location_check_points', str(check_points),
-            '--hint_cost', str(hint_cost),
-        ]
-        if not allow_cheats:
-            proc_args.append('--disable_item_cheat')
-
-        if os.path.exists(f'multidata/{token}_multisave'):
-            proc_args.append('--savefile')
-            proc_args.append(f'multidata/{token}_multisave')
-
+        # Host game and store in ctx.bot.servers
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST,
             'port': port,
-            'proc': Popen(proc_args, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
+            'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
         }
+        await ctx.bot.servers[token]['game'].server
 
         # Send host details to client
-        await ctx.send(f"Your game has been hosted:\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
-        pass
+        await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_HOST}:{port}`")
 
     @commands.command(
         name='send-command',
@@ -190,10 +189,7 @@ class Multiworld(commands.Cog):
             await ctx.send("No game with that token is currently running.")
             return
 
-        # Send client message to the process via stdin
-        # TODO: Figure out how to make the command actually stick
-        ctx.bot.servers[token]['proc'].stdin.write(bytearray(command + "\n", 'utf-8'))
-        await ctx.send("Okay, message is sent.")
+        # TODO: Send command to the server
 
     @commands.command(
         name='end-game',
@@ -213,24 +209,24 @@ class Multiworld(commands.Cog):
         # Enforce token formatting
         token = str(matches[0]).upper()
 
-        # Kill the server process if it exists
+        if token not in ctx.bot.servers:
+            await ctx.send("No game with that token is currently running")
+            return
+
+        # Kill the server if it exists
+        # TODO: This does not close the running server. It really needs to.
         if token in ctx.bot.servers:
-            ctx.bot.servers[token]['proc'].kill()
             del ctx.bot.servers[token]
 
-            # Delete the multidata file
-            if os.path.exists(f'multidata/{token}_multidata'):
-                os.remove(f'multidata/{token}_multidata')
+        # Delete multidata file
+        if os.path.exists(f'multidata/{token}_multidata'):
+            os.remove(f'multidata/{token}_multisave')
 
-            # If there is a multisave, delete that too
-            if os.path.exists(f'multidata/{token}_multisave'):
-                os.remove(f'multidata/{token}_multisave')
+        # Delete multisave file
+        if os.path.exists(f'multidata/{token}_multisave'):
+            os.remove(f'multidata/{token}_multisave')
 
-            await ctx.send("The game has been ended.")
-
-        else:
-            # Warn the user if the provided token does not match a currently running game
-            await ctx.send(f"No currently running game exists with the token {token}")
+        await ctx.send("The game has been closed.")
 
     @commands.command(
         name='purge-files',

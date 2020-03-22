@@ -9,6 +9,7 @@ A Discord bot designed to help organize, host, and moderate Z3R Multiworld Tourn
     a `.multidata` file
 
 ## Coming Soon™
+- Support resuming a multiworld game
 - Support sending commands to the server via the bot
 
 ## Configuration
@@ -19,7 +20,7 @@ Example config:
 ```.env
 AGINAHBOT_TOKEN=somereallylongsecretkeyprovidedbydiscord
 SQLITE_DB_NAME="aginahbot.db.sqlite3"
-BERSERKER_PATH=/path/to/berserker/MultiServer.py
+BERSERKER_PATH=/path/to/berserker/directory
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
