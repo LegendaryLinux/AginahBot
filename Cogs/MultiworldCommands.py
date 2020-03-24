@@ -9,7 +9,7 @@ ModuleUpdate.update_ran = True
 import MultiServer
 
 
-class Multiworld(commands.Cog):
+class MultiworldCommands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -70,4 +70,4 @@ class Multiworld(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Multiworld(bot))
+    bot.add_cog(MultiworldCommands(bot))
