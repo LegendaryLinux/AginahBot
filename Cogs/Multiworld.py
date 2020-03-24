@@ -189,7 +189,7 @@ class Multiworld(commands.Cog):
             await ctx.send("No game with that token is currently running.")
             return
 
-        # TODO: Send command to the server
+        # TODO: Parse command and run appropriate server function
 
     @commands.command(
         name='end-game',
@@ -214,13 +214,13 @@ class Multiworld(commands.Cog):
             return
 
         # Kill the server if it exists
-        # TODO: This does not close the running server. It really needs to.
         if token in ctx.bot.servers:
+            await ctx.bot.servers[token]['game'].server.ws_server._close()
             del ctx.bot.servers[token]
 
         # Delete multidata file
         if os.path.exists(f'multidata/{token}_multidata'):
-            os.remove(f'multidata/{token}_multisave')
+            os.remove(f'multidata/{token}_multidata')
 
         # Delete multisave file
         if os.path.exists(f'multidata/{token}_multisave'):

@@ -7,7 +7,11 @@ class ErrorHandler(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        await ctx.send("Either something broke, or you gave me a command I don't recognize.")
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.send("Sorry, I don't recognize that command. Use `!aginah help` for more info.")
+            return
+
+        await ctx.send("Something broke. You should tell Farrak what happened.")
         print(str(error))
         raise error
 
