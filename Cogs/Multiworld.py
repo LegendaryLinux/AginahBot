@@ -69,13 +69,14 @@ class Multiworld(commands.Cog):
         return multi
 
     @commands.command(
-        name='host-berserker',
-        brief="Use AginahBot to host your berserker-style multiworld",
-        help='Upload a .multidata file to have AginahBot host a berserker-style multiworld game.\n'
+        name='host-game',
+        brief="Use AginahBot to host your multiworld",
+        help='Upload a .multidata file to have AginahBot host a multiworld game. Games will be automatically closed '
+             'after eight hours.\n'
              'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
-             'Usage: !aginah resume-game {check_points=1} {hint_cost=50} {allow_cheats=False}',
+             'Usage: !aginah host-game {check_points=1} {hint_cost=50} {allow_cheats=False}',
     )
-    async def host_berserker(self, ctx: commands.Context):
+    async def host_game(self, ctx: commands.Context):
         if not ctx.message.attachments:
             await ctx.send("Did you forget to attach a multidata file?")
             return
@@ -108,6 +109,7 @@ class Multiworld(commands.Cog):
             'port': port,
             'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
         }
+        # TODO: Implement server expiration after eight hours
         await ctx.bot.servers[token]['game'].server
 
         # Send host details to client
@@ -166,30 +168,6 @@ class Multiworld(commands.Cog):
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_HOST}:{port}`")
-
-    @commands.command(
-        name='send-command',
-        brief='Send a command to an in-progress multiworld game',
-        help='Send a console command to an in-progress multiworld game.\n'
-             'Usage: !aginah send-command {token} {command}',
-    )
-    async def send_command(self, ctx: commands.Context):
-        # Parse token and command
-        matches = findall("^\!aginah send-command ([A-z]{4}) (.*)$", ctx.message.content)
-        if not len(matches) == 1:
-            await ctx.send("Your command doesn't look right. Use `!aginah help send-command` for more info.")
-            return
-
-        # Assign arguments to variables, enforce token formatting
-        token = str(matches[0][0]).upper()
-        command = str(matches[0][1])
-
-        # Ensure token exists among running games
-        if token not in ctx.bot.servers:
-            await ctx.send("No game with that token is currently running.")
-            return
-
-        # TODO: Parse command and run appropriate server function
 
     @commands.command(
         name='end-game',

@@ -43,6 +43,7 @@ async def on_ready():
 aginahBot.load_extension("Cogs.Casual")
 aginahBot.load_extension("Cogs.Racing")
 aginahBot.load_extension("Cogs.Multiworld")
+aginahBot.load_extension("Cogs.MultiworldCommands")
 aginahBot.load_extension("Cogs.ErrorHandler")
 
 # Run the bot
