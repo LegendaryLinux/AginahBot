@@ -73,8 +73,14 @@ class MultiworldCommands(commands.Cog):
                            "Use `!aginah help forfeit-player` for more info.")
             return
 
-        # TODO: Figure out why this raises an exception
-        MultiServer.forfeit_player(ctx.bot.servers[token]['game'], int(team)-1, int(player)-1)
+        try:
+            # Forfeit the player
+            # Why is team number 0-indexed, but player number is not?
+            MultiServer.forfeit_player(ctx.bot.servers[token]['game'], int(team)-1, int(player))
+        except KeyError:
+            await ctx.send(f"There is no Player {player} on Team {team}. "
+                           f"Are you sure that team number and player number exist?")
+            return
         await ctx.send("Player has been forfeited.")
 
     @commands.command(

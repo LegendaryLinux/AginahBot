@@ -58,7 +58,6 @@ class Multiworld(commands.Cog):
             multi.locations = {tuple(k): tuple(v) for k, v in json_obj['locations']}
 
         # Configure multisave
-        # TODO: This does not seem to load save data
         if os.path.exists(multi.save_filename):
             with open(multi.save_filename, 'rb') as f:
                 json_obj = json.loads(zlib.decompress(f.read()).decode("utf-8"))
