@@ -1,12 +1,15 @@
 import asyncio
 from discord.ext import commands
+from re import findall
 
 # Skip Berserker's automatically attempting to install requirements from a file
 import ModuleUpdate
 ModuleUpdate.update_ran = True
 
 # Import Berserker's MultiServer file
+from MultiClient import ReceivedItem
 import MultiServer
+import Items
 
 
 class MultiworldCommands(commands.Cog):
@@ -87,10 +90,42 @@ class MultiworldCommands(commands.Cog):
         name='give-item',
         brief='Give an item to a player',
         help='Give an item to a player in a multiworld game.\n'
-             'Usage: !aginah give-item {token} {player} {item} {team=1}',
+             'Usage: !aginah give-item {token} {player} {team} {item}',
     )
     async def give_item(self, ctx: commands.Context):
-        pass
+        result = findall("^ \!aginah give-item ([A-z]{4}) (\d) (\d) (.*)$", ctx.message.content)
+
+        if not result or len(result) == 0:
+            await ctx.send("That command doesn't look right. Use `!aginah help give-item` for more info.")
+            return
+
+        # Parse command arguments
+        token, player, team, item = result[0]
+
+        if not token:
+            await ctx.send("You forgot to specify a game token. Use `!aginah help show-players` for more info.")
+            return
+
+        # Enforce token formatting
+        token = str(token).upper()
+        if token not in ctx.bot.servers:
+            await ctx.send("There is no running game with that token!")
+            return
+
+        # Figure out which item to send
+        item_name, valid_item, response = MultiServer.get_intended_text(item, Items.item_table.keys())
+
+        # If the item is invalid, inform the user to try again
+        if not valid_item:
+            await ctx.send(response)
+            return
+
+        # Send the item to the specified player
+        new_item = ReceivedItem(Items.item_table[item_name][3], -1, player)
+        MultiServer.get_received_items(ctx.bot.servers[token]['game'], int(team)-1, int(player)).append(new_item)
+        MultiServer.notify_all(ctx.bot.servers[token]['game'], f"Admin Console: Sending {item_name} to "
+                                                               f"Player {player} on Team {team}")
+        MultiServer.send_new_items(ctx.bot.servers[token]['game'])
 
     @commands.command(
         name='show-players',
@@ -107,6 +142,7 @@ class MultiworldCommands(commands.Cog):
             await ctx.send("You forgot to specify a game token. Use `!aginah help show-players` for more info.")
             return
 
+        # Enforce token formatting
         token = str(token).upper()
         if token not in ctx.bot.servers:
             await ctx.send("There is no running game with that token!")
