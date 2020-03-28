@@ -87,20 +87,20 @@ class MultiworldCommands(commands.Cog):
         await ctx.send("Player has been forfeited.")
 
     @commands.command(
-        name='give-item',
+        name='send-item',
         brief='Give an item to a player',
         help='Give an item to a player in a multiworld game.\n'
-             'Usage: !aginah give-item {token} {player} {team} {item}',
+             'Usage: !aginah send-item {token} {player-name} {item}',
     )
-    async def give_item(self, ctx: commands.Context):
-        result = findall("^ \!aginah give-item ([A-z]{4}) (\d) (\d) (.*)$", ctx.message.content)
+    async def send_item(self, ctx: commands.Context):
+        result = findall("^!aginah send-item ([A-z]{4}) ([A-z0-9_-]*) (.*)$", ctx.message.content)
 
         if not result or len(result) == 0:
-            await ctx.send("That command doesn't look right. Use `!aginah help give-item` for more info.")
+            await ctx.send("That command doesn't look right. Use `!aginah help send-item` for more info.")
             return
 
         # Parse command arguments
-        token, player, team, item = result[0]
+        token, player, item = result[0]
 
         if not token:
             await ctx.send("You forgot to specify a game token. Use `!aginah help show-players` for more info.")
@@ -112,6 +112,16 @@ class MultiworldCommands(commands.Cog):
             await ctx.send("There is no running game with that token!")
             return
 
+        target_client = None
+        for client in ctx.bot.servers[token]["game"].clients:
+            if str(client.name).lower() == str(player).lower():
+                target_client = client
+                break
+
+        if not target_client:
+            await ctx.send("No matching player found.")
+            return
+
         # Figure out which item to send
         item_name, valid_item, response = MultiServer.get_intended_text(item, Items.item_table.keys())
 
@@ -121,11 +131,13 @@ class MultiworldCommands(commands.Cog):
             return
 
         # Send the item to the specified player
-        new_item = ReceivedItem(Items.item_table[item_name][3], -1, player)
-        MultiServer.get_received_items(ctx.bot.servers[token]['game'], int(team)-1, int(player)).append(new_item)
-        MultiServer.notify_all(ctx.bot.servers[token]['game'], f"Admin Console: Sending {item_name} to "
-                                                               f"Player {player} on Team {team}")
+        new_item = ReceivedItem(Items.item_table[item_name][3], -1, target_client.slot)
+        MultiServer.get_received_items(ctx.bot.servers[token]['game'],
+                                       target_client.team, target_client.slot).append(new_item)
+        notification = f"Admin Console: Sending {item_name} to {target_client.name} on Team {int(target_client.team)+1}"
+        MultiServer.notify_all(ctx.bot.servers[token]['game'], notification)
         MultiServer.send_new_items(ctx.bot.servers[token]['game'])
+        await ctx.send(f"Sending {item_name} to {target_client.name}.")
 
     @commands.command(
         name='show-players',
