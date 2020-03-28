@@ -17,14 +17,87 @@ class MultiworldCommands(commands.Cog):
         self.bot = bot
 
     @commands.command(
-        name='broadcast',
-        brief='Broadcast a message to all players',
-        help='Broadcast a message to all players of a multiworld game.\n'
-             'Usage: !aginah broadcast {token} {message}',
+        name='notify',
+        brief='Send a message to all players',
+        help='Send a message to all players of a multiworld game.\n'
+             'Usage: !aginah notify {token} {message}',
     )
-    async def broadcast(self, ctx: commands.Context):
-        pass
+    async def notify(self, ctx: commands.Context):
+        result = findall("^!aginah notify ([A-z]{4}) (.*)$", ctx.message.content)
+        if not result or len(result) == 0:
+            await ctx.send("That command doesn't look right. Use `!aginah help notify` for more info.")
+            return
 
+        # Parse command args
+        token, message = result[0]
+
+        token = str(token).upper()
+        if token not in ctx.bot.servers:
+            await ctx.send("There is no running game with that token!")
+            return
+
+        # Broadcast the message to all players
+        MultiServer.notify_all(ctx.bot.servers[token]['game'], f"[NOTIFY ALL]: {message}")
+        await ctx.send("Message sent.")
+
+    @commands.command(
+        name='notify-team',
+        brief='Send a message to all players on a team',
+        help='Send a message to all players on a specified team in a multiworld game.\n'
+             'Usage: !aginah notify-team {token} {team-number} {message}',
+    )
+    async def notify_team(self, ctx: commands.Context):
+        result = findall("^!aginah notify-team ([A-z]{4}) ([0-9]]*) (.*)$", ctx.message.content)
+        if not result or len(result) == 0:
+            await ctx.send("That command doesn't look right. Use `!aginah help notify-team` for more info.")
+            return
+
+        # Parse command args
+        token, team, message = result[0]
+
+        token = str(token).upper()
+        if token not in ctx.bot.servers:
+            await ctx.send("There is no running game with that token!")
+            return
+
+        # Broadcast the message to all players on the team
+        MultiServer.notify_team(ctx.bot.servers[token]['game'], int(team)-1, f"[NOTIFY_TEAM]: {message}")
+        await ctx.send("Message sent.")
+
+    @commands.command(
+        name='notify-player',
+        brief='Send a message to a player',
+        help='Send a message to a specified player in a multiworld game.\n'
+             'Usage: !aginah notify-player {token} {player} {message}',
+    )
+    async def notify_player(self, ctx: commands.Context):
+        result = findall("^!aginah notify-player ([A-z]{4}) ([A-z0-9_-]*) (.*)$", ctx.message.content)
+        if not result or len(result) == 0:
+            await ctx.send("That command doesn't look right. Use `!aginah help notify-player` for more info.")
+            return
+
+        # Parse command args
+        token, player, message = result[0]
+
+        token = str(token).upper()
+        if token not in ctx.bot.servers:
+            await ctx.send("There is no running game with that token!")
+            return
+
+        target_client = None
+        for client in ctx.bot.servers[token]["game"].clients:
+            if str(client.name).lower() == str(player).lower():
+                target_client = client
+                break
+
+        if not target_client:
+            await ctx.send("No matching player found.")
+            return
+
+        # Broadcast the message to all players on the team
+        MultiServer.notify_client(target_client, f"[NOTIFY_PLAYER]: {message}")
+        await ctx.send("Message sent.")
+        
     @commands.command(
         name='countdown',
         brief='Broadcast a countdown to all connected players',
@@ -50,17 +123,16 @@ class MultiworldCommands(commands.Cog):
         asyncio.create_task(MultiServer.countdown(ctx.bot.servers[token]['game'], int(seconds)))
 
     @commands.command(
-        name='forfeit-player',
+        name='forfeit',
         brief='Forfeit a player from a multiworld game',
         help='Forfeit a player from a multiworld game. This sends all items in their seed to the remaining players.\n'
-             'Usage: !aginah forfeit-player {token} {player_number} {team_number=1}',
+             'Usage: !aginah forfeit-player {token} {player-name}',
     )
-    async def forfeit_player(self, ctx: commands.Context):
+    async def forfeit(self, ctx: commands.Context):
         # Parse command arguments
         cmd_args = ctx.message.content.split()
         token = cmd_args[2] if 0 <= 2 < len(cmd_args) else None
         player = cmd_args[3] if 0 <= 3 < len(cmd_args) else None
-        team = cmd_args[4] if 0 <= 4 < len(cmd_args) else 1
 
         if not token:
             await ctx.send("You forgot to specify a game token. Use `!aginah help forfeit-player` for more info.")
@@ -72,19 +144,21 @@ class MultiworldCommands(commands.Cog):
             return
 
         if not player:
-            await ctx.send("You must specify a player number to forfeit. "
-                           "Use `!aginah help forfeit-player` for more info.")
+            await ctx.send("You must specify a player to forfeit. Use `!aginah help forfeit-player` for more info.")
             return
 
-        try:
-            # Forfeit the player
-            # Why is team number 0-indexed, but player number is not?
-            MultiServer.forfeit_player(ctx.bot.servers[token]['game'], int(team)-1, int(player))
-        except KeyError:
-            await ctx.send(f"There is no Player {player} on Team {team}. "
-                           f"Are you sure that team number and player number exist?")
+        target_client = None
+        for client in ctx.bot.servers[token]["game"].clients:
+            if str(client.name).lower() == str(player).lower():
+                target_client = client
+                break
+
+        if not target_client:
+            await ctx.send("No matching player found.")
             return
-        await ctx.send("Player has been forfeited.")
+
+        MultiServer.forfeit_player(ctx.bot.servers[token]['game'], target_client.team, target_client.slot)
+        await ctx.send(f"{target_client.name} has been forfeited.")
 
     @commands.command(
         name='send-item',
