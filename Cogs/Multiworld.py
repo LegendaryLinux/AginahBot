@@ -8,9 +8,10 @@ import socket
 import string
 import websockets
 import zlib
+from asyncio import sleep
 from discord.ext import commands
-from re import findall
 from random import choice, randrange
+from re import findall
 
 # Skip Berserker's automatically attempting to install requirements from a file
 import ModuleUpdate
@@ -70,8 +71,8 @@ class Multiworld(commands.Cog):
     @commands.command(
         name='host-game',
         brief="Use AginahBot to host your multiworld",
-        help='Upload a .multidata file to have AginahBot host a multiworld game. Games will be automatically closed '
-             'after eight hours.\n'
+        help='Upload a .multidata file to have AginahBot host a multiworld game. The game will be automatically '
+             'closed after eight hours.\n'
              'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
              'Usage: !aginah host-game {check_points=1} {hint_cost=50} {allow_cheats=False}',
     )
@@ -108,16 +109,22 @@ class Multiworld(commands.Cog):
             'port': port,
             'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
         }
-        # TODO: Implement server expiration after eight hours
         await ctx.bot.servers[token]['game'].server
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
 
+        # Kill the server after eight hours
+        await sleep(8*60*60)
+        if token in ctx.bot.servers:
+            await ctx.bot.servers[token]['game'].server.ws_server._close()
+            print(f"Automatically closed game with token {token} after eight hours.")
+
     @commands.command(
         name='resume-game',
         brief='Re-host a game previously hosted by AginahBot',
-        help='Re-host a timed-out or closed game previously hosted by AginahBot.\n'
+        help='Re-host a timed-out or closed game previously hosted by AginahBot. The game will automatically close '
+             'after eight hours.\n'
              'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
              'Usage: !aginah resume-game {token} {check_points=1} {hint_cost=50} {allow_cheats=False}',
     )
@@ -167,6 +174,12 @@ class Multiworld(commands.Cog):
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_HOST}:{port}`")
+
+        # Kill the server after eight hours
+        await sleep(8*60*60)
+        if token in ctx.bot.servers:
+            await ctx.bot.servers[token]['game'].server.ws_server._close()
+            print(f"Automatically closed game with token {token} after eight hours.")
 
     @commands.command(
         name='end-game',
