@@ -44,7 +44,7 @@ class Multiworld(commands.Cog):
     @staticmethod
     def create_multi_server(port: int, token: str, check_points: int, hint_cost: int, allow_cheats: bool = False):
         # Create and configure MultiWorld server
-        multi = MultiServer.Context('0.0.0.0', port, None, check_points, hint_cost, allow_cheats)
+        multi = MultiServer.Context('0.0.0.0', port, None, int(check_points), int(hint_cost), allow_cheats)
         multi.data_filename = f'multidata/{token}_multidata'
         multi.save_filename = f'multidata/{token}_multisave'
 
