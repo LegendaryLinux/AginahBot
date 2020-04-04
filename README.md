@@ -7,14 +7,15 @@ A Discord bot designed to help organize, host, and moderate Z3R Multiworld Tourn
 - Support casual multiworld voice and text channels, and automatic assignment of permissions on those channels
 - Host a [Berserker-style](https://github.com/Berserker66/MultiWorld-Utilities) multiworld game given 
     a `.multidata` file
-
-## Coming Soon™
-- Support resuming a multiworld game
-- Support sending commands to the server via the bot
+- Support for hosting and resuming multiworld games
+- Support for sending commands to the server via the bot
 
 ## Configuration
 A `.env` file is required to be present in the base directory of the repository. This file should contain
-your Discord bot's secret key and a name for the SQLite database file.
+your Discord bot's secret key, a name for the SQLite database file, and the path to Berserker's repository.
+
+It is recommended to use the source code from a release version of Berserker's repository. This should prevent
+some headaches as his repository is updated frequently.
 
 Example config:
 ```.env
