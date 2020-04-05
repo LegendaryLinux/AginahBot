@@ -161,6 +161,49 @@ class MultiworldCommands(commands.Cog):
         await ctx.send(f"{target_client.name} has been forfeited.")
 
     @commands.command(
+        name='kick-player',
+        brief='Kick a player from a game',
+        help='Kick a player from a multiworld game\n'
+             'Usage: !aginah kick-player {token} {player-name}',
+    )
+    async def kick_player(self, ctx: commands.Context):
+        result = findall("^!aginah kick-player ([A-z]{4}) ([A-z0-9_-]*)$", ctx.message.content)
+
+        if not result or len(result) == 0:
+            await ctx.send("That command doesn't look right. Use `!aginah help kick_player` for more info.")
+            return
+
+        # Parse command arguments
+        token, player = result[0]
+
+        if not token:
+            await ctx.send("You forgot to specify a game token. Use `!aginah help kick_player` for more info.")
+            return
+
+        # Enforce token formatting
+        token = str(token).upper()
+        if token not in ctx.bot.servers:
+            await ctx.send("There is no running game with that token!")
+            return
+
+        target_client = None
+        for client in ctx.bot.servers[token]["game"].clients:
+            if str(client.name).lower() == str(player).lower():
+                target_client = client
+                break
+
+        if not target_client:
+            await ctx.send("No player with that name could be found.")
+            return
+
+        if not target_client.socket or target_client.socket.closed:
+            await ctx.send("That played doesn't seem to be connected.")
+            return
+
+        await target_client.socket.close()
+        await ctx.send("Player kicked.")
+
+    @commands.command(
         name='send-item',
         brief='Give an item to a player',
         help='Give an item to a player in a multiworld game.\n'
