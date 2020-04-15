@@ -11,7 +11,7 @@ class ErrorHandler(commands.Cog):
             await ctx.send("Sorry, I don't recognize that command. Use `!aginah help` for more info.")
             return
 
-        await ctx.send("Something broke. You should tell Farrak what happened.")
+        await ctx.send("Something broke. You might want to submit an issue on the AginahBot GitHub Repo.")
         print(str(error))
         raise error
 

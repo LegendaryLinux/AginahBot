@@ -3,13 +3,13 @@ from discord.ext import commands
 from re import findall
 
 # Skip Berserker's automatically attempting to install requirements from a file
-import ModuleUpdate
+from ..MultiWorldUtilities import ModuleUpdate
 ModuleUpdate.update_ran = True
 
 # Import Berserker's MultiServer file
-from MultiClient import ReceivedItem
-import MultiServer
-import Items
+from ..MultiWorldUtilities.MultiClient import ReceivedItem
+from ..MultiWorldUtilities import MultiServer
+from ..MultiWorldUtilities import Items
 
 
 class MultiworldCommands(commands.Cog):

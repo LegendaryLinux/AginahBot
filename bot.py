@@ -42,7 +42,7 @@ async def on_ready():
 # Load commands and event responses from Cogs
 aginahBot.load_extension("Cogs.Casual")
 aginahBot.load_extension("Cogs.Racing")
-aginahBot.load_extension("Cogs.Multiworld")
+aginahBot.load_extension("Cogs.MultiworldHost")
 aginahBot.load_extension("Cogs.MultiworldCommands")
 aginahBot.load_extension("Cogs.ErrorHandler")
 

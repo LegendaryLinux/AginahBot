@@ -1,5 +1,5 @@
 # AginahBot
-A Discord bot designed to help organize, host, and moderate Z3R Multiworld Tournaments.
+A Discord bot designed to help organize, host, and moderate Z3R Multiworld Games.
 
 ## Current Features
 - Automatic creation of race voice and text channels, and automatic assignment of permissions to prevent viewing
@@ -12,23 +12,31 @@ A Discord bot designed to help organize, host, and moderate Z3R Multiworld Tourn
 
 ## Configuration
 A `.env` file is required to be present in the base directory of the repository. This file should contain
-your Discord bot's secret key, a name for the SQLite database file, and the path to Berserker's repository.
-
-It is recommended to use the source code from a release version of Berserker's repository. This should prevent
-some headaches as his repository is updated frequently.
+at minimum your Discord bot's secret key, and a name for the SQLite database file. You may optionally include
+a public IP address and a host url. A few notes about the `.env` file:
+- The discord bot token is required
+- The sqlite database name is required
+- If absent, the public ip will be automatically determined
+- If present, the host url will be provided to users instead of the public ip
 
 Example config:
 ```.env
 AGINAHBOT_TOKEN=somereallylongsecretkeyprovidedbydiscord
 SQLITE_DB_NAME="aginahbot.db.sqlite3"
-BERSERKER_PATH=/path/to/berserker/directory
+PUBLIC_IP="127.0.0.1"
+HOST_URL="multiworld.link"
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
-the following permissions:
+permissions granted by the permissions integer `285273104`.
+
+The following permissions will be granted
+to AginahBot:
 - Manage Roles
 - Manage Channels
 - Read Text Channels & See Voice Channels
 - Send Messages
+- Embed Links
+- Attach Files
 - Manage Messages
 - Move Members

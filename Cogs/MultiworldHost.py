@@ -9,22 +9,25 @@ import string
 import websockets
 import zlib
 from asyncio import sleep
+from dotenv import load_dotenv
 from discord.ext import commands
 from random import choice, randrange
 from re import findall
 
 # Skip Berserker's automatically attempting to install requirements from a file
-import ModuleUpdate
+from ..MultiWorldUtilities import ModuleUpdate
 ModuleUpdate.update_ran = True
 
 # Import Berserker's MultiServer file
-import MultiServer
+from ..MultiWorldUtilities import MultiServer
 
-# Find the public ip address of the current machine
-MULTIWORLD_HOST = requests.get('https://checkip.amazonaws.com').text.strip()
+# Find the public ip address of the current machine, and possibly a domain name
+load_dotenv()
+MULTIWORLD_HOST_IP = os.getenv('PUBLIC_IP', requests.get('https://checkip.amazonaws.com').text.strip())
+MULTIWORLD_DOMAIN = os.getenv('HOST_URL', MULTIWORLD_HOST_IP)
 
 
-class Multiworld(commands.Cog):
+class MultiworldHost(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -105,20 +108,52 @@ class Multiworld(commands.Cog):
 
         # Host game and store in ctx.bot.servers
         ctx.bot.servers[token] = {
-            'host': MULTIWORLD_HOST,
+            'host': MULTIWORLD_HOST_IP,
             'port': port,
             'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
         }
         await ctx.bot.servers[token]['game'].server
 
         # Send host details to client
-        await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_HOST}:{port}`\nToken: `{token}`")
+        await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_DOMAIN}:{port}`\nToken: `{token}`")
 
         # Kill the server after eight hours
         await sleep(8*60*60)
         if token in ctx.bot.servers:
             await ctx.bot.servers[token]['game'].server.ws_server._close()
             print(f"Automatically closed game with token {token} after eight hours.")
+
+    @commands.command(
+        name='generate-game',
+        brief='Use AginahBot to generate and host your multiworld',
+        help='Upload a .zip file containing player .yaml files to have AginahBot generate and host a multiworld game.\n'
+             'If a meta.yaml is present in the zip file, it will be used when generating the game.\n'
+             'The game will be automatically closed after eight hours.\n'
+             'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
+             'Usage: !aginah host-game {check_points=1} {hint_cost=50} {allow_cheats=False}',
+    )
+    async def generate_game(self, ctx: commands.Context):
+        # Parse command arguments from ctx
+        cmd_args = ctx.message.content.split()
+        check_points = cmd_args[2] if 0 <= 2 < len(cmd_args) else 1
+        hint_cost = cmd_args[3] if 0 <= 3 < len(cmd_args) else 50
+        allow_cheats = True if 0 <= 4 < len(cmd_args) else False
+
+        # TODO: Read and unpack the zip file
+
+        # Generate a multiworld token and ensure it is not in use already
+        while True:
+            token = await self.gen_token()
+            if token not in ctx.bot.servers:
+                break
+
+        # TODO: Generate the .multidata file and player patch files
+
+        # TODO: Place .multidata file in the local multidata folder
+
+        # TODO: Zip the player patch files
+
+        # TODO: Respond to the user with an attached zip file containing player patch files and host data
 
     @commands.command(
         name='resume-game',
@@ -153,7 +188,7 @@ class Multiworld(commands.Cog):
         # Check if game is already running
         if token in ctx.bot.servers:
             await ctx.send(f'It looks like a game with that token is already underway!\n'
-                           f'Host: {MULTIWORLD_HOST}:{ctx.bot.servers[token]["port"]}')
+                           f'Host: {MULTIWORLD_DOMAIN}:{ctx.bot.servers[token]["port"]}')
             return
 
         # Check for presence of multidata file with given token
@@ -166,14 +201,14 @@ class Multiworld(commands.Cog):
 
         # Host game and store in ctx.bot.servers
         ctx.bot.servers[token] = {
-            'host': MULTIWORLD_HOST,
+            'host': MULTIWORLD_HOST_IP,
             'port': port,
             'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
         }
         await ctx.bot.servers[token]['game'].server
 
         # Send host details to client
-        await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_HOST}:{port}`")
+        await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_DOMAIN}:{port}`")
 
         # Kill the server after eight hours
         await sleep(8*60*60)
@@ -237,4 +272,4 @@ class Multiworld(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Multiworld(bot))
+    bot.add_cog(MultiworldHost(bot))
