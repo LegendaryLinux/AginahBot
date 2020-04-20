@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import multiprocessing
+import sys
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -11,6 +12,8 @@ SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
 
 # All subprocesses should be initialized using the spawn method
 multiprocessing.set_start_method('spawn', force=True)
+
+sys.path.insert(0, "../MultiWorldUtilities")
 
 # Create a (or connect to) a local sqlite database
 db = sqlite3.connect(SQLITE_DB_NAME)

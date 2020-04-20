@@ -1,15 +1,17 @@
 import asyncio
+import sys
 from discord.ext import commands
 from re import findall
 
 # Skip Berserker's automatically attempting to install requirements from a file
-from ..MultiWorldUtilities import ModuleUpdate
+sys.path.append("MultiWorldUtilities")
+import ModuleUpdate
 ModuleUpdate.update_ran = True
 
 # Import Berserker's MultiServer file
-from ..MultiWorldUtilities.MultiClient import ReceivedItem
-from ..MultiWorldUtilities import MultiServer
-from ..MultiWorldUtilities import Items
+from Utils import ReceivedItem
+import MultiServer
+import Items
 
 
 class MultiworldCommands(commands.Cog):
@@ -277,7 +279,7 @@ class MultiworldCommands(commands.Cog):
             await ctx.send("There is no running game with that token!")
             return
 
-        await ctx.send(MultiServer.get_connected_players_string(ctx.bot.servers[token]['game']))
+        await ctx.send(MultiServer.get_players_string(ctx.bot.servers[token]['game']))
 
 
 def setup(bot: commands.Bot):

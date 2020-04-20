@@ -6,6 +6,7 @@ import os
 import requests
 import socket
 import string
+import sys
 import websockets
 import zlib
 from asyncio import sleep
@@ -15,11 +16,13 @@ from random import choice, randrange
 from re import findall
 
 # Skip Berserker's automatically attempting to install requirements from a file
-from ..MultiWorldUtilities import ModuleUpdate
+sys.path.append("MultiWorldUtilities")
+import ModuleUpdate
+
 ModuleUpdate.update_ran = True
 
 # Import Berserker's MultiServer file
-from ..MultiWorldUtilities import MultiServer
+import MultiServer
 
 # Find the public ip address of the current machine, and possibly a domain name
 load_dotenv()
@@ -45,9 +48,11 @@ class MultiworldHost(commands.Cog):
                     return port
 
     @staticmethod
-    def create_multi_server(port: int, token: str, check_points: int, hint_cost: int, allow_cheats: bool = False):
+    def create_multi_server(port: int, token: str, check_points: int, hint_cost: int,
+                            allow_cheats: bool = False, allow_forfeit: bool = True):
         # Create and configure MultiWorld server
-        multi = MultiServer.Context('0.0.0.0', port, None, int(check_points), int(hint_cost), allow_cheats)
+        multi = MultiServer.Context('0.0.0.0', port, None, int(check_points),
+                                    int(hint_cost), allow_cheats, allow_forfeit)
         multi.data_filename = f'multidata/{token}_multidata'
         multi.save_filename = f'multidata/{token}_multisave'
 
@@ -76,8 +81,9 @@ class MultiworldHost(commands.Cog):
         brief="Use AginahBot to host your multiworld",
         help='Upload a .multidata file to have AginahBot host a multiworld game. The game will be automatically '
              'closed after eight hours.\n'
-             'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
-             'Usage: !aginah host-game {check_points=1} {hint_cost=50} {allow_cheats=False}',
+             'Default values for arguments are shown below. Providing any value to allow_cheats and allow_forfeit '
+             'will toggle their default values.\n\n'
+             'Usage: !aginah host-game {check_points=1} {hint_cost=50} {allow_cheats=False} {allow_forfeit=True}',
     )
     async def host_game(self, ctx: commands.Context):
         if not ctx.message.attachments:
@@ -89,6 +95,7 @@ class MultiworldHost(commands.Cog):
         check_points = cmd_args[2] if 0 <= 2 < len(cmd_args) else 1
         hint_cost = cmd_args[3] if 0 <= 3 < len(cmd_args) else 50
         allow_cheats = True if 0 <= 4 < len(cmd_args) else False
+        allow_forfeit = False if 0 <= 5 < len(cmd_args) else True
 
         # Generate a multiworld token and ensure it is not in use already
         while True:
@@ -107,61 +114,43 @@ class MultiworldHost(commands.Cog):
         port = self.get_open_port()
 
         # Host game and store in ctx.bot.servers
-        ctx.bot.servers[token] = {
-            'host': MULTIWORLD_HOST_IP,
-            'port': port,
-            'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
-        }
-        await ctx.bot.servers[token]['game'].server
+        try:
+            ctx.bot.servers[token] = {
+                'host': MULTIWORLD_HOST_IP,
+                'port': port,
+                'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats, allow_forfeit)
+            }
+            await ctx.bot.servers[token]['game'].server
+        except zlib.error:
+            # Do not retain invalid multidata file
+            if os.path.exists(f'multidata/{token}_multidata'):
+                os.remove(f'multidata/{token}_multidata')
+
+            # Do not retain invalid multisave file
+            if os.path.exists(f'multidata/{token}_multisave'):
+                os.remove(f'multidata/{token}_multisave')
+
+            await ctx.send("Your multidata file appears to be invalid.")
+            return
 
         # Send host details to client
         await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_DOMAIN}:{port}`\nToken: `{token}`")
 
         # Kill the server after eight hours
-        await sleep(8*60*60)
+        await sleep(8 * 60 * 60)
         if token in ctx.bot.servers:
             await ctx.bot.servers[token]['game'].server.ws_server._close()
             print(f"Automatically closed game with token {token} after eight hours.")
-
-    @commands.command(
-        name='generate-game',
-        brief='Use AginahBot to generate and host your multiworld',
-        help='Upload a .zip file containing player .yaml files to have AginahBot generate and host a multiworld game.\n'
-             'If a meta.yaml is present in the zip file, it will be used when generating the game.\n'
-             'The game will be automatically closed after eight hours.\n'
-             'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
-             'Usage: !aginah host-game {check_points=1} {hint_cost=50} {allow_cheats=False}',
-    )
-    async def generate_game(self, ctx: commands.Context):
-        # Parse command arguments from ctx
-        cmd_args = ctx.message.content.split()
-        check_points = cmd_args[2] if 0 <= 2 < len(cmd_args) else 1
-        hint_cost = cmd_args[3] if 0 <= 3 < len(cmd_args) else 50
-        allow_cheats = True if 0 <= 4 < len(cmd_args) else False
-
-        # TODO: Read and unpack the zip file
-
-        # Generate a multiworld token and ensure it is not in use already
-        while True:
-            token = await self.gen_token()
-            if token not in ctx.bot.servers:
-                break
-
-        # TODO: Generate the .multidata file and player patch files
-
-        # TODO: Place .multidata file in the local multidata folder
-
-        # TODO: Zip the player patch files
-
-        # TODO: Respond to the user with an attached zip file containing player patch files and host data
 
     @commands.command(
         name='resume-game',
         brief='Re-host a game previously hosted by AginahBot',
         help='Re-host a timed-out or closed game previously hosted by AginahBot. The game will automatically close '
              'after eight hours.\n'
-             'Default values for arguments are shown below. Providing any value to allow_cheats will enable them.\n'
-             'Usage: !aginah resume-game {token} {check_points=1} {hint_cost=50} {allow_cheats=False}',
+             'Default values for arguments are shown below. Providing any value to allow_cheats and allow_forfeit '
+             'will toggle their default values.\n\n'
+             'Usage: !aginah resume-game {token} {check_points=1} {hint_cost=50} {allow_cheats=False} '
+             '{allow_forfeit=True}',
     )
     async def resume_game(self, ctx: commands.Context):
         # Parse command arguments from ctx
@@ -170,6 +159,7 @@ class MultiworldHost(commands.Cog):
         check_points = cmd_args[3] if 0 <= 3 < len(cmd_args) else 1
         hint_cost = cmd_args[4] if 0 <= 4 < len(cmd_args) else 50
         allow_cheats = True if 0 <= 5 < len(cmd_args) else False
+        allow_forfeit = False if 0 <= 6 < len(cmd_args) else False
 
         # Ensure a token is provided
         if not token:
@@ -203,7 +193,7 @@ class MultiworldHost(commands.Cog):
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST_IP,
             'port': port,
-            'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats)
+            'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats, allow_forfeit)
         }
         await ctx.bot.servers[token]['game'].server
 
@@ -211,7 +201,7 @@ class MultiworldHost(commands.Cog):
         await ctx.send(f"Your game has been hosted.\nHost: `{MULTIWORLD_DOMAIN}:{port}`")
 
         # Kill the server after eight hours
-        await sleep(8*60*60)
+        await sleep(8 * 60 * 60)
         if token in ctx.bot.servers:
             await ctx.bot.servers[token]['game'].server.ws_server._close()
             print(f"Automatically closed game with token {token} after eight hours.")
@@ -220,7 +210,7 @@ class MultiworldHost(commands.Cog):
         name='end-game',
         brief='Close a multiworld server',
         help='Shut down a multiworld server. Current players will be disconnected, new players will '
-             'be unable to join, and the game will not be able to be resumed.\n'
+             'be unable to join, and the game will not be able to be resumed.\n\n'
              'Usage: !aginah end-game {token}',
     )
     @commands.is_owner()
@@ -257,7 +247,7 @@ class MultiworldHost(commands.Cog):
         name='purge-files',
         brief='Delete all multidata and multisave files not currently in use',
         help='Delete all multidata and multisave files in the ./multidata directory which are not currently '
-             'in use by an active server\n'
+             'in use by an active server\n\n'
              'Usage: !aginah purge-files'
     )
     @commands.is_owner()
