@@ -48,23 +48,29 @@ class MultiworldHost(commands.Cog):
                     return port
 
     @staticmethod
-    def create_multi_server(port: int, token: str, check_points: int, hint_cost: int,
-                            allow_cheats: bool = False, allow_forfeit: bool = True):
+    def parse_multidata(filepath):
+        with open(filepath, 'rb') as f:
+            return json.loads(zlib.decompress(f.read()).decode("utf-8"))
+
+    @staticmethod
+    def create_multi_server(port: int, token: str):
         # Create and configure MultiWorld server
-        multi = MultiServer.Context('0.0.0.0', port, None, int(check_points),
-                                    int(hint_cost), allow_cheats, allow_forfeit)
+        multidata = MultiworldHost.parse_multidata(f'multidata/{token}_multidata')
+        server_opts = multidata['server_options']
+
+        multi = MultiServer.Context('0.0.0.0', port, None, int(server_opts['location_check_points']),
+                                    int(server_opts['hint_cost']), not server_opts['disable_item_cheat'],
+                                    not server_opts['disable_client_forfeit'])
         multi.data_filename = f'multidata/{token}_multidata'
         multi.save_filename = f'multidata/{token}_multisave'
 
-        # Configure multidata
-        with open(multi.data_filename, 'rb') as f:
-            json_obj = json.loads(zlib.decompress(f.read()).decode("utf-8"))
-            for team, names in enumerate(json_obj['names']):
-                for player, name in enumerate(names, 1):
-                    multi.player_names[(team, player)] = name
-            multi.rom_names = {tuple(rom): (team, slot) for slot, team, rom in json_obj['roms']}
-            multi.remote_items = set(json_obj['remote_items'])
-            multi.locations = {tuple(k): tuple(v) for k, v in json_obj['locations']}
+        # Configure multiserver
+        for team, names in enumerate(multidata['names']):
+            for player, name in enumerate(names, 1):
+                multi.player_names[(team, player)] = name
+        multi.rom_names = {tuple(rom): (team, slot) for slot, team, rom in multidata['roms']}
+        multi.remote_items = set(multidata['remote_items'])
+        multi.locations = {tuple(k): tuple(v) for k, v in multidata['locations']}
 
         # Configure multisave
         if os.path.exists(multi.save_filename):
@@ -80,22 +86,13 @@ class MultiworldHost(commands.Cog):
         name='host-game',
         brief="Use AginahBot to host your multiworld",
         help='Upload a .multidata file to have AginahBot host a multiworld game. The game will be automatically '
-             'closed after eight hours.\n'
-             'Default values for arguments are shown below. Providing any value to allow_cheats and allow_forfeit '
-             'will toggle their default values.\n\n'
-             'Usage: !aginah host-game {check_points=1} {hint_cost=50} {allow_cheats=False} {allow_forfeit=True}',
+             'closed after eight hours. Server options are loaded from the multidata file.\n\n'
+             'Usage: !aginah host-game',
     )
     async def host_game(self, ctx: commands.Context):
         if not ctx.message.attachments:
             await ctx.send("Did you forget to attach a multidata file?")
             return
-
-        # Parse command arguments from ctx
-        cmd_args = ctx.message.content.split()
-        check_points = cmd_args[2] if 0 <= 2 < len(cmd_args) else 1
-        hint_cost = cmd_args[3] if 0 <= 3 < len(cmd_args) else 50
-        allow_cheats = True if 0 <= 4 < len(cmd_args) else False
-        allow_forfeit = False if 0 <= 5 < len(cmd_args) else True
 
         # Generate a multiworld token and ensure it is not in use already
         while True:
@@ -118,7 +115,7 @@ class MultiworldHost(commands.Cog):
             ctx.bot.servers[token] = {
                 'host': MULTIWORLD_HOST_IP,
                 'port': port,
-                'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats, allow_forfeit)
+                'game': self.create_multi_server(port, token)
             }
             await ctx.bot.servers[token]['game'].server
         except zlib.error:
@@ -146,11 +143,8 @@ class MultiworldHost(commands.Cog):
         name='resume-game',
         brief='Re-host a game previously hosted by AginahBot',
         help='Re-host a timed-out or closed game previously hosted by AginahBot. The game will automatically close '
-             'after eight hours.\n'
-             'Default values for arguments are shown below. Providing any value to allow_cheats and allow_forfeit '
-             'will toggle their default values.\n\n'
-             'Usage: !aginah resume-game {token} {check_points=1} {hint_cost=50} {allow_cheats=False} '
-             '{allow_forfeit=True}',
+             'after eight hours Server options are loaded from the multidata file.\n\n'
+             'Usage: !aginah resume-game {token}'
     )
     async def resume_game(self, ctx: commands.Context):
         # Parse command arguments from ctx
@@ -193,7 +187,7 @@ class MultiworldHost(commands.Cog):
         ctx.bot.servers[token] = {
             'host': MULTIWORLD_HOST_IP,
             'port': port,
-            'game': self.create_multi_server(port, token, check_points, hint_cost, allow_cheats, allow_forfeit)
+            'game': self.create_multi_server(port, token)
         }
         await ctx.bot.servers[token]['game'].server
 
