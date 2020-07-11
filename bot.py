@@ -35,6 +35,7 @@ async def on_ready():
 # Load commands and event responses from Cogs
 aginahBot.load_extension("Cogs.Casual")
 aginahBot.load_extension("Cogs.Racing")
+aginahBot.load_extension("Cogs.HelpfulMessages")
 aginahBot.load_extension("Cogs.ErrorHandler")
 
 # Run the bot
