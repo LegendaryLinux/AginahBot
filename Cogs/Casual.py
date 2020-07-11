@@ -6,7 +6,7 @@ import re
 from discord.ext import commands
 
 load_dotenv()
-CATEGORY_NAME = 'Multiworld Casual'
+CATEGORY_NAME = 'SYNC MULTI'
 BASE_VOICE_CHANNEL_NAME = 'Start Game'
 VOICE_CHANNEL_NAME = 'Multi Channel '
 TEXT_CHANNEL_NAME = 'multi-channel-'

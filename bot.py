@@ -1,7 +1,5 @@
 import os
 import sqlite3
-import multiprocessing
-import sys
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -9,11 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 AGINAHBOT_TOKEN = os.getenv('AGINAHBOT_TOKEN')
 SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
-
-# All subprocesses should be initialized using the spawn method
-multiprocessing.set_start_method('spawn', force=True)
-
-sys.path.insert(0, "../MultiWorldUtilities")
 
 # Create a (or connect to) a local sqlite database
 db = sqlite3.connect(SQLITE_DB_NAME)
@@ -33,9 +26,6 @@ dbc.execute('CREATE TABLE IF NOT EXISTS casuals ('
 # Instantiate bot
 aginahBot = commands.Bot(command_prefix='!aginah ')
 
-# Store multiworld server data in memory
-aginahBot.servers = {}
-
 
 @aginahBot.event
 async def on_ready():
@@ -45,8 +35,6 @@ async def on_ready():
 # Load commands and event responses from Cogs
 aginahBot.load_extension("Cogs.Casual")
 aginahBot.load_extension("Cogs.Racing")
-aginahBot.load_extension("Cogs.MultiworldHost")
-aginahBot.load_extension("Cogs.MultiworldCommands")
 aginahBot.load_extension("Cogs.ErrorHandler")
 
 # Run the bot

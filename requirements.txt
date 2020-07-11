@@ -1,10 +1,2 @@
 discord
-websockets
-requests
-aiohttp
-aiofiles
 python-dotenv
-prompt_tooklit
-fuzzywuzzy
-pyyaml
-python-Levenshtein
