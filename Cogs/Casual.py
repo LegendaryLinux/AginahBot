@@ -85,6 +85,10 @@ class Casual(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.member, before: discord.VoiceState,
                                     after: discord.VoiceState):
+        # If the user changed their voice state but remained in the same voice channel, do nothing
+        if before and before.channel and after and after.channel and before.channel == after.channel:
+            return
+
         if after and after.channel:
             # Details about the user's connection
             voice_channel = after.channel
