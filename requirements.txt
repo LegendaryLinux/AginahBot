@@ -1,2 +1,4 @@
-discord
-python-dotenv
+discord~=1.0.1
+python-dotenv~=0.14.0
+py7zr~=0.9.1
+rarfile~=4.0
