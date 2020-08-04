@@ -36,7 +36,8 @@ async def on_ready():
 aginahBot.load_extension("Cogs.Casual")
 aginahBot.load_extension("Cogs.Racing")
 aginahBot.load_extension("Cogs.HelpfulMessages")
-aginahBot.load_extension("Cogs.Scanner")
+aginahBot.load_extension("Cogs.MessageScanner")
+aginahBot.load_extension("Cogs.RoleRequestor")
 aginahBot.load_extension("Cogs.ErrorHandler")
 
 # Run the bot

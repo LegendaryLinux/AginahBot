@@ -6,7 +6,7 @@ import tarfile
 import gzip
 
 
-class Scanner(commands.Cog):
+class MessageScanner(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -84,4 +84,4 @@ class Scanner(commands.Cog):
 
 # All cogs must have this function
 def setup(bot: commands.Bot):
-    bot.add_cog(Scanner(bot))
+    bot.add_cog(MessageScanner(bot))
