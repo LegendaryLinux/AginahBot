@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import re
 
 ROLE_REQUEST_CHANNEL = 'role-request'
 MODERATOR_ROLE = 'Moderator'
@@ -47,6 +46,32 @@ class RoleRequestor(commands.Cog):
 
         return ''.join(message_lines)
 
+    async def fetch_role(self, event: discord.RawReactionActionEvent, guild: discord.Guild, member: discord.Member):
+        print(type(event.emoji))
+        print(event.emoji)
+        print(type(event.emoji.name))
+        print(event.emoji.name)
+        db_role = self.bot.dbc.execute("SELECT role FROM roles r "
+                                       "JOIN role_categories rc ON r.categoryId=rc.id "
+                                       "WHERE rc.guildId=? "
+                                       "   AND rc.messageId=? "
+                                       "   AND r.reaction=?",
+                                       (event.guild_id, event.message_id, event.emoji.name)).fetchone()
+        if not db_role:
+            # Alert user that role cannot be added
+            await member.send("The role you requested could not be added, sorry.")
+            raise Exception(f"Role name could not be found in database based on guild and "
+                            f"message id for guild {guild.name} with id {guild.id}")
+
+        role = discord.utils.get(guild.roles, name=db_role[0])
+        if not role:
+            # Alert user that role cannot be added
+            await member.send("The role you requested could not be added, sorry.")
+            raise Exception(f"Discord role could not be resolved from role name in guild "
+                            f"{guild.name} with id {guild.id}")
+
+        return role
+
     @commands.command(
         name="init-role-system",
         brief="Create a #role-request channel for users to interact with AginahBot and request roles",
@@ -81,10 +106,10 @@ class RoleRequestor(commands.Cog):
              "Usage: !aginah init-role-system")
     @commands.check(is_administrator)
     async def destroy_role_system(self, ctx: commands.Context):
-        categories = self.bot.dbc.execute("SELECT id FROM role_categories WHERE guild=?", (ctx.guild.name,))
+        categories = self.bot.dbc.execute("SELECT id FROM role_categories WHERE guildId=?", (ctx.guild.id,))
         for category in categories:
             self.bot.dbc.execute("DELETE FROM roles WHERE categoryId=?", (category[0],))
-        self.bot.dbc.execute("DELETE FROM role_categories WHERE guild=?", (ctx.guild.name,))
+        self.bot.dbc.execute("DELETE FROM role_categories WHERE guildId=?", (ctx.guild.id,))
         self.bot.db.commit()
 
         channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
@@ -107,8 +132,8 @@ class RoleRequestor(commands.Cog):
             return
 
         # If category already exists, warn user and do nothing
-        if self.bot.dbc.execute("SELECT 1 FROM role_categories WHERE guild=? AND category=?",
-                                (ctx.guild.name, args[2],)).fetchone():
+        if self.bot.dbc.execute("SELECT 1 FROM role_categories WHERE guildId=? AND category=?",
+                                (ctx.guild.id, args[2],)).fetchone():
             await ctx.send("That category already exists!")
             return
 
@@ -117,12 +142,12 @@ class RoleRequestor(commands.Cog):
         message = await role_channel.send(f"Creating category. Standby...")
 
         # Save the new category and message id into the database
-        self.bot.dbc.execute("INSERT INTO role_categories (guild, category, messageId) VALUES (?,?,?)",
-                             (ctx.guild.name, args[2], message.id))
+        self.bot.dbc.execute("INSERT INTO role_categories (guildId, category, messageId) VALUES (?,?,?)",
+                             (ctx.guild.id, args[2], message.id))
         self.bot.db.commit()
 
-        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guild=? AND category=?",
-                                        (ctx.guild.name, args[2])).fetchone()
+        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guildId=? AND category=?",
+                                        (ctx.guild.id, args[2])).fetchone()
 
         await message.edit(content=await self.build_category_message(ctx, category))
 
@@ -143,8 +168,8 @@ class RoleRequestor(commands.Cog):
 
         # Fetch requisite data (role channel, category db row, role db rows)
         role_channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
-        category = self.bot.dbc.execute("SELECT id, messageId FROM role_categories WHERE guild=? AND category=?",
-                                        (ctx.guild.name, args[2])).fetchone()
+        category = self.bot.dbc.execute("SELECT id, messageId FROM role_categories WHERE guildId=? AND category=?",
+                                        (ctx.guild.id, args[2])).fetchone()
 
         # If category does not exist, warn user and do nothing
         if not category:
@@ -193,8 +218,8 @@ class RoleRequestor(commands.Cog):
         emoji = args[4] if len(args[4]) == 1 else args[4][1:-1]
 
         # Fetch category
-        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guild=? AND category=?",
-                                        (ctx.guild.name, args[2])).fetchone()
+        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guildId=? AND category=?",
+                                        (ctx.guild.id, args[2])).fetchone()
         if not category:
             await ctx.send("That category doesn't exist!")
             return
@@ -222,7 +247,7 @@ class RoleRequestor(commands.Cog):
         role = await ctx.guild.create_role(name=args[3], mentionable=True)
 
         # Add db row
-        desc = ''.join(args[5:]) if len(args) > 5 else None
+        desc = ' '.join(args[5:]) if len(args) > 5 else None
         self.bot.dbc.execute("INSERT INTO roles (categoryId, role, reaction, description) VALUES (?,?,?,?)",
                              (category[0], role.name, emoji, desc))
         self.bot.db.commit()
@@ -251,8 +276,8 @@ class RoleRequestor(commands.Cog):
             return
 
         # Fetch category
-        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guild=? AND category=?",
-                                        (ctx.guild.name, args[2],)).fetchone()
+        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guildId=? AND category=?",
+                                        (ctx.guild.id, args[2],)).fetchone()
         if not category:
             await ctx.send("That category doesn't exist!")
             return
@@ -291,6 +316,38 @@ class RoleRequestor(commands.Cog):
 
         # Notify of success
         await ctx.send("Role deleted.")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, event: discord.RawReactionActionEvent):
+        # Fetch guild and member info
+        guild = discord.utils.get(self.bot.guilds, id=event.guild_id)
+        member = discord.utils.get(guild.members, id=event.user_id)
+
+        # If a bot added a reaction (probably this bot), do nothing
+        if member.bot:
+            return
+
+        if not guild or not member:
+            raise Exception("Unable to determine guild or member to add role.")
+
+        role = await self.fetch_role(event, guild, member)
+        await member.add_roles(role)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, event: discord.RawReactionActionEvent):
+        # Fetch guild and member info
+        guild = discord.utils.get(self.bot.guilds, id=event.guild_id)
+        member = discord.utils.get(guild.members, id=event.user_id)
+
+        # If a bot added a reaction (probably this bot), do nothing
+        if member.bot:
+            return
+
+        if not guild or not member:
+            raise Exception("Unable to determine guild or member to add role.")
+
+        role = await self.fetch_role(event, guild, member)
+        await member.remove_roles(role)
 
 
 # All cogs must have this function

@@ -76,7 +76,7 @@ class Racing(commands.Cog):
         dbc.execute("DROP TABLE races")
         dbc.execute('CREATE TABLE IF NOT EXISTS races ('
                     'id integer not null primary key autoincrement,'
-                    'guild varchar(128) not null,'
+                    'guildId varchar(128) not null,'
                     'race_number integer not null'
                     ')'
                     )
@@ -126,7 +126,7 @@ class Racing(commands.Cog):
 
                 # Save this back to the database as an active race channel number
                 print(f'Writing active race {channel_number} to database')
-                dbc.execute("INSERT INTO races (guild, race_number) VALUES (?, ?)", (guild.name, int(channel_number)))
+                dbc.execute("INSERT INTO races (guildId, race_number) VALUES (?, ?)", (guild.id, int(channel_number)))
                 db.commit()
 
                 # Create new voice channels
@@ -266,7 +266,7 @@ class Racing(commands.Cog):
                     print(f'Deleting race {race_number} from the database')
                     db = sqlite3.connect(SQLITE_DB_NAME)
                     dbc = db.cursor()
-                    dbc.execute("DELETE FROM races WHERE guild=? and race_number=?", (guild.name, int(race_number)))
+                    dbc.execute("DELETE FROM races WHERE guildId=? and race_number=?", (guild.id, int(race_number)))
                     db.commit()
 
 

@@ -13,18 +13,18 @@ db = sqlite3.connect(SQLITE_DB_NAME)
 dbc = db.cursor()
 dbc.execute('CREATE TABLE IF NOT EXISTS races ('
             'id integer not null primary key autoincrement,'
-            'guild varchar(128) not null,'
+            'guildId varchar(128) not null,'
             'race_number integer not null'
             ')'
             )
 dbc.execute('CREATE TABLE IF NOT EXISTS casuals ('
             'id integer not null primary key autoincrement,'
-            'guild varchar(128) not null,'
+            'guildId varchar(128) not null,'
             'game_number integer not null'
             ')')
 dbc.execute('CREATE TABLE IF NOT EXISTS role_categories ('
             'id integer not null primary key autoincrement,'
-            'guild varchar(128) not null,'
+            'guildId varchar(128) not null,'
             'category varchar(128) not null,'
             'messageId varchar(128) not null'
             ')')

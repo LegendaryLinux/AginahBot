@@ -76,7 +76,7 @@ class Casual(commands.Cog):
         dbc.execute("DROP TABLE casuals")
         dbc.execute('CREATE TABLE IF NOT EXISTS casuals ('
                     'id integer not null primary key autoincrement,'
-                    'guild varchar(128) not null,'
+                    'guildId varchar(128) not null,'
                     'game_number integer not null'
                     ')'
                     )
@@ -126,7 +126,7 @@ class Casual(commands.Cog):
 
                 # Save this back to the database as an active game channel number
                 print(f'Writing active game {channel_number} to database')
-                dbc.execute("INSERT INTO casuals (guild, game_number) VALUES (?, ?)", (guild.name, int(channel_number)))
+                dbc.execute("INSERT INTO casuals (guildId, game_number) VALUES (?, ?)", (guild.id, int(channel_number)))
                 db.commit()
 
                 # Create a new voice channel
@@ -230,7 +230,7 @@ class Casual(commands.Cog):
                     print(f'Deleting game {game_number} from the database')
                     db = sqlite3.connect(SQLITE_DB_NAME)
                     dbc = db.cursor()
-                    dbc.execute("DELETE FROM casuals WHERE guild=? and game_number=?", (guild.name, int(game_number)))
+                    dbc.execute("DELETE FROM casuals WHERE guildId=? and game_number=?", (guild.id, int(game_number)))
                     db.commit()
 
 
