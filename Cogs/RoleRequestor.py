@@ -47,10 +47,6 @@ class RoleRequestor(commands.Cog):
         return ''.join(message_lines)
 
     async def fetch_role(self, event: discord.RawReactionActionEvent, guild: discord.Guild, member: discord.Member):
-        print(type(event.emoji))
-        print(event.emoji)
-        print(type(event.emoji.name))
-        print(event.emoji.name)
         db_role = self.bot.dbc.execute("SELECT role FROM roles r "
                                        "JOIN role_categories rc ON r.categoryId=rc.id "
                                        "WHERE rc.guildId=? "
