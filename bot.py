@@ -22,9 +22,24 @@ dbc.execute('CREATE TABLE IF NOT EXISTS casuals ('
             'guild varchar(128) not null,'
             'game_number integer not null'
             ')')
+dbc.execute('CREATE TABLE IF NOT EXISTS role_categories ('
+            'id integer not null primary key autoincrement,'
+            'guild varchar(128) not null,'
+            'category varchar(128) not null,'
+            'messageId varchar(128) not null'
+            ')')
+dbc.execute('CREATE TABLE IF NOT EXISTS roles ('
+            'id integer not null primary key autoincrement,'
+            'categoryId int not null,'
+            'role varchar(100) not null,'
+            'reaction varchar(128) not null,'
+            'description varchar(256)'
+            ')')
 
 # Instantiate bot
 aginahBot = commands.Bot(command_prefix='!aginah ')
+aginahBot.db = db
+aginahBot.dbc = dbc
 
 
 @aginahBot.event

@@ -1,50 +1,296 @@
 import discord
 from discord.ext import commands
+import re
+
+ROLE_REQUEST_CHANNEL = 'role-request'
+MODERATOR_ROLE = 'Moderator'
+
+
+async def is_administrator(ctx: commands.Context):
+    return ctx.author.guild_permissions.administrator
+
+
+async def is_moderator(ctx: commands.Context):
+    guild_roles = []
+    for role in ctx.guild.roles:
+        guild_roles.append(role.name)
+
+    moderator_roles = guild_roles[guild_roles.index('Moderator'):]
+    return ctx.author.guild_permissions.administrator or (ctx.author.top_role in moderator_roles)
 
 
 class RoleRequestor(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(
-        name='create-role',
-        brief="Create a role which may be pinged",
-        help="Create a role which may be pinged by anyone on the server\n"
-             "Usage: !aginah create-role RoleName"
-    )
-    async def create_role(self, ctx: commands.Context):
-        args = ctx.message.content.split(' ')
-        if len(args) < 3:
-            await ctx.send('You\'ve got a syntax error! You must include the role to create.\n'
-                           '`!aginah help create-role` for more information.')
-            return
+    async def build_category_message(self, ctx: commands.Context, category: tuple):
+        roles = self.bot.dbc.execute("SELECT role, description, reaction FROM roles WHERE categoryId=?",
+                                     (category[0],)).fetchall()
+        message_lines = [
+            f"*{category[2]}:*"
+        ]
 
-        if len(args) > 3:
-            await ctx.send('You\'ve got a syntax error! Only one new role may be created at a time.\n'
-                           '!aginah create-role` for more information.')
-            return
+        if len(roles) == 0:
+            message_lines.append('\nThere are no roles in this category.')
+            return ''.join(message_lines)
 
-        if not args[2].isalnum():
-            await ctx.send('You\'ve got a syntax error! Role names must be alphanumeric.')
-            return
-
-        for role in ctx.guild.roles:
-            if args[2] == role.name:
-                await ctx.send(f"{role.name} already exists!")
+        for db_role in roles:
+            role = discord.utils.get(ctx.guild.roles, name=db_role[0])
+            if not role:
+                await ctx.send(f"@FarrakKilhn Something weird happened. Role {db_role[0]} should exist, but doesn't.")
                 return
 
-        await ctx.guild.create_role(args[2])
-        await ctx.send(f"{args[2]} has been created! Use `!aginah grant-role RoleName` to grant this role to yourself.")
-        return
+            # Append role line to message body
+            emoji = db_role[2] if len(db_role[2]) == 1 else f"<{db_role[2]}>"
+            description = f" ({db_role[1]})" if db_role[1] else None
+            message_lines.append(f'\nReact with {emoji} for {role.mention}{description}')
+
+        return ''.join(message_lines)
 
     @commands.command(
-        name='grant-role',
-        brief="",
-        help=""
+        name="init-role-system",
+        brief="Create a #role-request channel for users to interact with AginahBot and request roles",
+        help="Create a #role-request text channel for users to interact with AginahBot and request roles. "
+             "This channel will be used to post role category messages users can react to to add or remove roles\n"
+             "Usage: !aginah init-role-system")
+    @commands.check(is_administrator)
+    async def init_role_system(self, ctx: commands.Context):
+        mod_role = discord.utils.get(ctx.guild.roles, name=MODERATOR_ROLE)
+        if not mod_role:
+            await ctx.send("There is no @Moderator role on your server. Please create one and try again.")
+            return
+
+        for channel in ctx.guild.text_channels:
+            if channel.name == ROLE_REQUEST_CHANNEL:
+                await ctx.send("It looks like the roles system is already active on this server.")
+                return
+
+        await ctx.guild.create_text_channel(ROLE_REQUEST_CHANNEL,
+                                            topic="Assign yourself roles if you would like to be pinged",
+                                            overwrites={
+                                                ctx.guild.default_role: discord.PermissionOverwrite(
+                                                    add_reactions=False),
+                                                ctx.guild.me: discord.PermissionOverwrite(add_reactions=True)
+                                            })
+        await ctx.send("Role system initialized.")
+
+    @commands.command(
+        name="destroy-role-system",
+        brief="Delete the role-request channel and all categories and permissions created by this bot",
+        help="Delete the role-request channel and all categories and permissions created by this bot\n"
+             "Usage: !aginah init-role-system")
+    @commands.check(is_administrator)
+    async def destroy_role_system(self, ctx: commands.Context):
+        categories = self.bot.dbc.execute("SELECT id FROM role_categories WHERE guild=?", (ctx.guild.name,))
+        for category in categories:
+            self.bot.dbc.execute("DELETE FROM roles WHERE categoryId=?", (category[0],))
+        self.bot.dbc.execute("DELETE FROM role_categories WHERE guild=?", (ctx.guild.name,))
+        self.bot.db.commit()
+
+        channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
+        await channel.delete()
+
+        await ctx.send("Role system destroyed.")
+
+    @commands.command(
+        name="create-role-category",
+        brief="Create a category for roles to be added to.",
+        help="Create a category for roles to be added to. Each category will have its own message in the "
+             "#role-request channel. Category names must be a single alphanumeric word.\n"
+             "Usage: !aginah create-role-category CategoryName"
     )
-    async def grant_role(self, ctx: commands.Context):
-        # TODO: Figure out how to disallow assigning yourself privileged roles
-        pass
+    @commands.check(is_moderator)
+    async def create_role_category(self, ctx: commands.Context):
+        args = ctx.message.content.split(' ')
+        if len(args) != 3:
+            await ctx.send("Looks like you have a syntax error! `!aginah help create-role-category` for more info.")
+            return
+
+        # If category already exists, warn user and do nothing
+        if self.bot.dbc.execute("SELECT 1 FROM role_categories WHERE guild=? AND category=?",
+                                (ctx.guild.name, args[2],)).fetchone():
+            await ctx.send("That category already exists!")
+            return
+
+        # Create the new category and add a message to the #role-request channel
+        role_channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
+        message = await role_channel.send(f"Creating category. Standby...")
+
+        # Save the new category and message id into the database
+        self.bot.dbc.execute("INSERT INTO role_categories (guild, category, messageId) VALUES (?,?,?)",
+                             (ctx.guild.name, args[2], message.id))
+        self.bot.db.commit()
+
+        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guild=? AND category=?",
+                                        (ctx.guild.name, args[2])).fetchone()
+
+        await message.edit(content=await self.build_category_message(ctx, category))
+
+        await ctx.send("Category created.")
+
+    @commands.command(
+        name="delete-role-category",
+        brief="Delete a role category.",
+        help="Delete a role category. All roles within this category will also be deleted.\n"
+             "Usage: !aginah delete-role-category CategoryName"
+    )
+    @commands.check(is_moderator)
+    async def delete_role_category(self, ctx: commands.Context):
+        args = ctx.message.content.split(' ')
+        if len(args) != 3:
+            await ctx.send("Looks like you have a syntax error! `!aginah help create-role-category` for more info.")
+            return
+
+        # Fetch requisite data (role channel, category db row, role db rows)
+        role_channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
+        category = self.bot.dbc.execute("SELECT id, messageId FROM role_categories WHERE guild=? AND category=?",
+                                        (ctx.guild.name, args[2])).fetchone()
+
+        # If category does not exist, warn user and do nothing
+        if not category:
+            await ctx.send("That category does not exist!")
+            return
+
+        roles = self.bot.dbc.execute("SELECT * FROM roles WHERE categoryId=?", (category[0],))
+
+        # Delete roles from Discord
+        for role in roles:
+            await (discord.utils.get(ctx.guild.roles, name=role.role)).delete()
+
+        # Delete roles from db
+        self.bot.dbc.execute("DELETE FROM roles WHERE categoryId=?", (category[0],))
+        self.bot.db.commit()
+
+        # Delete category message
+        message = await role_channel.fetch_message(category[1])
+        await message.delete()
+
+        # Delete category
+        self.bot.dbc.execute("DELETE FROM role_categories WHERE id=?", (category[0],))
+        self.bot.db.commit()
+
+        await ctx.send("Category deleted.")
+
+    @commands.command(
+        name="create-role",
+        brief="Create a role which may be pinged",
+        help="Create a role which may be pinged by anyone on the server\n"
+             "Usage: !aginah create-role CategoryName RoleName reaction [description]"
+    )
+    @commands.check(is_moderator)
+    async def create_role(self, ctx: commands.Context):
+        args = ctx.message.content.split(' ')
+        if len(args) < 5:
+            await ctx.send("Looks like you have a syntax error! `!aginah help create-role` for more info.")
+            return
+
+        # Ensure role does not exist
+        for role in ctx.guild.roles:
+            if role.name == args[3]:
+                await ctx.send("That role already exists!")
+                return
+
+        emoji = args[4] if len(args[4]) == 1 else args[4][1:-1]
+
+        # Fetch category
+        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guild=? AND category=?",
+                                        (ctx.guild.name, args[2])).fetchone()
+        if not category:
+            await ctx.send("That category doesn't exist!")
+            return
+
+        # Fetch role request channel
+        channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
+        if not channel:
+            await ctx.send("It looks like the role requestor is not set up on this server. Please contact an admin.")
+            return
+
+        # Fetch role message
+        message = await channel.fetch_message(category[3])
+        if not message:
+            await ctx.send("Something is very wrong here. Hey @FarrakKilhn take a look at this.")
+            return
+
+        try:
+            # Add reaction to category message
+            await message.add_reaction(emoji)
+        except:
+            await ctx.send("The emoji you tried to use is not available on this server. Please try again.")
+            return
+
+        # Add role to Discord
+        role = await ctx.guild.create_role(name=args[3], mentionable=True)
+
+        # Add db row
+        desc = ''.join(args[5:]) if len(args) > 5 else None
+        self.bot.dbc.execute("INSERT INTO roles (categoryId, role, reaction, description) VALUES (?,?,?,?)",
+                             (category[0], role.name, emoji, desc))
+        self.bot.db.commit()
+
+        # Update message contents to show updated roles
+        await message.edit(content=await self.build_category_message(ctx, category))
+
+        await ctx.send("Role created.")
+
+    @commands.command(
+        name="delete-role",
+        brief="Delete a role created by this bot",
+        help="Delete a role created by this bot\n"
+             "Usage: !aginah delete-role CategoryName RoleName"
+    )
+    @commands.check(is_moderator)
+    async def delete_role(self, ctx: commands.Context):
+        args = ctx.message.content.split(' ')
+        if len(args) != 4:
+            await ctx.send("Looks like you have a syntax error! `!aginah help delete-role` for more info.")
+            return
+
+        role = discord.utils.get(ctx.guild.roles, name=args[3])
+        if not role:
+            await ctx.send("That role does not exist!")
+            return
+
+        # Fetch category
+        category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guild=? AND category=?",
+                                        (ctx.guild.name, args[2],)).fetchone()
+        if not category:
+            await ctx.send("That category doesn't exist!")
+            return
+
+        # Fetch role request channel
+        channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
+        if not channel:
+            await ctx.send(
+                "It looks like the role requestor is not set up on this server. Please contact an admin.")
+            return
+
+        # Fetch role message
+        message = await channel.fetch_message(category[3])
+        if not message:
+            await ctx.send("Something is very wrong here. Hey @FarrakKilhn take a look at this.")
+            return
+
+        # Fetch db role
+        db_role = self.bot.dbc.execute("SELECT * FROM roles WHERE categoryId=? and role=?",
+                                       (category[0], args[3])).fetchone()
+
+        # Remove role from db
+        self.bot.dbc.execute("DELETE FROM roles WHERE categoryId=? AND role=?", (category[0], role.name))
+        self.bot.db.commit()
+
+        # Delete Discord role
+        await role.delete()
+
+        # Edit category message to display updated roles
+        await message.edit(content=await self.build_category_message(ctx, category))
+
+        # Remove role reactions from message
+        for reaction in message.reactions:
+            if reaction.emoji == db_role[3]:
+                await reaction.clear()
+
+        # Notify of success
+        await ctx.send("Role deleted.")
 
 
 # All cogs must have this function
