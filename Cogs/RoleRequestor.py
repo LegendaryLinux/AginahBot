@@ -91,9 +91,9 @@ class RoleRequestor(commands.Cog):
                                                            topic="Assign yourself roles if you would like to be pinged",
                                                            overwrites={
                                                                ctx.guild.default_role: discord.PermissionOverwrite(
-                                                                   add_reactions=False),
+                                                                   add_reactions=False, send_messages=False),
                                                                ctx.guild.me: discord.PermissionOverwrite(
-                                                                   add_reactions=True)
+                                                                   add_reactions=True, send_messages=True)
                                                            })
         await text_channel.send(f"The following roles are available on this server. If you would like to be "
                                 f"assigned a role, please react to this message with the indicated emoji. All "
@@ -126,7 +126,8 @@ class RoleRequestor(commands.Cog):
         self.bot.db.commit()
 
         channel = discord.utils.get(ctx.guild.text_channels, name=ROLE_REQUEST_CHANNEL)
-        await channel.delete()
+        if channel:
+            await channel.delete()
 
         await ctx.send("Role system destroyed.")
 
@@ -332,14 +333,15 @@ class RoleRequestor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event: discord.RawReactionActionEvent):
-        # Do not operate on messages which are not a category message
-        skip = True
-        valid_ids = self.bot.dbc.execute("SELECT messageId FROM role_categories")
-        for msgId in valid_ids:
-            if msgId[0] == event.message_id:
-                skip = False
+        # Do not operate on non-role-category messages
+        disregard = True
+        valid_ids = self.bot.dbc.execute("SELECT messageId FROM role_categories WHERE guildId=?",
+                                         (event.guild_id,)).fetchall()
+        for valid_id in valid_ids:
+            if str(valid_id[0]) == str(event.message_id):
+                disregard = False
                 break
-        if skip:
+        if disregard:
             return
 
         # Fetch guild and member info
@@ -358,14 +360,15 @@ class RoleRequestor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, event: discord.RawReactionActionEvent):
-        # Do not operate on messages which are not a category message
-        skip = True
-        valid_ids = self.bot.dbc.execute("SELECT messageId FROM role_categories")
-        for msgId in valid_ids:
-            if msgId[0] == event.message_id:
-                skip = False
+        # Do not operate on non-role-category messages
+        disregard = True
+        valid_ids = self.bot.dbc.execute("SELECT messageId FROM role_categories WHERE guildId=?",
+                                         (event.guild_id,)).fetchall()
+        for valid_id in valid_ids:
+            if str(valid_id[0]) == str(event.message_id):
+                disregard = False
                 break
-        if skip:
+        if disregard:
             return
 
         # Fetch guild and member info
