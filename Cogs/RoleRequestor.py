@@ -26,11 +26,11 @@ class RoleRequestor(commands.Cog):
         roles = self.bot.dbc.execute("SELECT role, description, reaction FROM roles WHERE categoryId=?",
                                      (category[0],)).fetchall()
         message_lines = [
-            f"*{category[2]}:*"
+            f"\n**{category[2]} Roles:**"
         ]
 
         if len(roles) == 0:
-            message_lines.append('\nThere are no roles in this category.')
+            message_lines.append('\n\nThere are no roles in this category.')
             return ''.join(message_lines)
 
         for db_role in roles:
@@ -41,9 +41,10 @@ class RoleRequestor(commands.Cog):
 
             # Append role line to message body
             emoji = db_role[2] if len(db_role[2]) == 1 else f"<{db_role[2]}>"
-            description = f" ({db_role[1]})" if db_role[1] else None
-            message_lines.append(f'\nReact with {emoji} for {role.mention}{description}')
+            description = f": *{db_role[1]}*" if db_role[1] else None
+            message_lines.append(f"\n\n{emoji} - {role.mention}{description}")
 
+        message_lines.append("\n\n")
         return ''.join(message_lines)
 
     async def fetch_role(self, event: discord.RawReactionActionEvent, guild: discord.Guild, member: discord.Member):
@@ -86,13 +87,18 @@ class RoleRequestor(commands.Cog):
                 await ctx.send("It looks like the roles system is already active on this server.")
                 return
 
-        await ctx.guild.create_text_channel(ROLE_REQUEST_CHANNEL,
-                                            topic="Assign yourself roles if you would like to be pinged",
-                                            overwrites={
-                                                ctx.guild.default_role: discord.PermissionOverwrite(
-                                                    add_reactions=False),
-                                                ctx.guild.me: discord.PermissionOverwrite(add_reactions=True)
-                                            })
+        text_channel = await ctx.guild.create_text_channel(ROLE_REQUEST_CHANNEL,
+                                                           topic="Assign yourself roles if you would like to be pinged",
+                                                           overwrites={
+                                                               ctx.guild.default_role: discord.PermissionOverwrite(
+                                                                   add_reactions=False),
+                                                               ctx.guild.me: discord.PermissionOverwrite(
+                                                                   add_reactions=True)
+                                                           })
+        await text_channel.send(f"The following roles are available on this server. If you would like to be "
+                                f"assigned a role, please react to this message with the indicated emoji. All "
+                                f"roles are pingable by everyone on the server. Remember, with great power comes "
+                                f"great responsibility.\n")
         await ctx.send("Role system initialized.")
 
     @commands.command(
@@ -102,9 +108,20 @@ class RoleRequestor(commands.Cog):
              "Usage: !aginah init-role-system")
     @commands.check(is_administrator)
     async def destroy_role_system(self, ctx: commands.Context):
+        # Fetch categories for this guild
         categories = self.bot.dbc.execute("SELECT id FROM role_categories WHERE guildId=?", (ctx.guild.id,))
         for category in categories:
+            # Fetch roles for this category
+            db_roles = self.bot.dbc.execute("SELECT role FROM roles WHERE categoryId=?", (category[0],))
+            for db_role in db_roles:
+                # Delete role from the guild
+                role = discord.utils.get(ctx.guild.roles, name=db_role[0])
+                await role.delete()
+
+            # Delete roles from the db
             self.bot.dbc.execute("DELETE FROM roles WHERE categoryId=?", (category[0],))
+
+        # Delete categories from db
         self.bot.dbc.execute("DELETE FROM role_categories WHERE guildId=?", (ctx.guild.id,))
         self.bot.db.commit()
 
@@ -139,7 +156,7 @@ class RoleRequestor(commands.Cog):
 
         # Save the new category and message id into the database
         self.bot.dbc.execute("INSERT INTO role_categories (guildId, category, messageId) VALUES (?,?,?)",
-                             (ctx.guild.id, args[2], message.id))
+                             (ctx.guild.id, args[2].strip(), message.id))
         self.bot.db.commit()
 
         category = self.bot.dbc.execute("SELECT * FROM role_categories WHERE guildId=? AND category=?",
@@ -245,7 +262,7 @@ class RoleRequestor(commands.Cog):
         # Add db row
         desc = ' '.join(args[5:]) if len(args) > 5 else None
         self.bot.dbc.execute("INSERT INTO roles (categoryId, role, reaction, description) VALUES (?,?,?,?)",
-                             (category[0], role.name, emoji, desc))
+                             (category[0], role.name.strip(), emoji, desc.strip()))
         self.bot.db.commit()
 
         # Update message contents to show updated roles
