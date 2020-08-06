@@ -332,6 +332,16 @@ class RoleRequestor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event: discord.RawReactionActionEvent):
+        # Do not operate on messages which are not a category message
+        skip = True
+        valid_ids = self.bot.dbc.execute("SELECT messageId FROM role_categories")
+        for msgId in valid_ids:
+            if msgId[0] == event.message_id:
+                skip = False
+                break
+        if skip:
+            return
+
         # Fetch guild and member info
         guild = discord.utils.get(self.bot.guilds, id=event.guild_id)
         member = discord.utils.get(guild.members, id=event.user_id)
@@ -348,6 +358,16 @@ class RoleRequestor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, event: discord.RawReactionActionEvent):
+        # Do not operate on messages which are not a category message
+        skip = True
+        valid_ids = self.bot.dbc.execute("SELECT messageId FROM role_categories")
+        for msgId in valid_ids:
+            if msgId[0] == event.message_id:
+                skip = False
+                break
+        if skip:
+            return
+
         # Fetch guild and member info
         guild = discord.utils.get(self.bot.guilds, id=event.guild_id)
         member = discord.utils.get(guild.members, id=event.user_id)
