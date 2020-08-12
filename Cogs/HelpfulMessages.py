@@ -12,17 +12,26 @@ class HelpfulMessages(commands.Cog):
         help="Get the link to the current MultiWorld setup video"
     )
     async def get_setup_video(self, ctx: commands.Context):
-        await ctx.send("https://www.youtube.com/watch?v=8g87Zhf5p_c")
-        pass
+        await ctx.send("https://www.youtube.com/watch?v=mJKEHaiyR_Y")
+        return
 
     @commands.command(
-        name='host',
-        brief="Get the link to the MultiWorld WebHost service",
-        help="Get the link to the MultiWorld WebHost service"
+        name='website',
+        brief="Get the link to the MultiWorld website",
+        help="Get the link to the MultiWorld website"
     )
     async def get_webhost_link(self, ctx: commands.Context):
         await ctx.send("https://berserkermulti.world/")
-        pass
+        return
+
+    @commands.command(
+        name='github',
+        brief="Get the link to the MultiWorld's GitHub page",
+        help="Get the link to the MultiWorld's GitHub page"
+    )
+    async def get_github_link(self, ctx: commands.Context):
+        await ctx.send("https://github.com/Berserker66/MultiWorld-Utilities")
+        return
 
 
 # All cogs must have this function
