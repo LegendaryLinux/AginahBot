@@ -8,11 +8,12 @@ class HelpfulMessages(commands.Cog):
 
     @commands.command(
         name='setup',
-        brief="Get the link to the current MultiWorld setup video",
-        help="Get the link to the current MultiWorld setup video"
+        brief="Get instructions on how to set up your computer to play MultiWorlds",
+        help="Get instructions on how to set up your computer to play MultiWorlds"
     )
     async def get_setup_video(self, ctx: commands.Context):
-        await ctx.send("https://www.youtube.com/watch?v=mJKEHaiyR_Y")
+        await ctx.send("A written guide may be found here: https://berserkermulti.world/tutorial\n"
+                       "A video guide may be found here: https://www.youtube.com/watch?v=mJKEHaiyR_Y")
         return
 
     @commands.command(
