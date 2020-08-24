@@ -48,12 +48,14 @@ class RoleRequestor(commands.Cog):
         return ''.join(message_lines)
 
     async def fetch_role(self, event: discord.RawReactionActionEvent, guild: discord.Guild, member: discord.Member):
+        emoji = f":{event.emoji.name}:{event.emoji.id}" if event.emoji.is_custom_emoji() else event.emoji.name
+        print(emoji)
         db_role = self.bot.dbc.execute("SELECT role FROM roles r "
                                        "JOIN role_categories rc ON r.categoryId=rc.id "
                                        "WHERE rc.guildId=? "
                                        "   AND rc.messageId=? "
                                        "   AND r.reaction=?",
-                                       (event.guild_id, event.message_id, event.emoji.name)).fetchone()
+                                       (event.guild_id, event.message_id, emoji)).fetchone()
         if not db_role:
             # Alert user that role cannot be added
             await member.send("The role you requested could not be added, sorry.")
@@ -324,9 +326,10 @@ class RoleRequestor(commands.Cog):
         await message.edit(content=await self.build_category_message(ctx, category))
 
         # Remove role reactions from message
-        for reaction in message.reactions:
-            if reaction.emoji == db_role[3]:
-                await reaction.clear()
+        for r in message.reactions:
+            emoji = r.emoji if type(r.emoji) == str else f":{r.emoji.name}:{r.emoji.id}"
+            if emoji == db_role[3]:
+                await r.clear()
 
         # Notify of success
         await ctx.send("Role deleted.")
