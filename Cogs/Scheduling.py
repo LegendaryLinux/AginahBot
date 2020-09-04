@@ -298,7 +298,7 @@ class Scheduling(commands.Cog):
 
         if re.search(r'x{1,2}:\d{1,2}', time_str):
             dt_parts = re.match(r'x{1,2}:(\d{1,2})', time_str)
-            target_time = datetime.datetime(current_time.year, current_time.month, current_time.day, 0,
+            target_time = datetime.datetime(current_time.year, current_time.month, current_time.day, current_time.hour,
                                             int(dt_parts[1]), 0, 0, datetime.timezone(datetime.timedelta()))
 
             if target_time.timestamp() < current_time.timestamp():
