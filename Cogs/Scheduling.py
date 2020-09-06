@@ -1,5 +1,5 @@
 import discord
-import datetime
+from datetime import datetime, timezone, timedelta
 import re
 from discord.ext import commands
 
@@ -221,98 +221,85 @@ class Scheduling(commands.Cog):
     async def schedule(self, ctx: commands.Context):
         args = ctx.message.content.split(' ')
         if len(args) < 4:
-            await ctx.send("Did you forget to provide a role or time?")
+            await ctx.send("Did you forget to provide a role or time? `!aginah help schedule` for more info.")
             return
 
-        if re.search('^<.*>$', args[2]):
-            role_mention = args[2]
-        else:
-            role = discord.utils.get(ctx.guild.roles, name=args[2])
-            if role:
-                if not role.mentionable:
-                    await ctx.send("You don't have permission to ping that role.")
-                    return
-                else:
-                    role_mention = role.mention
-            else:
-                await ctx.send(f"The role you wanted to ping ({args[2]}) doesn't exist on this server.")
-                return
-
         time_str = (' '.join(args[3:])).lower()
-        current_time = datetime.datetime.now(datetime.timezone(datetime.timedelta()))
+        current_time = datetime.now(timezone(timedelta()))
 
+        # User includes a full date, time, and timezone
         if re.search(r'\d{1,2}/\d{1,2}/\d{4} \d{1,2}:\d{1,2} [A-z]*', time_str):
             dt_parts = re.match(r'(\d{1,2})/(\d{1,2})/(\d{4}) (\d{1,2}):(\d{1,2}) ([A-z]*)', time_str)
             if dt_parts[6].upper() not in timezones:
                 await ctx.send(f"I'm not familiar with the {dt_parts[6].upper()} timezone.")
                 return
 
-            target_time = datetime.datetime(int(dt_parts[3]), int(dt_parts[1]), int(dt_parts[2]),
-                                            int(dt_parts[4]), int(dt_parts[5]), 0, 0,
-                                            datetime.timezone(datetime.timedelta(0, 0, 0, 0,
-                                                                                 timezones[dt_parts[6].upper()][1],
-                                                                                 timezones[dt_parts[6].upper()][0])))
+            target_time = datetime(int(dt_parts[3]), int(dt_parts[1]), int(dt_parts[2]), int(dt_parts[4]),
+                                   int(dt_parts[5]), 0, 0, timezone(timedelta(0, 0, 0, 0,
+                                                                              timezones[dt_parts[6].upper()][1],
+                                                                              timezones[dt_parts[6].upper()][0])))
             if target_time.timestamp() < current_time.timestamp():
                 await ctx.send("You can't schedule a game in the past!")
                 return
 
-            msg = await ctx.send(f'Attention {role_mention}:\n'
-                                 f'{ctx.message.author.mention} wants to schedule a game to occur on: '
+            msg = await ctx.send(f'{ctx.message.author.mention} wants to schedule a game to occur on: '
                                  f'{dt_parts[1]}/{dt_parts[2]}/{dt_parts[3]} '
                                  f'at {int(dt_parts[4])}:{friendly_number(int(dt_parts[5]))} '
                                  f'{dt_parts[6].upper()}.\n'
+                                 f'https://gametimes.multiworld.link/?timestamp={int(target_time.timestamp())*1000}\n'
                                  f'React with {REACTION_CONFIRM} If you intend to join this game.\n'
                                  f'React with {REACTION_UNSURE} If you don\'t know yet.')
             await msg.add_reaction(REACTION_CONFIRM)
             await msg.add_reaction(REACTION_UNSURE)
-            await ctx.message.delete()
             return
 
+        # User includes only a time and timezone
         if re.search(r'\d{1,2}:\d{1,2} [A-z]*', time_str):
             dt_parts = re.match(r'(\d{1,2}):(\d{1,2}) ([A-z]*)', time_str)
             if dt_parts[3].upper() not in timezones:
                 await ctx.send(f"I'm not familiar with the {dt_parts[3].upper()} timezone.")
                 return
 
-            target_time = datetime.datetime(current_time.year, current_time.month, current_time.day,
-                                            int(dt_parts[1]), int(dt_parts[2]), 0, 0,
-                                            datetime.timezone(datetime.timedelta(0, 0, 0, 0,
-                                                                                 timezones[dt_parts[3].upper()][1],
-                                                                                 timezones[dt_parts[3].upper()][0]))
-                                            )
+            target_time = datetime(current_time.year, current_time.month, current_time.day, int(dt_parts[1]),
+                                   int(dt_parts[2]), 0, 0, timezone(timedelta(0, 0, 0, 0,
+                                                                              timezones[dt_parts[3].upper()][1],
+                                                                              timezones[dt_parts[3].upper()][0])))
 
             if target_time.timestamp() < current_time.timestamp():
-                target_time = target_time + datetime.timedelta(days=1)
+                target_time = target_time + timedelta(days=1)
 
-            msg = await ctx.send(f'Attention {role_mention}:\n'
-                                 f'{ctx.message.author.mention} wants to schedule a game to occur on: '
+            msg = await ctx.send(f'{ctx.message.author.mention} wants to schedule a game to occur on: '
                                  f'{target_time.month}/{target_time.day}/{target_time.year} '
                                  f'at {target_time.hour}:{friendly_number(target_time.minute)} '
                                  f'{dt_parts[3].upper()}.\n'
+                                 f'https://gametimes.multiworld.link/?timestamp={int(target_time.timestamp())*1000}\n'
                                  f'React with {REACTION_CONFIRM} If you intend to join this game.\n'
                                  f'React with {REACTION_UNSURE} If you don\'t know yet.')
             await msg.add_reaction(REACTION_CONFIRM)
             await msg.add_reaction(REACTION_UNSURE)
-            await ctx.message.delete()
             return
 
+        # User includes only a fuzzy hour
         if re.search(r'x{1,2}:\d{1,2}', time_str):
             dt_parts = re.match(r'x{1,2}:(\d{1,2})', time_str)
-            target_time = datetime.datetime(current_time.year, current_time.month, current_time.day, current_time.hour,
-                                            int(dt_parts[1]), 0, 0, datetime.timezone(datetime.timedelta()))
+            target_time = datetime(current_time.year, current_time.month, current_time.day, current_time.hour,
+                                   int(dt_parts[1]), 0, 0, timezone(timedelta()))
+
+            print(current_time)
+            print(target_time)
+            print()
 
             if target_time.timestamp() < current_time.timestamp():
-                target_time = target_time + datetime.timedelta(hours=1)
+                target_time = target_time + timedelta(hours=1)
 
-            msg = await ctx.send(f'Attention {role_mention}:\n'
-                                 f'{ctx.message.author.mention} wants to schedule a game to occur on: '
+            msg = await ctx.send(f'{ctx.message.author.mention} wants to schedule a game to occur on: '
                                  f'{target_time.month}/{target_time.day}/{target_time.year} '
                                  f'at {target_time.hour}:{friendly_number(target_time.minute)} UTC.\n'
+                                 f'https://gametimes.multiworld.link/?timestamp={int(target_time.timestamp())*1000}\n'
                                  f'React with {REACTION_CONFIRM} If you intend to join this game.\n'
                                  f'React with {REACTION_UNSURE} If you don\'t know yet.')
             await msg.add_reaction(REACTION_CONFIRM)
             await msg.add_reaction(REACTION_UNSURE)
-            await ctx.message.delete()
             return
 
         await ctx.send("Sorry, I don't understand that time. Use `!aginah help schedule` for more info.")
