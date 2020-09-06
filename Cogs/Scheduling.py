@@ -225,7 +225,7 @@ class Scheduling(commands.Cog):
             return
 
         if re.search('^<.*>$', args[2]):
-            role = role_mention = args[2]
+            role_mention = args[2]
         else:
             role = discord.utils.get(ctx.guild.roles, name=args[2])
             if role:
