@@ -15,6 +15,19 @@ PLAYER_ROLE_NAME = 'Casual Player Game '
 SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
 
 
+async def is_administrator(ctx: commands.Context):
+    return ctx.author.guild_permissions.administrator
+
+
+async def is_moderator(ctx: commands.Context):
+    guild_roles = []
+    for role in ctx.guild.roles:
+        guild_roles.append(role.name)
+
+    moderator_roles = guild_roles[guild_roles.index('Moderator'):]
+    return ctx.author.guild_permissions.administrator or (ctx.author.top_role in moderator_roles)
+
+
 class Casual(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -25,7 +38,7 @@ class Casual(commands.Cog):
         help="Create a category with a voice channel which when joined, will create casual channels and"
              " authorize users automatically."
     )
-    @commands.is_owner()
+    @commands.check(is_administrator)
     async def create_casual_channels(self, ctx: commands.Context):
         # If the channel from which other channels are created already exists, do nothing
         if discord.utils.get(ctx.guild.categories, name=CATEGORY_NAME) \
@@ -48,7 +61,7 @@ class Casual(commands.Cog):
         brief="Delete casual category and channels.",
         help="Destroy the casual category and everything created by the create-casual-channels command"
     )
-    @commands.is_owner()
+    @commands.check(is_administrator)
     async def destroy_casual_channels(self, ctx: commands.Context):
         # If the casual category exists, delete it and all channels within it
         casual_category = discord.utils.get(ctx.guild.categories, name=CATEGORY_NAME)

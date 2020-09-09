@@ -15,6 +15,19 @@ RACING_PLAYER_ROLE_NAME = 'Tournament Player Game '
 SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME')
 
 
+async def is_administrator(ctx: commands.Context):
+    return ctx.author.guild_permissions.administrator
+
+
+async def is_moderator(ctx: commands.Context):
+    guild_roles = []
+    for role in ctx.guild.roles:
+        guild_roles.append(role.name)
+
+    moderator_roles = guild_roles[guild_roles.index('Moderator'):]
+    return ctx.author.guild_permissions.administrator or (ctx.author.top_role in moderator_roles)
+
+
 class Racing(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -25,7 +38,7 @@ class Racing(commands.Cog):
         help="Create a category with a voice channel which when joined, will create race channels and"
              " authorize users automatically."
     )
-    @commands.is_owner()
+    @commands.check(is_administrator)
     async def create_race_channels(self, ctx: commands.Context):
         # If the channel from which other channels are created already exists, do nothing
         if discord.utils.get(ctx.guild.categories, name=RACING_CATEGORY_NAME) \
@@ -48,7 +61,7 @@ class Racing(commands.Cog):
         brief="Delete racing category and channels.",
         help="Destroy the racing category and everything created by the create-race-channels command"
     )
-    @commands.is_owner()
+    @commands.check(is_administrator)
     async def destroy_race_channels(self, ctx: commands.Context):
         # If the racing category exists, delete it and all channels within it
         race_category = discord.utils.get(ctx.guild.categories, name=RACING_CATEGORY_NAME)
