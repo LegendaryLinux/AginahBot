@@ -21,7 +21,7 @@ SQLITE_DB_NAME="aginahbot.db.sqlite3"
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
-permissions granted by the permissions integer `285273104`.
+permissions granted by the permissions integer `285240400`.
 
 The following permissions will be granted
 to AginahBot:
@@ -29,7 +29,7 @@ to AginahBot:
 - Manage Channels
 - Read Text Channels & See Voice Channels
 - Send Messages
-- Embed Links
-- Attach Files
 - Manage Messages
-- Move Members
+- Embed Links
+- Add Reactions
+- Move Members (Voice Channels)
