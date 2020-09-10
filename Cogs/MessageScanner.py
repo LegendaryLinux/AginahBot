@@ -116,7 +116,6 @@ class MessageScanner(commands.Cog):
             # page on berserkermulti.world, ping @here and pin the message to the channel
             if re.search('^(multi|racing)-channel-', message.channel.name):
                 if message.content.find('berserkermulti.world/hosted') > -1:
-                    await message.channel.send('@here: The game has been hosted and seeds are available!')
                     await message.pin()
         except:
             # If something goes terribly wrong while scanning a file, delete it
