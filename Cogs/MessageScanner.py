@@ -3,6 +3,7 @@ import zipfile
 import py7zr
 import rarfile
 import tarfile
+import re
 
 
 def is_valid_archive_content_filename(fname: str):
@@ -110,6 +111,13 @@ class MessageScanner(commands.Cog):
                     await message.delete()
                     await message.channel.send(
                         f'{message.author.mention} Sorry, `.gzip` files are prohibited.')
+
+            # Check if the channel is a casual or racing channel and if this message contains a link to a /hosted
+            # page on berserkermulti.world, ping @here and pin the message to the channel
+            if re.search('^(multi|racing)-channel-', message.channel.name):
+                if message.content.find('berserkermulti.world/hosted') > -1:
+                    await message.channel.send('@here: The game has been hosted and seeds are available!')
+                    await message.pin()
         except:
             # If something goes terribly wrong while scanning a file, delete it
             await message.delete()

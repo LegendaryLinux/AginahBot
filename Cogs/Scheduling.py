@@ -285,10 +285,6 @@ class Scheduling(commands.Cog):
             target_time = datetime(current_time.year, current_time.month, current_time.day, current_time.hour,
                                    int(dt_parts[1]), 0, 0, timezone(timedelta()))
 
-            print(current_time)
-            print(target_time)
-            print()
-
             if target_time.timestamp() < current_time.timestamp():
                 target_time = target_time + timedelta(hours=1)
 
