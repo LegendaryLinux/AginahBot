@@ -1,4 +1,4 @@
 .idea/
 node_modules/
-*.env
+config.json
 *.sqlite3
