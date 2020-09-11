@@ -1,0 +1,8 @@
+{
+  "name": "aginah-bot",
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^12.3.1"
+  }
+}

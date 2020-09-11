@@ -1,0 +1,11 @@
+{
+  "token": "NzAxMjI1NzU2ODk3ODM3MDk2.XwkxbA._2ymBq_gALVtxxt7R_0tWCal8Z4",
+  "db": {
+    "url": "",
+    "dbName": "aginahbot.db.sqlite3",
+    "username": "",
+    "password": ""
+  },
+  "commandPrefix": "!aginah ",
+  "moderatorRole": "Moderator"
+}

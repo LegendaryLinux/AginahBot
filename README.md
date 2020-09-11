@@ -1,11 +1,14 @@
 # AginahBot
-A Discord bot designed to help organize, and moderate Z3R Multiworld Games.  
+A Discord bot designed to help organize and moderate Z3R Multiworld Games.  
 Find it in use at [Berserker's MultiWorld Discord](https://discord.gg/B5pjMYy)
 
 ## Current Features
 - Automatic creation of race voice and text channels, and automatic assignment of permissions to prevent viewing
     an opposing team's chat
 - Support casual multiworld voice and text channels, and automatic assignment of permissions on those channels
+- Automatically delete ROM files, and compressed files containing them
+- Organization features to help schedule games
+- Alert players in game lobbies that their seeds are ready
 
 ## Configuration
 A `.env` file is required to be present in the base directory of the repository. This file should contain
