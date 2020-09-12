@@ -1,7 +1,7 @@
 const Discord = require('discord.js')
 const config = require('./config.json');
 const errorHandlers = require('./errorHandlers');
-const { verifyUserPermissions } = require('./lib');
+const { verifyUserRole } = require('./lib');
 const fs = require('fs');
 
 const client = new Discord.Client();
@@ -10,9 +10,13 @@ client.once('ready', () => {
 });
 
 client.commands = new Discord.Collection();
-fs.readdirSync('./commands').filter((file) => file.endsWith('.js')).forEach((commandFile) => {
-    const command = require(`./commands/${commandFile}`);
-    client.commands.set(command.name, command);
+client.commandCategories = [];
+fs.readdirSync('./commandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {
+    const commandCategory = require(`./commandCategories/${categoryFile}`);
+    client.commandCategories.push(commandCategory);
+    commandCategory.commands.forEach((command) => {
+        client.commands.set(command.name, command);
+    });
 });
 
 client.on('message', (message) => {
@@ -38,10 +42,10 @@ client.on('message', (message) => {
         if (!message.guild) { return message.reply('That command may only be used in a server.'); }
 
         // If the command is available to everyone, just run it
-        if (!command.minimumPermissions) { return command.execute(message, args); }
+        if (!command.minimumRole) { return command.execute(message, args); }
 
         // Otherwise, the user must have permission to access this command
-        verifyUserPermissions(message.member, command.minimumPermissions).then((permitted) => {
+        verifyUserRole(message.member, command.minimumPermissions).then((permitted) => {
             if (permitted) { return command.execute(message, args); }
             return message.reply('You are not authorized to use that command.');
         }).catch(errorHandlers.generalErrorHandler);
