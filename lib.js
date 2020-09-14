@@ -3,7 +3,7 @@ const Discord = require('discord.js');
 module.exports = {
     // Function which returns a promise which will resolve to true or false
     verifyUserRole: (guildMember, minimumRoleName) => new Promise((resolve, reject) => {
-        if (guildMember.hasPermission(Discord.Permissions.FLAGS.ADMINISTRATOR)) { resolve(true); }
+        if (this.verifyIsAdmin(guildMember)) { resolve(true); }
 
         const memberRole = guildMember.roles.highest;
         guildMember.guild.roles.fetch().then((roles) => {

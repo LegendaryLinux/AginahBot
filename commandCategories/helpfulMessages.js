@@ -8,6 +8,8 @@ module.exports = {
             aliases: ['setup-guide'],
             usage: '`!aginah setup`',
             guildOnly: false,
+            minimumRole: null,
+            adminOnly: false,
             execute(message) {
                 message.channel.send('The setup guide may be found here:\nhttps://berserkermulti.world/tutorial');
             }
@@ -19,7 +21,9 @@ module.exports = {
             aliases: ['site', 'webpage'],
             usage: '`!aginah website`',
             guildOnly: false,
-            execute(message, args) {
+            minimumRole: null,
+            adminOnly: false,
+            execute(message) {
                 message.channel.send('https://berserkermulti.world/');
             }
         },
@@ -30,6 +34,8 @@ module.exports = {
             aliases: ['github', 'git'],
             usage: '`!aginah code`',
             guildOnly: false,
+            minimumRole: null,
+            adminOnly: false,
             execute(message) {
                 message.channel.send([
                     "Randomizer Repo: https://github.com/Berserker66/MultiWorld-Utilities",

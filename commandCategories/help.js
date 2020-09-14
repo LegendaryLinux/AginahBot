@@ -10,6 +10,8 @@ module.exports = {
             longDescription: null,
             aliases: ['commands'],
             usage: '`!aginah help [command name]`',
+            minimumRole: null,
+            adminOnly: false,
             guildOnly: true,
             execute(message, args) {
                 const data = []; // Each entry in this array will be sent on a new line
@@ -64,12 +66,8 @@ module.exports = {
                 if (command.longDescription) { data.push(`**Description:** ${command.longDescription}`) }
                 else if (command.description) { data.push(`**Description: ** ${command.description}`); }
                 if (command.usage) { data.push(`**Usage: ** ${command.usage}`); }
-                message.author.send(data, { split: true }).then(() => {
-                    message.react('👍');
-                }).catch((error) => {
-                    errorHandlers.dmErrorHandler(error, message);
-                    message.react('👎');
-                });
+                message.channel.send(data, { split: true }).then(() => {
+                }).catch((error) => errorHandlers.generalErrorHandler(error));
             },
         }
     ],

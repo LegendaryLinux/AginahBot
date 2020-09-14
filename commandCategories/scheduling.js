@@ -1,7 +1,7 @@
 const {generalErrorHandler} = require('../errorHandlers');
 
 const sendScheduleMessage = (message, targetDate) => message.channel.send([
-    `@${message.author.tag} wants to schedule a game for ` +
+    `${message.author} wants to schedule a game for ` +
     `${targetDate.getUTCMonth()+1}/${targetDate.getUTCDate()}/${targetDate.getUTCFullYear()} at `+
     `${targetDate.getUTCHours()}:${targetDate.getUTCMinutes().toString().padStart(2,'0')} UTC`,
     `https://gametimes.multiworld.link/?timestamp=${targetDate.getTime()}`,
@@ -10,7 +10,7 @@ const sendScheduleMessage = (message, targetDate) => message.channel.send([
 ]).then((msg) => {
     msg.react('⚔');
     msg.react('🐔');
-}).catch((error) => generalErrorHandler);
+}).catch((error) => generalErrorHandler(error));
 
 module.exports = {
     category: 'Scheduling',
@@ -27,6 +27,8 @@ module.exports = {
             aliases: [],
             usage: '`!aginah schedule [role] [time]`',
             guildOnly: true,
+            minimumRole: null,
+            adminOnly: false,
             execute(message, args) {
                 if (arguments.length < 2) {
                     return message.channel.send("Looks like you're missing some arguments. Use " +
