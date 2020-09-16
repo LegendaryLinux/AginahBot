@@ -16,12 +16,8 @@ Find it in use at [Berserker's MultiWorld Discord](https://discord.gg/B5pjMYy).
 
 ## Configuration
 A `config.json` file is required to be present in the base directory of the repository. This file should contain
-at minimum your Discord bot's secret key, a name for the SQLite database file, and a command prefix. 
-
-A note about this file:
-- If the moderator role is present, it will be created on your server if it does not exist already. In either
-case, the roleId will be stored in the database and used to grant additional functionality to all users with
-this role or a higher one.
+your Discord bot's secret key, a name for the SQLite database file, a command prefix, and a name for the Moderator
+role which will be created on servers the bot joins if it does not exist already. 
 
 Example config:
 ```json

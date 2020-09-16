@@ -3,21 +3,18 @@ const sqlite3 = require('sqlite3');
 const dbSetup = require('./dbSetup')
 const config = require('./config.json');
 const errorHandlers = require('./errorHandlers');
-const { verifyUserRole, verifyIsAdmin } = require('./lib');
+const { verifyUserRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete, verifyGuildSetups } = require('./lib');
 const fs = require('fs');
 
 // Build the database if it does not exist
 dbSetup();
 
 const client = new Discord.Client();
-client.once('ready', () => {
-    console.log("Connected to Discord. Active in X guilds.");
-});
-
 client.db = new sqlite3.Database(config.dbFile);
 client.commands = new Discord.Collection();
 client.commandCategories = [];
 client.messageListeners = [];
+client.reactionListeners = [];
 client.voiceStateListeners = [];
 
 // Load command category files
@@ -33,6 +30,12 @@ fs.readdirSync('./commandCategories').filter((file) => file.endsWith('.js')).for
 fs.readdirSync('./messageListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
     const listener = require(`./messageListeners/${listenerFile}`);
     client.messageListeners.push(listener);
+});
+
+// Load reaction listener files
+fs.readdirSync('./reactionListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
+    const listener = require(`./reactionListeners/${listenerFile}`);
+    client.reactionListeners.push(listener);
 });
 
 // Load voice state listener files
@@ -96,6 +99,23 @@ client.on('message', (message) => {
 client.on('voiceStateUpdate', (oldState, newState) => {
     // Run the voice states through the listeners
     client.voiceStateListeners.forEach((listener) => listener(client, oldState, newState));
+});
+
+// Run the reaction updates through the listeners
+client.on('messageReactionAdd', (messageReaction, user) =>
+    client.reactionListeners.forEach((listener) => listener(client, messageReaction, user)));
+client.on('messageReactionRemove', (messageReaction, user) =>
+    client.reactionListeners.forEach((listener) => listener(client, messageReaction, user)));
+
+// Handle the bot being added to a new guild
+client.on('guildCreate', (guild) => handleGuildCreate(client, guild));
+
+// Handle the bot being removed from a guild
+client.on('guildDelete', (guild) => handleGuildDelete(client, guild));
+
+client.once('ready', () => {
+    verifyGuildSetups(client);
+    console.log(`Connected to Discord. Active in ${client.guilds.cache.array().length} guilds.`);
 });
 
 client.login(config.token);
