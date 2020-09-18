@@ -287,17 +287,17 @@ module.exports = {
 
           // Remove reactions from the role category message
           message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
-              .then((categoryMessage) => {
-                // TODO: This doesn't always delete the reaction. Look into this more.
-                // Maybe we can store the reactionId from message.react?
-                categoryMessage.reactions.resolve(role.reaction).remove();
+            .then((categoryMessage) => {
+              categoryMessage.reactions.cache.each((reaction) => {
+                if (reaction.emoji.toString() === role.reaction) { reaction.remove(); }
+              });
 
-                // Add new reaction to message
-                categoryMessage.react(emoji);
-              }).catch((err) => generalErrorHandler(err));
+              // Add new reaction to message
+              categoryMessage.react(emoji);
+            }).catch((err) => generalErrorHandler(err));
 
           message.client.db.serialize(() => {
-            message.client.db.run(`UPDATE roles SET reaction=? WHERE id=?`, args[2], role.id);
+            message.client.db.run(`UPDATE roles SET reaction=? WHERE id=?`, emoji.toString(), role.id);
             updateCategoryMessage(message.client, message.guild, role.messageId);
             message.react('👍');
           });

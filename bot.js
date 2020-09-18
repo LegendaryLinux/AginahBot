@@ -103,9 +103,9 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 // Run the reaction updates through the listeners
 client.on('messageReactionAdd', (messageReaction, user) =>
-    client.reactionListeners.forEach((listener) => listener(client, messageReaction, user)));
+    client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true)));
 client.on('messageReactionRemove', (messageReaction, user) =>
-    client.reactionListeners.forEach((listener) => listener(client, messageReaction, user)));
+    client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false)));
 
 // Handle the bot being added to a new guild
 client.on('guildCreate', (guild) => handleGuildCreate(client, guild));
