@@ -17,7 +17,6 @@ const roleCategories = `CREATE TABLE IF NOT EXISTS role_categories (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     roleSystemId VARCHAR(128) NOT NULL,
     categoryName VARCHAR(128) NOT NULL,
-    roleRequestChannelId CARCHAR(128) NOT NULL,
     messageId VARCHAR(128) NOT NULL
 )`;
 
@@ -27,7 +26,7 @@ const roles = `CREATE TABLE IF NOT EXISTS roles (
     roleId VARCHAR(128) NOT NULL,
     roleName VARCHAR(128) NOT NULL,
     reaction VARCHAR(128) NOT NULL,
-    description VARCHAR(128) NOT NULL
+    description VARCHAR(128)
 )`;
 
 const gameCategories = `CREATE TABLE IF NOT EXISTS game_categories (

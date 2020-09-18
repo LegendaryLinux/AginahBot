@@ -2,8 +2,7 @@ const Discord = require('discord.js')
 const sqlite3 = require('sqlite3');
 const dbSetup = require('./dbSetup')
 const config = require('./config.json');
-const errorHandlers = require('./errorHandlers');
-const { verifyUserRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete, verifyGuildSetups } = require('./lib');
+const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete, verifyGuildSetups } = require('./lib');
 const fs = require('fs');
 
 // Build the database if it does not exist
@@ -85,10 +84,11 @@ client.on('message', (message) => {
         if (!command.minimumRole) { return command.execute(message, args); }
 
         // Otherwise, the user must have permission to access this command
-        verifyUserRole(message.member, command.minimumPermissions).then((permitted) => {
-            if (permitted) { return command.execute(message, args); }
-            return message.reply('You are not authorized to use that command.');
-        }).catch(errorHandlers.generalErrorHandler);
+        if (verifyModeratorRole(message.member)) {
+            return command.execute(message, args);
+        }
+
+        return message.reply('You are not authorized to use that command.');
     }catch (error) {
         // Log the error, report a problem
         console.error(error);

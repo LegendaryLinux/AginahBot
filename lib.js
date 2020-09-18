@@ -4,18 +4,9 @@ const config = require('./config.json');
 
 module.exports = {
     // Function which returns a promise which will resolve to true or false
-    verifyUserRole: (guildMember, minimumRoleName) => new Promise((resolve, reject) => {
-        if (module.exports.verifyIsAdmin(guildMember)) { resolve(true); }
-
-        const memberRole = guildMember.roles.highest;
-        guildMember.guild.roles.fetch().then((roles) => {
-            for (const role of roles.cache) {
-                if (role.name === minimumRoleName) {
-                    resolve(role.rawPosition <= memberRole.rawPosition);
-                }
-            }
-        }).error((error) => reject(error));
-    }),
+    verifyModeratorRole: (guildMember) => {
+        return module.exports.getModeratorRole(guildMember.guild).position <= guildMember.roles.highest.position;
+    },
 
     verifyIsAdmin: (guildMember) => guildMember.hasPermission(Discord.Permissions.FLAGS.ADMINISTRATOR),
 
@@ -89,5 +80,23 @@ module.exports = {
                 if (!row) { module.exports.handleGuildCreate(client, guild); }
             });
         });
+    },
+
+    /**
+     * Get an emoji object usable with Discord. Null if the Emoji is not usable in the provided guild.
+     * @param guild
+     * @param emoji
+     * @returns String || Object || null
+     */
+    parseEmoji: (guild, emoji) => {
+        const emojiIdRegex = new RegExp(/^<:.*:(\d+)>$/);
+        const match = emoji.match(emojiIdRegex);
+        if (match && match.length > 1) {
+            const emojiObj = guild.emojis.resolve(match[1]);
+            return emojiObj ? emojiObj : null;
+        }
+
+        const nodeEmoji = require('node-emoji');
+        return nodeEmoji.hasEmoji(emoji) ? emoji : null;
     },
 };

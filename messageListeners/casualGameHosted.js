@@ -4,7 +4,8 @@ module.exports = (client, message) => {
         let sql = `SELECT IFNULL(cg.roleId, rg.roleId) AS roleId FROM game_categories gc
                     LEFT JOIN casual_games cg ON gc.id = cg.categoryId
                     LEFT JOIN race_games rg on gc.id = rg.categoryId
-                    WHERE gc.guildId=?
+                    JOIN guild_data gd ON gc.guildDataId=gd.id
+                    WHERE gd.guildId=?
                       AND (cg.textChannelId=? OR rg.textChannelId=?)`;
         client.db.get(sql, message.guild.id, message.channel.id, message.channel.id, (err, roleData) => {
             if (roleData) {

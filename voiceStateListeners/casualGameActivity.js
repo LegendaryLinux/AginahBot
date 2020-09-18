@@ -14,8 +14,10 @@ module.exports = (client, oldState, newState) => {
     // If the user changed their voice state but remained in the same channel, do nothing (mute, deafen, etc.)
     if (oldState.channel && newState.channel && oldState.channel.id === newState.channel.id) { return; }
 
-    let sql = `SELECT id, channelCategoryId, newGameChannelId
-                FROM game_categories WHERE guildId=? AND categoryType='casual'`;
+    let sql = `SELECT gc.id, gc.channelCategoryId, gc.newGameChannelId
+                FROM game_categories gc
+                JOIN guild_data gd ON gc.guildDataId=gd.id
+                WHERE gd.guildId=? AND categoryType='casual'`;
     client.db.get(sql, newState.guild.id, (err, categoryData) => {
         if (!categoryData) { return; }
 

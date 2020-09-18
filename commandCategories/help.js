@@ -1,5 +1,5 @@
 const errorHandlers = require('../errorHandlers');
-const { verifyUserRole } = require('../lib');
+const { verifyModeratorRole } = require('../lib');
 
 module.exports = {
     category: 'Help',
@@ -32,11 +32,9 @@ module.exports = {
 
                             // If the command does have a minimum role, only report if the user has
                             // sufficient permissions
-                            verifyUserRole(message.member, command.minimumRole).then((permitted) => {
-                                if (permitted) {
-                                    permittedCommands.push(`\`${command.name}\`: ${command.description}`);
-                                }
-                            }).catch(errorHandlers.generalErrorHandler);
+                            if (verifyModeratorRole(message.member)) {
+                                permittedCommands.push(`\`${command.name}\`: ${command.description}`);
+                            }
                         });
 
                         if (permittedCommands.length > 0) {
