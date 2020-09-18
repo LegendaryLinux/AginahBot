@@ -5,6 +5,7 @@ const config = require('./config.json');
 module.exports = {
     // Function which returns a promise which will resolve to true or false
     verifyModeratorRole: (guildMember) => {
+        if (module.exports.verifyIsAdmin(guildMember)) { return true; }
         return module.exports.getModeratorRole(guildMember.guild).position <= guildMember.roles.highest.position;
     },
 
