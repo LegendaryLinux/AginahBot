@@ -13,18 +13,18 @@ const updateCategoryMessage = (client, guild, messageId) => {
     if (err) { return generalErrorHandler(err); }
     if (!roleCategory) { throw Error("Unable to update category message. Role category could not be found."); }
 
-    const roleInfo = [`__${roleCategory.categoryName}__`];
+    const roleInfo = [`> __${roleCategory.categoryName}__`];
     let sql = `SELECT r.roleId, r.reaction, r.description FROM roles r WHERE r.categoryId=?`;
     client.db.each(sql, roleCategory.id, (err, role) => {
       if (err) { return generalErrorHandler(err); }
-      roleInfo.push(`${role.reaction} ${guild.roles.resolve(role.roleId)}` +
+      roleInfo.push(`> ${role.reaction} ${guild.roles.resolve(role.roleId)}` +
           `${role.description ? `: ${role.description}` : ''}`);
     }, (err) => {
       // Completion function, run when all callbacks are complete
       if (err) { return generalErrorHandler(err); }
 
       // If there are no roles in this category, mention that there are none
-      if (roleInfo.length === 1) { roleInfo.push("There are no roles in this category yet."); }
+      if (roleInfo.length === 1) { roleInfo.push("> There are no roles in this category yet."); }
 
       // Fetch and edit the category message
       guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(messageId)
