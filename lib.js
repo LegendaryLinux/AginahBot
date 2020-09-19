@@ -83,6 +83,23 @@ module.exports = {
         });
     },
 
+    cacheRoleRequestMessages: (client) => {
+        client.guilds.cache.each((guild) => {
+            let sql = `SELECT rc.messageId, rs.roleRequestChannelId
+                        FROM role_categories rc
+                        JOIN role_systems rs ON rc.roleSystemId=rs.id
+                        JOIN guild_data gd ON rs.guildDataId=gd.id
+                        WHERE gd.guildId=?`;
+            client.db.each(sql, guild.id, (err, roleCategory) => {
+                if (err) { return generalErrorHandler(err); }
+
+                // Cache the role requestor category messages. This is required because reactions can only
+                // be monitored on cached messages.
+                guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId);
+            });
+        });
+    },
+
     /**
      * Get an emoji object usable with Discord. Null if the Emoji is not usable in the provided guild.
      * @param guild

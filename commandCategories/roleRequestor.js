@@ -2,8 +2,6 @@ const config = require('../config.json');
 const {generalErrorHandler} = require('../errorHandlers');
 const {parseEmoji} = require('../lib');
 
-const ROLE_REQUEST_CHANNEL_NAME = 'role-request';
-
 const updateCategoryMessage = (client, guild, messageId) => {
   // Fetch the target message
   let sql = `SELECT rc.id, rc.categoryName, rs.roleRequestChannelId FROM role_categories rc
@@ -62,10 +60,20 @@ module.exports = {
           message.client.db.get(sql, message.guild.id, (err, guildData) => {
             if (err) { return generalErrorHandler(err); }
             // Create the #role-request channel
-            message.guild.channels.create(ROLE_REQUEST_CHANNEL_NAME, {
+            message.guild.channels.create(config.roleRequestChannel, {
               type: 'text',
               topic: 'Request roles so that you may be pinged for various notifications.',
               reason: 'Role Request system created.',
+              permissionOverwrites: [
+                {
+                  id: message.client.user.id,
+                  allow: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ],
+                },
+                {
+                  id: message.guild.roles.everyone.id,
+                  deny: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ]
+                }
+              ],
             }).then((channel) => {
               // Add role system data to the database
               let sql = `INSERT INTO role_systems (guildDataId, roleRequestChannelId) VALUES(?, ?)`

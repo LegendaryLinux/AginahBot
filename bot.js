@@ -2,7 +2,8 @@ const Discord = require('discord.js')
 const sqlite3 = require('sqlite3');
 const dbSetup = require('./dbSetup')
 const config = require('./config.json');
-const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete, verifyGuildSetups } = require('./lib');
+const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
+    verifyGuildSetups, cacheRoleRequestMessages } = require('./lib');
 const fs = require('fs');
 
 // Build the database if it does not exist
@@ -115,6 +116,7 @@ client.on('guildDelete', (guild) => handleGuildDelete(client, guild));
 
 client.once('ready', () => {
     verifyGuildSetups(client);
+    cacheRoleRequestMessages(client);
     console.log(`Connected to Discord. Active in ${client.guilds.cache.array().length} guilds.`);
 });
 
