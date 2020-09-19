@@ -241,7 +241,11 @@ module.exports = {
 
             // Create the role on the server
             message.guild.roles.create({
-              data: { name: args[1], reason: 'Added as part of role-request system.', },
+              data: {
+                name: args[1],
+                mentionable: true,
+              },
+              reason: 'Added as part of role-request system.',
             }).then((role) => {
               message.client.db.serialize(() => {
                 // Add the role to the database
