@@ -2,6 +2,7 @@ const Discord = require('discord.js')
 const sqlite3 = require('sqlite3');
 const dbSetup = require('./dbSetup')
 const config = require('./config.json');
+const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
     verifyGuildSetups, cacheRoleRequestMessages } = require('./lib');
 const fs = require('fs');
@@ -113,6 +114,9 @@ client.on('guildCreate', (guild) => handleGuildCreate(client, guild));
 
 // Handle the bot being removed from a guild
 client.on('guildDelete', (guild) => handleGuildDelete(client, guild));
+
+// Use the general error handler to handle unexpected errors
+client.on('error', (error) => generalErrorHandler(error));
 
 client.once('ready', () => {
     verifyGuildSetups(client);
