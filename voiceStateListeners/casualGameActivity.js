@@ -26,7 +26,7 @@ module.exports = (client, oldState, newState) => {
             // TODO: Limit user channel creation speed
 
             const channelName = channelNames[randInRange(0, channelNames.length - 1)];
-            return newState.guild.roles.create({ data: { name: channelName }}).then((role) => {
+            newState.guild.roles.create({ data: { name: channelName }}).then((role) => {
                 Promise.all([
                     // Voice channel
                     newState.guild.channels.create(channelName, {
@@ -52,37 +52,47 @@ module.exports = (client, oldState, newState) => {
                         ],
                     })
                 ]).then((channels) => {
-                    channels[1].overwritePermissions([
-                        {
-                            // @everyone may not view the text channel
-                            id: newState.guild.id,
-                            deny: [ 'VIEW_CHANNEL' ],
-                        },
-                        // TODO: Moderators should be able to view this channel
-                        {
-                            // @AginahBot may view the text channel
-                            id: client.user.id,
-                            allow: [ 'VIEW_CHANNEL' ],
-                        },
-                        {
-                            // Role assignees may view the channel
-                            id: role.id,
-                            allow: [ 'VIEW_CHANNEL' ],
-                        }
-                    ]);
-                    let sql = `INSERT INTO casual_games (categoryId, voiceChannelId, textChannelId, roleId)
+                    let gdSql = `SELECT moderatorRoleId FROM guild_data WHERE guildId=?`;
+                    client.db.get(gdSql, newState.guild.id, (err, guildData) => {
+                        if (err) { return generalErrorHandler(err); }
+                        if (!guildData) { throw new Error(`Guild ${newState.guild.name} (${newState.guild.id}) ` +
+                            `could not be found in the database.`); }
+                        channels[1].overwritePermissions([
+                            {
+                                // @everyone may not view the text channel
+                                id: newState.guild.id,
+                                deny: [ 'VIEW_CHANNEL' ],
+                            },
+                            {
+                                // Moderators should be able to view this channel
+                                id: guildData.moderatorRoleId,
+                                allow: [ 'VIEW_CHANNEL' ],
+                            },
+                            {
+                                // @AginahBot may view the text channel
+                                id: client.user.id,
+                                allow: [ 'VIEW_CHANNEL' ],
+                            },
+                            {
+                                // Role assignees may view the channel
+                                id: role.id,
+                                allow: [ 'VIEW_CHANNEL' ],
+                            }
+                        ]);
+                        let sql = `INSERT INTO casual_games (categoryId, voiceChannelId, textChannelId, roleId)
                                 VALUES (?, ?, ?, ?)`;
-                    client.db.run(sql, categoryData.id, channels[0].id, channels[1].id, role.id);
-                    newState.member.voice.setChannel(channels[0]);
-                    newState.member.roles.add(role);
+                        client.db.run(sql, categoryData.id, channels[0].id, channels[1].id, role.id);
+                        newState.member.voice.setChannel(channels[0]);
+                        newState.member.roles.add(role);
+                    });
                 }).catch((error) => generalErrorHandler(error));
             });
         }
 
         // User leaves a game channel
-        if (oldState.channel && (!newState.channel || (oldState.channel.id !== newState.channel.id))) {
+        if (oldState.channel) {
             let sql = `SELECT * FROM casual_games WHERE categoryId=? AND voiceChannelId=?`;
-            return client.db.get(sql, categoryData.id, oldState.channel.id, (err, channelData) => {
+            client.db.get(sql, categoryData.id, oldState.channel.id, (err, channelData) => {
                 // If the voice channel the user left was not a game channel, do nothing
                 if (!channelData) { return; }
 

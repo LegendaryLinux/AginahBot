@@ -76,9 +76,9 @@ module.exports = {
                             category.delete();
                             db.run(`DELETE FROM casual_games WHERE categoryId=?`, row.id);
                             db.run(`DELETE FROM game_categories WHERE id=?`, row.id);
+                            return message.react('👍');
                         }
                     });
-                    return message.react('👍');
                 });
             }
         },
