@@ -45,18 +45,13 @@ module.exports = {
                             permittedCommands.forEach((cmd) => data.push(cmd));
                         }
                     });
-                    return message.author.send(data, { split: true }).then(() => {
-                        message.react('👍');
-                    }).catch((error) => {
-                        errorHandlers.dmErrorHandler(error, message);
-                        message.react('👎')
-                    });
+                    return message.author.send(data, { split: true }).catch((error) =>
+                        errorHandlers.dmErrorHandler(error, message));
                 }
 
                 // Send data about a specific command
                 const command = message.client.commands.get(args[0].toLowerCase());
                 if (!command) {
-                    message.react('👎');
                     return message.author.send('That isn\'t a valid command!').then().catch((error) => {
                         errorHandlers.dmErrorHandler(error, message);
                     });

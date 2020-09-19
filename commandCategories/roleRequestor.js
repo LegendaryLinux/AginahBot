@@ -82,7 +82,6 @@ module.exports = {
                 `assigned a role, please react to the appropriate message with the indicated ` +
                 `emoji. All roles are pingable by everyone on the server. Remember, with great ` +
                 `power comes great responsibility.`);
-              message.react('👍');
             }).catch((error) => generalErrorHandler(error));
           });
         });
@@ -167,7 +166,6 @@ module.exports = {
                   let sql = `INSERT INTO role_categories (roleSystemId, categoryName, messageId) VALUES (?, ?, ?)`;
                   message.client.db.run(sql, roleSystem.id, args[0], categoryMessage.id)
                   updateCategoryMessage(message.client, message.guild, categoryMessage.id);
-                  message.react('👍');
                 });
               });
           });
@@ -200,7 +198,6 @@ module.exports = {
             message.client.db.run(`DELETE FROM role_categories WHERE id=?`, roleCategory.id);
             message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
                 .then((categoryMessage) => categoryMessage.delete()).catch((err) => generalErrorHandler(err));
-            message.react('👍');
           });
         });
       }
@@ -257,11 +254,10 @@ module.exports = {
                 // Add the reaction to the category message
                 message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
                     .then((categoryMessage) => categoryMessage.react(emoji).catch((err) => generalErrorHandler(err)));
-
-                // React to the command
-                message.react('👍');
               });
-            }).catch((error) => { message.react('👎'); generalErrorHandler(error) });
+            }).catch((error) => {
+              throw new Error(`Unable to create guild role. Error: ${error}`);
+            });
           });
         });
       }
@@ -307,7 +303,6 @@ module.exports = {
           message.client.db.serialize(() => {
             message.client.db.run(`UPDATE roles SET reaction=? WHERE id=?`, emoji.toString(), role.id);
             updateCategoryMessage(message.client, message.guild, role.messageId);
-            message.react('👍');
           });
         });
       }
@@ -338,7 +333,6 @@ module.exports = {
           message.client.db.serialize(() => {
             message.client.db.run(sql, args[2] ? args.slice(2).join(' ') : null, role.id);
             updateCategoryMessage(message.client, message.guild, role.messageId);
-            message.react('👍');
           });
         });
       }
@@ -377,7 +371,6 @@ module.exports = {
           message.client.db.serialize(() => {
             message.client.db.run(`DELETE FROM roles WHERE categoryId=?`, role.categoryId);
             updateCategoryMessage(message.client, message.guild, role.messageId);
-            message.react('👍');
           });
         });
       }

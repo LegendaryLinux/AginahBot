@@ -26,7 +26,7 @@ module.exports = {
                 db.get(sql, message.guild.id, (err, row) => {
                     if (!row) {
                         // Create the system
-                        message.guild.channels.create(CATEGORY_NAME, { type: 'category' }).then((category) => {
+                        return message.guild.channels.create(CATEGORY_NAME, { type: 'category' }).then((category) => {
                             Promise.all([
                                 message.guild.channels.create(PLANNING_CHANNEL_NAME, { parent: category }),
                                 message.guild.channels.create(VOICE_CHANNEL_NAME, { type: 'voice', parent: category }),
@@ -40,11 +40,9 @@ module.exports = {
                                 });
                             }).catch((error) => generalErrorHandler(error));
                         });
-                        return message.react('👍');
                     } else {
                         // System already exists. Abort.
                         message.channel.send('Your server is already set up to handle dynamic casual channels.');
-                        return message.react('👎');
                     }
                 });
             }
@@ -69,14 +67,12 @@ module.exports = {
                     db.get(sql, guildData.id, (err, row) => {
                         if (!row) {
                             message.channel.send('Your server is not configured to handle dynamic casual channels.');
-                            return message.react('👎');
                         } else {
                             const category = message.guild.channels.resolve(row.channelCategoryId);
                             category.children.forEach((channel) => channel.delete());
                             category.delete();
                             db.run(`DELETE FROM casual_games WHERE categoryId=?`, row.id);
                             db.run(`DELETE FROM game_categories WHERE id=?`, row.id);
-                            return message.react('👍');
                         }
                     });
                 });

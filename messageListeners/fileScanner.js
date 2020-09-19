@@ -1,4 +1,5 @@
 const {generalErrorHandler} = require('../errorHandlers');
+const { verifyModeratorRole } = require('../lib');
 const https = require('https');
 const tmp = require('tmp');
 const fs = require('fs');
@@ -50,7 +51,7 @@ module.exports = (client, message) => {
 
             if (isArchiveFile(attachment.name)) {
                 // Disallow archive files larger than five Megabytes (Windows MB, not real ones)
-                if (attachment.size > 5242880) {
+                if (attachment.size > 5242880 && message.member && !verifyModeratorRole(message.member)) {
                     message.channel.send("Your archive files are too powerful! (Archive files are limited to 5MB)");
                     return message.delete();
                 }
@@ -135,5 +136,10 @@ module.exports = (client, message) => {
                 });
             }
         });
-    } catch (error) { generalErrorHandler(error); }
+    } catch (error) {
+        message.channel.send("Something went wrong while trying to analyze your file. It has been deleted " +
+            "for safety purposes.");
+        message.delete();
+        generalErrorHandler(error);
+    }
 };

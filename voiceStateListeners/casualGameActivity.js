@@ -1,4 +1,5 @@
 const { generalErrorHandler } = require('../errorHandlers');
+const { getModeratorRole } = require('../lib');
 
 const channelNames = ['Zucchini', 'Artichoke', 'Pineapple', 'Kumquat', 'Avocado', 'Blueberry', 'Mango', 'Strawberry',
     'Durian', 'Watermelon', 'Papaya', 'Cherry', 'Nectarine', 'Raspberry', 'Cantaloupe', 'Potato', 'Tomato', 'Broccoli',
@@ -45,27 +46,8 @@ module.exports = (client, oldState, newState) => {
                                 deny: [ 'VIEW_CHANNEL' ],
                             },
                             {
-                                // @AginahBot may view the text channel
-                                id: client.user.id,
-                                allow: [ 'VIEW_CHANNEL' ],
-                            }
-                        ],
-                    })
-                ]).then((channels) => {
-                    let gdSql = `SELECT moderatorRoleId FROM guild_data WHERE guildId=?`;
-                    client.db.get(gdSql, newState.guild.id, (err, guildData) => {
-                        if (err) { return generalErrorHandler(err); }
-                        if (!guildData) { throw new Error(`Guild ${newState.guild.name} (${newState.guild.id}) ` +
-                            `could not be found in the database.`); }
-                        channels[1].overwritePermissions([
-                            {
-                                // @everyone may not view the text channel
-                                id: newState.guild.id,
-                                deny: [ 'VIEW_CHANNEL' ],
-                            },
-                            {
                                 // Moderators should be able to view this channel
-                                id: guildData.moderatorRoleId,
+                                id: getModeratorRole(newState.guild).id,
                                 allow: [ 'VIEW_CHANNEL' ],
                             },
                             {
@@ -78,20 +60,22 @@ module.exports = (client, oldState, newState) => {
                                 id: role.id,
                                 allow: [ 'VIEW_CHANNEL' ],
                             }
-                        ]);
-                        let sql = `INSERT INTO casual_games (categoryId, voiceChannelId, textChannelId, roleId)
+                        ],
+                    })
+                ]).then((channels) => {
+                    let sql = `INSERT INTO casual_games (categoryId, voiceChannelId, textChannelId, roleId)
                                 VALUES (?, ?, ?, ?)`;
-                        client.db.run(sql, categoryData.id, channels[0].id, channels[1].id, role.id);
-                        newState.member.voice.setChannel(channels[0]);
-                        newState.member.roles.add(role);
-                    });
+                    client.db.run(sql, categoryData.id, channels[0].id, channels[1].id, role.id);
+                    newState.member.voice.setChannel(channels[0]);
+                    newState.member.roles.add(role);
                 }).catch((error) => generalErrorHandler(error));
             });
         }
 
         // User leaves a game channel
         if (oldState.channel) {
-            let sql = `SELECT * FROM casual_games WHERE categoryId=? AND voiceChannelId=?`;
+            let sql = `SELECT id, roleId, textChannelId, voiceChannelId
+                        FROM casual_games WHERE categoryId=? AND voiceChannelId=?`;
             client.db.get(sql, categoryData.id, oldState.channel.id, (err, channelData) => {
                 // If the voice channel the user left was not a game channel, do nothing
                 if (!channelData) { return; }
@@ -106,7 +90,7 @@ module.exports = (client, oldState, newState) => {
                     oldState.guild.channels.resolve(channelData.textChannelId).delete();
                     oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
 
-                    // Delete the database dor for this channel
+                    // Delete the database for for this channel
                     client.db.run(`DELETE FROM casual_games WHERE id=?`, channelData.id);
                 }
             });
@@ -114,7 +98,7 @@ module.exports = (client, oldState, newState) => {
 
         // User enters a game channel
         if (newState.channel) {
-            let sql = `SELECT * FROM casual_games WHERE categoryId=? AND voiceChannelId=?`;
+            let sql = `SELECT roleId FROM casual_games WHERE categoryId=? AND voiceChannelId=?`;
             client.db.get(sql, categoryData.id, newState.channel.id, (err, channelData) => {
                 // If the voice channel the user entered is not a game channel, do nothing
                 if (!channelData) { return; }
