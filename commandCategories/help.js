@@ -1,5 +1,5 @@
 const errorHandlers = require('../errorHandlers');
-const { verifyModeratorRole } = require('../lib');
+const { verifyModeratorRole, verifyIsAdmin } = require('../lib');
 
 module.exports = {
     category: 'Help',
@@ -24,6 +24,9 @@ module.exports = {
                         const permittedCommands = [];
 
                         category.commands.forEach((command) => {
+                            // If the command requires admin access, do not report it if the user is not admin
+                            if (command.adminOnly && !verifyIsAdmin(message.member)) { return; }
+
                             // If the command does not have a minimum role, always report on it
                             if (!command.minimumRole){
                                 permittedCommands.push(`\`${command.name}\`: ${command.description}`);
