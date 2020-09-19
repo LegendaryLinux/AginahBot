@@ -16,8 +16,9 @@ Find it in use at [Berserker's MultiWorld Discord](https://discord.gg/B5pjMYy).
 
 ## Configuration
 A `config.json` file is required to be present in the base directory of the repository. This file should contain
-your Discord bot's secret key, a name for the SQLite database file, a command prefix, and a name for the Moderator
-role which will be created on servers the bot joins if it does not exist already. 
+your Discord bot's secret key, a name for the SQLite database file, a command prefix, a name for the text channel
+used in the role requestor system, and a name for the Moderator role which will be created on servers the bot
+joins if it does not exist already. 
 
 Example config:
 ```json
@@ -25,7 +26,8 @@ Example config:
   "token": "your-token-here",
   "dbFile": "aginahBot.db.sqlite3",
   "commandPrefix": "!aginah ",
-  "moderatorRole": "Moderator"
+  "moderatorRole": "Moderator",
+  "roleRequestChannel": "role-request"
 }
 ```
 
