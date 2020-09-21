@@ -4,7 +4,7 @@ const dbSetup = require('./dbSetup')
 const config = require('./config.json');
 const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
-    verifyGuildSetups, cacheRoleRequestMessages } = require('./lib');
+    verifyGuildSetups, populateBotCache } = require('./lib');
 const fs = require('fs');
 
 // Build the database if it does not exist
@@ -120,7 +120,7 @@ client.on('error', (error) => generalErrorHandler(error));
 
 client.once('ready', () => {
     verifyGuildSetups(client);
-    cacheRoleRequestMessages(client);
+    populateBotCache(client);
     console.log(`Connected to Discord. Active in ${client.guilds.cache.array().length} guilds.`);
 });
 

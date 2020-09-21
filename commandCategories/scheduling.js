@@ -7,13 +7,26 @@ const sendScheduleMessage = (message, targetDate) => message.channel.send([
     `https://gametimes.multiworld.link/?timestamp=${targetDate.getTime()}`,
     'React with ⚔ if you intend to join this game.',
     'React with 🐔 if you don\'t know yet.'
-]).then((msg) => {
-    msg.react('⚔');
-    msg.react('🐔');
+]).then((scheduleMessage) => {
+    // Save scheduled game to database
+    message.client.db.get(`SELECT id FROM guild_data WHERE guildId=?`, message.guild.id, (err, guildData) => {
+        if (err) { throw new Error(err); }
+        if (!guildData) { throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) ` +
+            `in guild_data table.`); }
+        let sql = `INSERT INTO scheduled_games
+                    (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag)
+                    VALUES (?, ?, ?, ?, ?, ?)`;
+        message.client.db.run(sql, guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
+            message.member.user.id, message.member.user.tag);
+    });
+
+    // Put appropriate reactions onto the message
+    scheduleMessage.react('⚔');
+    scheduleMessage.react('🐔');
 }).catch((error) => generalErrorHandler(error));
 
 module.exports = {
-    category: 'Scheduling',
+    category: 'Game Scheduling',
     commands: [
         {
             name: 'schedule',

@@ -43,7 +43,7 @@ module.exports = {
         client.db.get(`SELECT id FROM guild_data WHERE guildId=?`, guild.id, (err, guildData) => {
             if (err) { return generalErrorHandler(err); }
             if (!guildData) {
-                return console.log(`No guild data could be found when trying to delete data for guild:` +
+                throw new Error(`No guild data could be found when trying to delete data for guild:` +
                     `${guild.name} (${guild.id}).`);
             }
 
@@ -83,8 +83,11 @@ module.exports = {
         });
     },
 
-    cacheRoleRequestMessages: (client) => {
+    /** Cache messages for which the bot must listen to reactions. This is required because reactions can
+     * only be monitored on cached messages. */
+    populateBotCache: (client) => {
         client.guilds.cache.each((guild) => {
+            // Cache the role requestor category messages.
             let sql = `SELECT rc.messageId, rs.roleRequestChannelId
                         FROM role_categories rc
                         JOIN role_systems rs ON rc.roleSystemId=rs.id
@@ -92,10 +95,18 @@ module.exports = {
                         WHERE gd.guildId=?`;
             client.db.each(sql, guild.id, (err, roleCategory) => {
                 if (err) { return generalErrorHandler(err); }
-
-                // Cache the role requestor category messages. This is required because reactions can only
-                // be monitored on cached messages.
                 guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId);
+            });
+
+            // Cache the game scheduling messages for games which have not yet started
+            sql = `SELECT channelId, messageId
+                    FROM scheduled_games sg
+                    JOIN guild_data gd ON sg.guildDataId = gd.id
+                    WHERE gd.guildId=?
+                        AND sg.timestamp > ?`;
+            client.db.each(sql, guild.id, new Date().getTime(), (err, scheduleMessage) => {
+                if (err) { throw new Error(err); }
+                guild.channels.resolve(scheduleMessage.channelId).messages.fetch(scheduleMessage.messageId);
             });
         });
     },

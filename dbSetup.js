@@ -54,6 +54,17 @@ const raceGames = `CREATE TABLE IF NOT EXISTS race_games (
     roleId VARCHAR(128) NOT NULL
 )`;
 
+const scheduledGames = `CREATE TABLE IF NOT EXISTS scheduled_games (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    guildDataId INTEGER NOT NULL,
+    timestamp VARCHAR(64) NOT NULL,
+    channelId VARCHAR(64) NOT NULL,
+    messageId VARCHAR(64) NOT NULL,
+    schedulingUserId VARCHAR(64) NOT NULL,
+    schedulingUserTag VARCHAR(128) NOT NULL,
+    rsvpCount INTEGER NOT NULL DEFAULT 0
+)`;
+
 module.exports = () => {
     const db = new sqlite3.Database(dbFile);
     db.serialize(() => {
@@ -64,5 +75,6 @@ module.exports = () => {
         db.run(gameCategories);
         db.run(casualGames);
         db.run(raceGames);
+        db.run(scheduledGames);
     });
 };
