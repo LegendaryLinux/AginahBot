@@ -64,7 +64,7 @@ client.on('message', (message) => {
             client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));
 
         // If the command does not exist, alert the user
-        if (!command) { return message.channel.send("I don't know that command. `!aginah help` for more info."); }
+        if (!command) { return message.channel.send("I don't know that command. Use `!aginah help` for more info."); }
 
         // If the command does not require a guild, just run it
         if (!command.guildOnly) { return command.execute(message, args); }

@@ -52,7 +52,8 @@ module.exports = {
                 // Send data about a specific command
                 const command = message.client.commands.get(args[0].toLowerCase());
                 if (!command) {
-                    return message.author.send('That isn\'t a valid command!').then().catch((error) => {
+                    return message.channel.send('I don\'t know that command. Use `!aginah help` for more info.')
+                        .then().catch((error) => {
                         errorHandlers.dmErrorHandler(error, message);
                     });
                 }
