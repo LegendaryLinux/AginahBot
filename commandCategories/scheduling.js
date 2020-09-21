@@ -30,20 +30,44 @@ module.exports = {
     commands: [
         {
             name: 'schedule',
-            description: 'Schedule a MultiWorld game',
-            longDescription: "Schedule a MultiWorld game. Allowed times look like:\n\n" +
+            description: 'View upcoming games or schedule a new game',
+            longDescription: "View upcoming games or Schedule a new game. Allowed times look like:\n\n" +
                 "`X:00`: Schedule a game for the next occurrence of the provided minutes value\n\n" +
                 "`14:00 EST`: Schedule a game for the next occurrence of the provided time and " +
                 "timezone. Users subject to daylight savings time, be aware you may have two " +
                 "different timezones. EST / EDT, for example.\n\n" +
                 "`01/01/2020 07:00 GMT`: Schedule a game for the specific provided time.\n",
             aliases: [],
-            usage: '`!aginah schedule [role] [time]`',
+            usage: '`!aginah schedule [role time]`',
             guildOnly: true,
             minimumRole: null,
             adminOnly: false,
             execute(message, args) {
-                if (arguments.length < 2) {
+                if (args.length === 0) {
+                    let sql = `SELECT sg.timestamp, sg.schedulingUserTag, sg.channelId, sg.messageId, sg.rsvpCount
+                                FROM scheduled_games sg
+                                JOIN guild_data gd ON sg.guildDataId = gd.id
+                                WHERE gd.guildId=?
+                                    AND sg.timestamp > ?`;
+                    return message.client.db.each(sql, message.guild.id, new Date().getTime(), (err, game) => {
+                        if (err) { throw new Error(err); }
+                        message.guild.channels.resolve(game.channelId).messages.fetch(game.messageId)
+                            .then((scheduleMessage) => {
+                                const gameTime = new Date(parseInt(game.timestamp, 10));
+                                message.channel.send(
+                                    `> **${game.schedulingUserTag}** scheduled a game for **` +
+                                    `${gameTime.getUTCMonth()+1}/${gameTime.getUTCDate()}/` +
+                                    `${gameTime.getUTCFullYear()} ${gameTime.getUTCHours()}:` +
+                                    `${gameTime.getUTCMinutes().toString().padStart(2, '0')} UTC**.\n` +
+                                    `> In your timezone: ` +
+                                    `https://gametimes.multiworld.link/?timestamp=${parseInt(game.timestamp, 10)}\n` +
+                                    `> RSVP Link: ${scheduleMessage.url}\n` +
+                                    `> Current RSVPs: ${game.rsvpCount}`);
+                            }).catch((err) => generalErrorHandler(err));
+                    });
+                }
+
+                if (args.length < 2) {
                     return message.channel.send("Looks like you're missing some arguments. Use " +
                         "`!aginah help schedule` for more info.");
                 }
