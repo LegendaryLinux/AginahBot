@@ -7,6 +7,9 @@ const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete
     verifyGuildSetups, populateBotCache } = require('./lib');
 const fs = require('fs');
 
+// Catch all unhandled errors
+process.on('uncaughtException', (err) => generalErrorHandler(err));
+
 // Build the database if it does not exist
 dbSetup();
 
