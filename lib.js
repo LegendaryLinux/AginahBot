@@ -25,12 +25,17 @@ module.exports = {
         // Find this guild's moderator role id
         let moderatorRole = module.exports.getModeratorRole(guild);
         if (!moderatorRole) {
-            moderatorRole = guild.roles.create({
+            return guild.roles.create({
                 data: {
                     name: config.moderatorRole,
                     reason: `AginahBot requires a ${config.moderatorRole} role.`
                 },
-            });
+            }).then((moderatorRole) => {
+                let sql = `INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)`;
+                client.db.run(sql, guild.id, moderatorRole.id, (err) => {
+                    if (err) { return generalErrorHandler(err); }
+                });
+            }).catch((err) => generalErrorHandler(err));
         }
 
         let sql = `INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)`;
