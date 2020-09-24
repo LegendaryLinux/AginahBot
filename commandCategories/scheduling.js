@@ -33,10 +33,8 @@ module.exports = {
             description: 'View upcoming games or schedule a new game',
             longDescription: "View upcoming games or Schedule a new game. Allowed times look like:\n\n" +
                 "`X:00`: Schedule a game for the next occurrence of the provided minutes value\n\n" +
-                "`14:00 EST`: Schedule a game for the next occurrence of the provided time and " +
-                "timezone. Users subject to daylight savings time, be aware you may have two " +
-                "different timezones. EST / EDT, for example.\n\n" +
-                "`01/01/2020 07:00 GMT`: Schedule a game for the specific provided time.\n",
+                "`01/01/2020 07:00 GMT`: Schedule a game for the specific provided time.\nUsers subject to daylight " +
+                "savings time, be aware you may have two different timezones. EST / EDT, for example.\n",
             aliases: [],
             usage: '`!aginah schedule [role time]`',
             guildOnly: true,
@@ -87,9 +85,6 @@ module.exports = {
                 // Format: 12/31/2020 4:30 PDT
                 const fullDatePattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-Z]*)$/);
 
-                // Format: 14:50 CST
-                const timePattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-Z]*)$/);
-
                 // Format XX:30
                 const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})$/);
 
@@ -101,18 +96,6 @@ module.exports = {
 
                     if (targetDate.getTime() < currentDate.getTime()) {
                         return message.channel.send("You can't schedule a game in the past!");
-                    }
-
-                    return sendScheduleMessage(message, targetDate);
-
-                } else if (timeString.search(timePattern) > -1) {
-                    const patternParts = timeString.match(timePattern);
-                    const targetDate = new Date(`${currentDate.getUTCMonth()+1}/${currentDate.getUTCDate()}`+
-                        `/${currentDate.getUTCFullYear()} ${patternParts[1]}:${patternParts[2]} ${patternParts[3]}`);
-
-                    // If the target hour is in the past, schedule the game for the next day
-                    if (targetDate.getTime() < currentDate.getTime()) {
-                        targetDate.setUTCDate(targetDate.getUTCDate() + 1);
                     }
 
                     return sendScheduleMessage(message, targetDate);
