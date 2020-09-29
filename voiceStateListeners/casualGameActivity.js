@@ -27,7 +27,7 @@ module.exports = (client, oldState, newState) => {
             // TODO: Limit user channel creation speed
 
             const channelName = channelNames[randInRange(0, channelNames.length - 1)];
-            newState.guild.roles.create({ data: { name: channelName }}).then((role) => {
+            newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
                 Promise.all([
                     // Voice channel
                     newState.guild.channels.create(channelName, {
