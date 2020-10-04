@@ -36,10 +36,11 @@ module.exports = {
             description: 'View upcoming games or schedule a new game',
             longDescription: "View upcoming games or Schedule a new game. Allowed times look like:\n\n" +
                 "`X:00`: Schedule a game for the next occurrence of the provided minutes value\n" +
+                "`HH:MM TZ`: Schedule a game for the next occurrence of the provided time.\n" +
                 "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
-                "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n" +
+                "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n" +
                 "Strict ISO-8601 formatted datetime values are aso allowed.\n" +
-                "Users subject to daylight savings time, be aware you may have two different timezones. EST / EDT," +
+                "Users subject to daylight savings time, be aware you may have two different timezones. EST / EDT, " +
                 "for example.\n",
             aliases: [],
             usage: '`!aginah schedule [role date/time]`',
@@ -97,6 +98,9 @@ module.exports = {
                 // Format: YYYY-MM-DD HH:MM TZ
                 const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z]*)$/);
 
+                // Format: HH:MM TZ
+                const specificHourPattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-z]*)$/);
+
                 // Format XX:30
                 const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})$/);
 
@@ -122,7 +126,7 @@ module.exports = {
                     const sign = zoneOffset < 1 ? '-' : '+';
                     const targetDate = new Date(`${patternParts[1]}-${patternParts[2]}-${patternParts[3]}T` +
                         `${patternParts[4]}:${patternParts[5]}${sign}` +
-                        `${Math.abs(zoneOffset).toString().padStart(2,'0')}:00`);
+                        `${Math.abs(zoneOffset).toString().padStart(2, '0')}:00`);
 
                     if (targetDate.getTime() < currentDate.getTime()) {
                         return message.channel.send("You can't schedule a game in the past!");
@@ -130,8 +134,39 @@ module.exports = {
 
                     return sendScheduleMessage(message, targetDate);
 
+                } else if (timeString.search(specificHourPattern) > -1) {
+                    const patternParts = timeString.match(specificHourPattern);
+                    if (parseInt(patternParts[1], 10) > 24) {
+                        return message.channel.send("There are only 24 hours in a day!");
+                    }
+
+                    if (parseInt(patternParts[2], 10) > 59) {
+                        return message.channel.send("There are only 60 minutes in an hour!");
+                    }
+
+                    const zoneOffset = getZoneOffset(patternParts[3]);
+                    if (isNaN(zoneOffset)) {
+                        return message.channel.send("I don't recognize that timezone!");
+                    }
+
+                    const targetDate = new Date(currentDate.getTime());
+                    targetDate.setUTCHours(parseInt(patternParts[1], 10));
+                    targetDate.setUTCMinutes(parseInt(patternParts[2], 10));
+                    targetDate.setUTCSeconds(0);
+                    targetDate.setUTCMilliseconds(0);
+                    targetDate.setTime(targetDate.getTime() - (zoneOffset * 60 * 60 * 1000));
+
+                    while (targetDate.getTime() < currentDate.getTime()) {
+                        targetDate.setTime(targetDate.getTime() + (24 * 60 * 60 * 1000));
+                    }
+
+                    sendScheduleMessage(message, targetDate);
+
                 } else if (timeString.search(nextHourPattern) > -1) {
                     const patternParts = timeString.match(nextHourPattern);
+                    if (patternParts[1] > 59) {
+                        return message.channel.send("There are only sixty minutes in an hour!");
+                    }
                     const targetDate = new Date(`${currentDate.getUTCMonth()+1}/${currentDate.getUTCDate()}`+
                         `/${currentDate.getUTCFullYear()} ${currentDate.getUTCHours()}:${patternParts[1]} UTC`);
 
