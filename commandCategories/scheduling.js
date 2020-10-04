@@ -1,5 +1,8 @@
 const {generalErrorHandler} = require('../errorHandlers');
 
+// Return the offset in hours of a given timezone
+const getZoneOffset = (zone) => 0 - new Date(`01/01/1970 00:00 ${zone}`).getTime() / 1000 / 60 / 60;
+
 const sendScheduleMessage = (message, targetDate) => message.channel.send([
     `${message.author} wants to schedule a game for ` +
     `${targetDate.getUTCMonth()+1}/${targetDate.getUTCDate()}/${targetDate.getUTCFullYear()} at `+
@@ -32,11 +35,14 @@ module.exports = {
             name: 'schedule',
             description: 'View upcoming games or schedule a new game',
             longDescription: "View upcoming games or Schedule a new game. Allowed times look like:\n\n" +
-                "`X:00`: Schedule a game for the next occurrence of the provided minutes value\n\n" +
-                "`01/01/2020 07:00 GMT`: Schedule a game for the specific provided time.\nUsers subject to daylight " +
-                "savings time, be aware you may have two different timezones. EST / EDT, for example.\n",
+                "`X:00`: Schedule a game for the next occurrence of the provided minutes value\n" +
+                "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
+                "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n" +
+                "Strict ISO-8601 formatted datetime values are aso allowed.\n" +
+                "Users subject to daylight savings time, be aware you may have two different timezones. EST / EDT," +
+                "for example.\n",
             aliases: [],
-            usage: '`!aginah schedule [role time]`',
+            usage: '`!aginah schedule [role date/time]`',
             guildOnly: true,
             minimumRole: null,
             adminOnly: false,
@@ -82,17 +88,41 @@ module.exports = {
                 const timeString = args.join(' ').toUpperCase().trim();
                 const currentDate = new Date();
 
-                // Format: 12/31/2020 4:30 PDT
-                const fullDatePattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-Z]*)$/);
+                // Format: Strict ISO-8601
+                const iso8601Pattern = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(Z|([+-]\d{2}:\d{2}))$/);
+
+                // Format: MM/DD/YYYY HH:II TZ
+                const mdyPattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-z]*)$/);
+
+                // Format: YYYY-MM-DD HH:MM TZ
+                const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z]*)$/);
 
                 // Format XX:30
                 const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})$/);
 
-                if (timeString.search(fullDatePattern) > -1) {
+                if (timeString.search(iso8601Pattern) > -1 || timeString.search(mdyPattern) > -1) {
                     const targetDate = new Date(timeString);
                     if (isNaN(targetDate.getTime())) {
                         return message.channel.send("The date you provided is invalid.");
                     }
+
+                    if (targetDate.getTime() < currentDate.getTime()) {
+                        return message.channel.send("You can't schedule a game in the past!");
+                    }
+
+                    return sendScheduleMessage(message, targetDate);
+
+                } else if (timeString.search(isoSimplePattern) > -1) {
+                    const patternParts = timeString.match(isoSimplePattern);
+                    const zoneOffset = getZoneOffset(patternParts[6]);
+                    if (isNaN(zoneOffset)) {
+                        return message.channel.send("I don't recognize that timezone!");
+                    }
+
+                    const sign = zoneOffset < 1 ? '-' : '+';
+                    const targetDate = new Date(`${patternParts[1]}-${patternParts[2]}-${patternParts[3]}T` +
+                        `${patternParts[4]}:${patternParts[5]}${sign}` +
+                        `${Math.abs(zoneOffset).toString().padStart(2,'0')}:00`);
 
                     if (targetDate.getTime() < currentDate.getTime()) {
                         return message.channel.send("You can't schedule a game in the past!");
