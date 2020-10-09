@@ -8,6 +8,7 @@ module.exports = (client, message) => {
                     WHERE gd.guildId=?
                       AND (cg.textChannelId=? OR rg.textChannelId=?)`;
         client.db.get(sql, message.guild.id, message.channel.id, message.channel.id, (err, roleData) => {
+            if (err) { throw new Error(err); }
             if (roleData) {
                 message.channel.send(`${message.guild.roles.resolve(roleData.roleId)}: The seeds have been posted!`);
 

@@ -46,6 +46,14 @@ const casualGames = `CREATE TABLE IF NOT EXISTS casual_games (
     roleId VARCHAR(128) NOT NULL
 )`;
 
+const casualReadyChecks = `CREATE TABLE IF NOT EXISTS casual_ready_checks (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    gameId INTEGER NOT NULL,
+    playerId VARCHAR(64) NOT NULL,
+    playerTag VARCHAR(256) NOT NULL,
+    readyState INTEGER NOT NULL DEFAULT 0
+)`;
+
 const raceGames = `CREATE TABLE IF NOT EXISTS race_games (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     categoryId INTEGER NOT NULL,
@@ -74,6 +82,7 @@ module.exports = () => {
         db.run(roles);
         db.run(gameCategories);
         db.run(casualGames);
+        db.run(casualReadyChecks);
         db.run(raceGames);
         db.run(scheduledGames);
     });

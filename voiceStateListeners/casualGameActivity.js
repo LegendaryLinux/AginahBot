@@ -3,7 +3,7 @@ const { getModeratorRole } = require('../lib');
 
 const channelNames = ['Zucchini', 'Artichoke', 'Pineapple', 'Kumquat', 'Avocado', 'Blueberry', 'Mango', 'Strawberry',
     'Durian', 'Watermelon', 'Papaya', 'Cherry', 'Nectarine', 'Raspberry', 'Cantaloupe', 'Potato', 'Tomato', 'Broccoli',
-    'Cauliflower', 'Cucumber', 'Asparagus', 'Rhubarb', 'Eggplant'];
+    'Cauliflower', 'Cucumber', 'Asparagus', 'Rhubarb', 'Eggplant', 'Plantain', 'Banana'];
 
 const randInRange = (min, max) => {
     min = Math.ceil(min);
@@ -77,12 +77,21 @@ module.exports = (client, oldState, newState) => {
             let sql = `SELECT id, roleId, textChannelId, voiceChannelId
                         FROM casual_games WHERE categoryId=? AND voiceChannelId=?`;
             client.db.get(sql, categoryData.id, oldState.channel.id, (err, channelData) => {
+                if (err) { return generalErrorHandler(err); }
+
                 // If the voice channel the user left was not a game channel, do nothing
                 if (!channelData) { return; }
 
                 // Remove channel role from this user
                 const role = oldState.guild.roles.resolve(channelData.roleId);
                 oldState.member.roles.remove(role);
+
+                // Remove user from ready_checks table
+                let sql = `SELECT id FROM casual_games WHERE voiceChannelId=? AND categoryId=?`;
+                client.db.get(sql, oldState.channel.id, categoryData.id, (err, game) => {
+                    let sql = `DELETE FROM casual_ready_checks WHERE gameId=? AND playerId=?`;
+                    client.db.run(sql, game.id, oldState.member.id);
+                });
 
                 // If the voice channel is now empty, destroy the role and channels
                 if (oldState.channel.members.array().length === 0) {
@@ -106,6 +115,15 @@ module.exports = (client, oldState, newState) => {
                 // Grant the user the channel role
                 const role = newState.guild.roles.resolve(channelData.roleId);
                 newState.member.roles.add(role);
+
+                let sql = `SELECT id FROM casual_games WHERE categoryId=? AND voiceChannelId=?`;
+                client.db.get(sql, categoryData.id, newState.channel.id, (err, game) => {
+                    if (err) { return generalErrorHandler(err); }
+
+                    // Add the user to the ready checks table
+                    let sql = `INSERT INTO casual_ready_checks (gameId, playerId, playerTag) VALUES (?,?,?)`;
+                    client.db.run(sql, game.id, newState.member.id, newState.member.user.tag);
+                });
             });
         }
     });
