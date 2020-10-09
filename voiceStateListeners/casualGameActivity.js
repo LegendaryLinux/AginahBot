@@ -63,6 +63,11 @@ module.exports = (client, oldState, newState) => {
                         ],
                     })
                 ]).then((channels) => {
+                    channels[1].send(`Hello! Use this channel to discuss the ${channelName} game.\n` +
+                        '`.ready` to show you are ready to begin\n' +
+                        '`.unready` to change your mind\n' +
+                        '`.readycheck` to see who is ready');
+
                     let sql = `INSERT INTO casual_games (categoryId, voiceChannelId, textChannelId, roleId)
                                 VALUES (?, ?, ?, ?)`;
                     client.db.run(sql, categoryData.id, channels[0].id, channels[1].id, role.id);
