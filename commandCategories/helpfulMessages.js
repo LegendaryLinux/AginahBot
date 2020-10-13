@@ -39,8 +39,9 @@ module.exports = {
             execute(message) {
                 message.channel.send([
                     "Randomizer Repo: https://github.com/Berserker66/MultiWorld-Utilities",
+                    "Enemizer Repo: https://github.com/Ijwu/Enemizer",
+                    "Assembler Repo: https://github.com/CaitSith2/z3randomizer",
                     "AginahBot Repo: https://github.com/LegendaryLinux/AginahBot",
-                    "Enemizer Repo: https://github.com/Ijwu/Enemizer"
                 ]);
             }
         },
