@@ -4,7 +4,7 @@ module.exports = (client, message) => {
     const commands = ['.ready', '.unready', '.readycheck'];
     if (commands.indexOf(message.content) === -1) { return; }
 
-    let sql = `SELECT crc.id
+    let sql = `SELECT crc.id, cg.id AS gameId
                 FROM casual_ready_checks crc
                 JOIN casual_games cg ON crc.gameId = cg.id
                 JOIN game_categories gc ON cg.categoryId = gc.id
@@ -28,8 +28,8 @@ module.exports = (client, message) => {
                 const notReady = [];
 
                 // Find each player's ready state
-                let sql = `SELECT playerTag, readyState FROM casual_ready_checks WHERE id=?`;
-                client.db.each(sql, readyCheck.id, (err, player) => {
+                let sql = `SELECT playerTag, readyState FROM casual_ready_checks WHERE gameId=?`;
+                client.db.each(sql, readyCheck.gameId, (err, player) => {
                     if (err) { throw new Error(err); }
                     if (parseInt(player.readyState, 10) === 1) {
                         ready.push(player.playerTag);
