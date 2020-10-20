@@ -58,6 +58,7 @@ client.on('message', (message) => {
     }
 
     // If the message is a command, parse the command and arguments
+    // TODO: Allow arguments to be enclosed in single or double quotes
     const args = message.content.slice(config.commandPrefix.length).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
 

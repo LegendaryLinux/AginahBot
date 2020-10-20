@@ -16,7 +16,7 @@ const sendScheduleMessage = (message, targetDate) => message.channel.send([
         if (err) { throw new Error(err); }
         if (!guildData) { throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) ` +
             `in guild_data table.`); }
-        let sql = `INSERT INTO scheduled_games
+        let sql = `INSERT INTO scheduled_events
                     (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag)
                     VALUES (?, ?, ?, ?, ?, ?)`;
         message.client.db.run(sql, guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
@@ -29,12 +29,12 @@ const sendScheduleMessage = (message, targetDate) => message.channel.send([
 }).catch((error) => generalErrorHandler(error));
 
 module.exports = {
-    category: 'Game Scheduling',
+    category: 'Event Scheduling',
     commands: [
         {
             name: 'schedule',
-            description: 'View upcoming games or schedule a new game',
-            longDescription: "View upcoming games or Schedule a new game. Allowed times look like:\n\n" +
+            description: 'View upcoming events or schedule a new one',
+            longDescription: "View upcoming events or Schedule a new one. Allowed times look like:\n\n" +
                 "`X:00`: Schedule a game for the next occurrence of the provided minutes value\n" +
                 "`HH:MM TZ`: Schedule a game for the next occurrence of the provided time.\n" +
                 "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
@@ -49,11 +49,11 @@ module.exports = {
             adminOnly: false,
             execute(message, args) {
                 if (args.length === 0) {
-                    let sql = `SELECT sg.timestamp, sg.schedulingUserTag, sg.channelId, sg.messageId, sg.rsvpCount
-                                FROM scheduled_games sg
-                                JOIN guild_data gd ON sg.guildDataId = gd.id
+                    let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.rsvpCount
+                                FROM scheduled_events se
+                                JOIN guild_data gd ON se.guildDataId = gd.id
                                 WHERE gd.guildId=?
-                                    AND sg.timestamp > ?`;
+                                    AND se.timestamp > ?`;
                     let gameCount = 0;
                     return message.client.db.each(sql, message.guild.id, new Date().getTime(), (err, game) => {
                         if (err) { throw new Error(err); }

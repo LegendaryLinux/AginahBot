@@ -3,7 +3,7 @@ module.exports = {
     commands: [
         {
             name: 'setup',
-            description: 'Get instructions on how to start playing!',
+            description: 'Get instructions on how to start playing Multiworld games!',
             longDescription: null,
             aliases: ['setup-guide'],
             usage: '`!aginah setup`',
@@ -16,7 +16,7 @@ module.exports = {
         },
         {
             name: 'website',
-            description: 'Get the link to the website.',
+            description: 'Get the link to the Multiworld website.',
             longDescription: null,
             aliases: ['site', 'webpage'],
             usage: '`!aginah website`',
@@ -29,7 +29,7 @@ module.exports = {
         },
         {
             name: 'code',
-            description: 'Get the link to the GitHub repos associated with this project.',
+            description: 'Get the link to the code repositories associated with this project.',
             longDescription: null,
             aliases: ['github', 'git'],
             usage: '`!aginah code`',

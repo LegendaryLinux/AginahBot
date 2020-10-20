@@ -53,12 +53,11 @@ module.exports = {
             }
 
             // Delete dynamic game system data
-            client.db.get(`SELECT id FROM game_categories WHERE guildDataId=?`, guildData.id, (err, category) => {
+            client.db.get(`SELECT id FROM room_systems WHERE guildDataId=?`, guildData.id, (err, category) => {
                 if (err) { return generalErrorHandler(err); }
                 if (!category) { return; }
-                client.db.run(`DELETE FROM casual_games WHERE categoryId=?`, category.id);
-                client.db.run(`DELETE FROM race_games WHERE categoryId=?`, category.id);
-                client.db.run(`DELETE FROM game_categories WHERE id=?`, category.id);
+                client.db.run(`DELETE FROM room_system_games WHERE roomSystemId=?`, category.id);
+                client.db.run(`DELETE FROM room_systems WHERE id=?`, category.id);
             });
 
             // Delete role requestor system data
@@ -105,10 +104,10 @@ module.exports = {
 
             // Cache the game scheduling messages for games which have not yet started
             sql = `SELECT channelId, messageId
-                    FROM scheduled_games sg
-                    JOIN guild_data gd ON sg.guildDataId = gd.id
+                    FROM scheduled_events se
+                    JOIN guild_data gd ON se.guildDataId = gd.id
                     WHERE gd.guildId=?
-                        AND sg.timestamp > ?`;
+                        AND se.timestamp > ?`;
             client.db.each(sql, guild.id, new Date().getTime(), (err, scheduleMessage) => {
                 if (err) { throw new Error(err); }
                 guild.channels.resolve(scheduleMessage.channelId).messages.fetch(scheduleMessage.messageId);

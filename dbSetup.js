@@ -29,24 +29,23 @@ const roles = `CREATE TABLE IF NOT EXISTS roles (
     description VARCHAR(128)
 )`;
 
-const gameCategories = `CREATE TABLE IF NOT EXISTS game_categories (
+const roomSystems = `CREATE TABLE IF NOT EXISTS room_systems (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     guildDataId INTEGER NOT NULL,
-    categoryType VARCHAR(128) CHECK(categoryType IN ('casual', 'race')) NOT NULL,
     channelCategoryId VARCHAR(128) NOT NULL,
     planningChannelId VARCHAR(128) NOT NULL,
     newGameChannelId VARCHAR(128) NOT NULL
 )`;
 
-const casualGames = `CREATE TABLE IF NOT EXISTS casual_games (
+const roomSystemGames = `CREATE TABLE IF NOT EXISTS room_system_games (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    categoryId INTEGER NOT NULL,
+    roomSystemId INTEGER NOT NULL,
     voiceChannelId VARCHAR(128) NOT NULL,
     textChannelId VARCHAR(128) NOT NULL,
     roleId VARCHAR(128) NOT NULL
 )`;
 
-const casualReadyChecks = `CREATE TABLE IF NOT EXISTS casual_ready_checks (
+const roomSystemReadyChecks = `CREATE TABLE IF NOT EXISTS room_system_ready_checks (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     gameId INTEGER NOT NULL,
     playerId VARCHAR(64) NOT NULL,
@@ -54,15 +53,7 @@ const casualReadyChecks = `CREATE TABLE IF NOT EXISTS casual_ready_checks (
     readyState INTEGER NOT NULL DEFAULT 0
 )`;
 
-const raceGames = `CREATE TABLE IF NOT EXISTS race_games (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    categoryId INTEGER NOT NULL,
-    voiceChannelId VARCHAR(128) NOT NULL,
-    textChannelId VARCHAR(128) NOT NULL,
-    roleId VARCHAR(128) NOT NULL
-)`;
-
-const scheduledGames = `CREATE TABLE IF NOT EXISTS scheduled_games (
+const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     guildDataId INTEGER NOT NULL,
     timestamp VARCHAR(64) NOT NULL,
@@ -80,10 +71,9 @@ module.exports = () => {
         db.run(roleSystems);
         db.run(roleCategories);
         db.run(roles);
-        db.run(gameCategories);
-        db.run(casualGames);
-        db.run(casualReadyChecks);
-        db.run(raceGames);
-        db.run(scheduledGames);
+        db.run(roomSystems);
+        db.run(roomSystemGames);
+        db.run(roomSystemReadyChecks);
+        db.run(scheduledEvents);
     });
 };
