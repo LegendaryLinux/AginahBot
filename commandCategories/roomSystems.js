@@ -9,7 +9,8 @@ module.exports = {
     commands: [
         {
             name: 'create-room-system',
-            description: 'Enable this server to dynamically create voice and text channels community events.',
+            description: 'Add a dynamic room system to this server. It will automatically create voice and text ' +
+                'channels on demand.',
             longDescription: null,
             aliases: ['crs'],
             usage: '`!aginah create-room-system [categoryName]`',
