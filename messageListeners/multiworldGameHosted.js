@@ -7,7 +7,7 @@ module.exports = (client, message) => {
                     JOIN guild_data gd ON rs.guildDataId=gd.id
                     WHERE gd.guildId=?
                       AND rsg.textChannelId=?`;
-        client.db.get(sql, message.guild.id, message.channel.id, message.channel.id, (err, roleData) => {
+        client.db.get(sql, message.guild.id, message.channel.id, (err, roleData) => {
             if (err) { throw new Error(err); }
             if (roleData) {
                 message.channel.send(`${message.guild.roles.resolve(roleData.roleId)}: The seeds have been posted!`);
