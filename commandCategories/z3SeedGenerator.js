@@ -5,8 +5,7 @@ const fs = require('fs');
 const { generalErrorHandler } = require('../errorHandlers');
 const { presets } = require('../assets/presets.json');
 
-// TODO: Get the final endpoint URL
-const GENERATOR_ENDPOINT = 'https://berserkermulti.world/generate';
+const GENERATOR_ENDPOINT = 'https://berserkermulti.world/api/generate';
 
 module.exports = {
     category: 'Z3 Seed Generator',
@@ -16,23 +15,35 @@ module.exports = {
             description: 'Generate a single-player game based on a preset or uploaded file.',
             longDescription: null,
             aliases: ['gen'],
-            usage: '`!aginah generate preset`',
+            usage: '`!aginah generate preset|yamlFile`',
             guildOnly: false,
             minimumRole: null,
             adminOnly: false,
             execute(message, args) {
                 if (message.attachments.array().length > 0){
-                    // TODO: Download attachment and forward it to BMW 🏎
+                    return axios.get(message.attachments.array()[0].url).then((dResponse) => { // Discord Response
+                        try {
+                            const playerSettings = jsYaml.safeLoad(dResponse.data);
+                            axios.post(GENERATOR_ENDPOINT, {playerSettings}).then((bResponse) => { // Berserker Response
+                                message.channel.send(`Game generated. Download your patch file from:\n` +
+                                    `${bResponse.data.url}`);
+                            }).catch((error) => {
+                                message.channel.send("I couldn't generate that game, sorry.");
+                                throw new Error(error);
+                            });
+                        } catch (YAMLException) {
+                            return message.channel.send("I couldn't parse that settings file.");
+                        }
+                    });
                 }
 
-                if (presets.hasOwnProperty(args[0].toLowerCase())){
-                    return axios.post(GENERATOR_ENDPOINT, {}).then((response) => {
-                        // TODO: Get the final endpoint data
-                        message.channel.send('Game generated. Grab your patch file at: ' +
-                            '\nhttps://berserkermulti.world/hosted');
+                if (args[0] && presets.hasOwnProperty(args[0].toLowerCase())){
+                    return axios.post(GENERATOR_ENDPOINT, {}).then((bResponse) => {
+                        message.channel.send(`Game generated. Download your patch file from:\n` +
+                            `${bResponse.data.url}`);
                     }).catch((error) => {
                         message.channel.send("I couldn't generate that game, sorry.");
-                        generalErrorHandler(error);
+                        throw new Error(error);
                     });
                 }
 
@@ -63,7 +74,7 @@ module.exports = {
                 const yaml = jsYaml.safeDump(presets[args[0].toLowerCase()], { noCompatMode: true })
                     .replace(/'(\d+)':/g, (x, y) => `${y}:`);
 
-                tmp.file((err, tmpFilePath, fd, cleanupCallback) => {
+                return tmp.file((err, tmpFilePath, fd, cleanupCallback) => {
                     fs.writeFile(tmpFilePath, yaml, () => {
                         return message.channel.send({
                             files: [
