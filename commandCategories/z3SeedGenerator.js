@@ -1,49 +1,57 @@
 const axios = require('axios');
+const FormData = require('form-data');
 const jsYaml = require('js-yaml');
 const tmp = require('tmp');
 const fs = require('fs');
-const { generalErrorHandler } = require('../errorHandlers');
 const { presets } = require('../assets/presets.json');
 
-const GENERATOR_ENDPOINT = 'https://berserkermulti.world/api/generate';
+const API_ENDPOINT = 'https://berserkermulti.world/api/generate';
+const Z3_DOMAIN = 'https://berserkermulti.world'
 
 module.exports = {
     category: 'Z3 Seed Generator',
     commands: [
         {
             name: 'generate',
-            description: 'Generate a single-player game based on a preset or uploaded file.',
+            description: 'Generate a game based on a preset or uploaded file.',
             longDescription: null,
             aliases: ['gen'],
-            usage: '`!aginah generate preset|yamlFile`',
+            usage: '`!aginah generate preset|yamlFile|zipFile [race]`',
             guildOnly: false,
             minimumRole: null,
             adminOnly: false,
             execute(message, args) {
                 if (message.attachments.array().length > 0){
                     return axios.get(message.attachments.array()[0].url).then((dResponse) => { // Discord Response
-                        try {
-                            const playerSettings = jsYaml.safeLoad(dResponse.data);
-                            axios.post(GENERATOR_ENDPOINT, {playerSettings}).then((bResponse) => { // Berserker Response
-                                message.channel.send(`Game generated. Download your patch file from:\n` +
-                                    `${bResponse.data.url}`);
-                            }).catch((error) => {
-                                message.channel.send("I couldn't generate that game, sorry.");
-                                throw new Error(error);
+                        const postfix = '.'+message.attachments.array()[0].name.split('.').reverse()[0];
+                        return tmp.file({postfix}, (err, tmpFilePath, fd, cleanupCallback) => {
+                            fs.writeFile(tmpFilePath, dResponse.data, () => {
+                                const formData = new FormData();
+                                formData.append('file', fs.createReadStream(tmpFilePath));
+                                formData.append('race', (args[0] && args[0].toLowerCase() === 'race') ? '1' : '0');
+                                axios.post(API_ENDPOINT, formData, { headers: formData.getHeaders() }).then((bResponse) => { // Berserker Response
+                                    message.channel.send(`Game generated. Download your patch file from:\n` +
+                                        `${Z3_DOMAIN}${bResponse.data.url}`);
+                                    cleanupCallback();
+                                }).catch((error) => {
+                                    message.channel.send("I couldn't generate that game, sorry.");
+                                    return console.error(error);
+                                });
                             });
-                        } catch (YAMLException) {
-                            return message.channel.send("I couldn't parse that settings file.");
-                        }
+                        });
                     });
                 }
 
                 if (args[0] && presets.hasOwnProperty(args[0].toLowerCase())){
-                    return axios.post(GENERATOR_ENDPOINT, {}).then((bResponse) => {
-                        message.channel.send(`Game generated. Download your patch file from:\n` +
-                            `${bResponse.data.url}`);
+                    return axios.post(API_ENDPOINT, {
+                        weights: { [args[0].toLowerCase()]: presets[args[0].toLowerCase()] },
+                        race: false,
+                    }).then((bResponse) => {
+                        message.channel.send(`Seed generation underway. When it's ready, you will be able to ` +
+                            `download your patch file from:\n${Z3_DOMAIN}${bResponse.data.url}`);
                     }).catch((error) => {
                         message.channel.send("I couldn't generate that game, sorry.");
-                        throw new Error(error);
+                        return console.error(error);
                     });
                 }
 
