@@ -1,12 +1,15 @@
 const axios = require('axios');
+const request = require('request');
 const FormData = require('form-data');
 const jsYaml = require('js-yaml');
 const tmp = require('tmp');
 const fs = require('fs');
 const { presets } = require('../assets/presets.json');
 
-const API_ENDPOINT = 'https://berserkermulti.world/api/generate';
-const Z3_DOMAIN = 'https://berserkermulti.world'
+// const API_ENDPOINT = 'https://berserkermulti.world/api/generate';
+// const Z3_DOMAIN = 'https://berserkermulti.world'
+const API_ENDPOINT = 'http://requestbin.net/r/1ei3o6q1';
+const Z3_DOMAIN = 'http://localhost'
 
 module.exports = {
     category: 'Z3 Seed Generator',
@@ -22,24 +25,24 @@ module.exports = {
             adminOnly: false,
             execute(message, args) {
                 if (message.attachments.array().length > 0){
-                    return axios.get(message.attachments.array()[0].url).then((dResponse) => { // Discord Response
-                        const postfix = '.'+message.attachments.array()[0].name.split('.').reverse()[0];
-                        return tmp.file({postfix}, (err, tmpFilePath, fd, cleanupCallback) => {
-                            fs.writeFile(tmpFilePath, dResponse.data, () => {
-                                const formData = new FormData();
-                                formData.append('file', fs.createReadStream(tmpFilePath));
-                                formData.append('race', (args[0] && args[0].toLowerCase() === 'race') ? '1' : '0');
-                                axios.post(API_ENDPOINT, formData, { headers: formData.getHeaders() }).then((bResponse) => { // Berserker Response
-                                    message.channel.send(`Game generated. Download your patch file from:\n` +
-                                        `${Z3_DOMAIN}${bResponse.data.url}`);
-                                    cleanupCallback();
-                                }).catch((error) => {
-                                    message.channel.send("I couldn't generate that game, sorry.");
-                                    return console.error(error);
-                                });
+                    const postfix = '.'+message.attachments.array()[0].name.split('.').reverse()[0];
+                    const tempFile = tmp.fileSync({ prefix: "upload-", postfix });
+                    return request.get(message.attachments.array()[0].url)
+                        .pipe(fs.createWriteStream(tempFile.name))
+                        .on('close', () => {
+                            // Send request to api
+                            const formData = new FormData();
+                            formData.append('file', fs.createReadStream(tempFile.name), tempFile.name);
+                            formData.append('race', (args[0] && args[0].toLowerCase() === 'race') ? '1' : '0');
+                            axios.post(API_ENDPOINT, formData, { headers: formData.getHeaders() }).then((bResponse) => { // Berserker Response
+                                message.channel.send(`Game generated. Download your patch file from:\n` +
+                                    `${Z3_DOMAIN}${bResponse.data.url}`);
+                                // tempFile.removeCallback();
+                            }).catch((error) => {
+                                message.channel.send("I couldn't generate that game, sorry.");
+                                return console.error(error);
                             });
                         });
-                    });
                 }
 
                 if (args[0] && presets.hasOwnProperty(args[0].toLowerCase())){
