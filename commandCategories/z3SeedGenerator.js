@@ -6,10 +6,8 @@ const tmp = require('tmp');
 const fs = require('fs');
 const { presets } = require('../assets/presets.json');
 
-// const API_ENDPOINT = 'https://berserkermulti.world/api/generate';
-// const Z3_DOMAIN = 'https://berserkermulti.world'
-const API_ENDPOINT = 'http://requestbin.net/r/1ei3o6q1';
-const Z3_DOMAIN = 'http://localhost'
+const API_ENDPOINT = 'https://berserkermulti.world/api/generate';
+const Z3_DOMAIN = 'https://berserkermulti.world'
 
 module.exports = {
     category: 'Z3 Seed Generator',
