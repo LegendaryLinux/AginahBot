@@ -46,7 +46,7 @@ module.exports = {
                 if (args[0] && presets.hasOwnProperty(args[0].toLowerCase())){
                     return axios.post(API_ENDPOINT, {
                         weights: { [args[0].toLowerCase()]: presets[args[0].toLowerCase()] },
-                        race: false,
+                        race: args[1] && args[1] === 'race' ? '1' : '0',
                     }).then((bResponse) => {
                         message.channel.send(`Seed generation underway. When it's ready, you will be able to ` +
                             `download your patch file from:\n${Z3_DOMAIN}${bResponse.data.url}`);
