@@ -5,11 +5,11 @@
   "dependencies": {
     "7zip-bin": "^5.0.3",
     "axios": "^0.21.0",
-    "discord.js": "^12.3.1",
+    "discord.js": "^12.4.1",
     "form-data": "^3.0.0",
     "js-yaml": "^3.14.0",
     "memfs": "^3.2.0",
-    "node-7z": "^2.1.1",
+    "node-7z": "^2.1.2",
     "node-emoji": "^1.10.0",
     "request": "^2.88.2",
     "sqlite3": "^5.0.0",
