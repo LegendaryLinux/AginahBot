@@ -35,7 +35,7 @@ module.exports = {
                             axios.post(API_ENDPOINT, formData, { headers: formData.getHeaders() }).then((bResponse) => { // Berserker Response
                                 message.channel.send(`Game generated. Download your patch file from:\n` +
                                     `${Z3_DOMAIN}${bResponse.data.url}`);
-                                // tempFile.removeCallback();
+                                tempFile.removeCallback();
                             }).catch((error) => {
                                 message.channel.send("I couldn't generate that game, sorry.");
                                 if(error.isAxiosError && error.response.data){
