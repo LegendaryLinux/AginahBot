@@ -87,34 +87,6 @@ module.exports = {
         });
     },
 
-    /** Cache messages for which the bot must listen to reactions. This is required because reactions can
-     * only be monitored on cached messages. */
-    populateBotCache: (client) => {
-        client.guilds.cache.each((guild) => {
-            // Cache the role requestor category messages.
-            let sql = `SELECT rc.messageId, rs.roleRequestChannelId
-                        FROM role_categories rc
-                        JOIN role_systems rs ON rc.roleSystemId=rs.id
-                        JOIN guild_data gd ON rs.guildDataId=gd.id
-                        WHERE gd.guildId=?`;
-            client.db.each(sql, guild.id, (err, roleCategory) => {
-                if (err) { return generalErrorHandler(err); }
-                guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId);
-            });
-
-            // Cache the game scheduling messages for games which have not yet started
-            sql = `SELECT channelId, messageId
-                    FROM scheduled_events se
-                    JOIN guild_data gd ON se.guildDataId = gd.id
-                    WHERE gd.guildId=?
-                        AND se.timestamp > ?`;
-            client.db.each(sql, guild.id, new Date().getTime(), (err, scheduleMessage) => {
-                if (err) { throw new Error(err); }
-                guild.channels.resolve(scheduleMessage.channelId).messages.fetch(scheduleMessage.messageId);
-            });
-        });
-    },
-
     /**
      * Get an emoji object usable with Discord. Null if the Emoji is not usable in the provided guild.
      * @param guild
@@ -132,4 +104,11 @@ module.exports = {
         const nodeEmoji = require('node-emoji');
         return nodeEmoji.hasEmoji(emoji) ? emoji : null;
     },
+
+    cachePartial: (partial) => new Promise((resolve, reject) => {
+        if (!partial.partial) { resolve(partial); }
+        partial.fetch()
+            .then((full) => resolve(full))
+            .catch((error) => reject(error));
+    }),
 };
