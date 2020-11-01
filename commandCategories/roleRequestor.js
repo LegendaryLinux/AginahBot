@@ -60,7 +60,7 @@ module.exports = {
           message.client.db.get(sql, message.guild.id, (err, guildData) => {
             if (err) { return generalErrorHandler(err); }
             // Create the #role-request channel
-            message.guild.channels.create(config.roleRequestChannel, {
+            message.guild.channels.create('role-request', {
               type: 'text',
               topic: 'Request roles so that you may be pinged for various notifications.',
               reason: 'Role Request system created.',

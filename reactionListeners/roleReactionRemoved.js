@@ -1,4 +1,3 @@
-const config = require('../config.json');
 const {parseEmoji} = require('../lib');
 const {generalErrorHandler} = require('../errorHandlers');
 
@@ -8,9 +7,6 @@ module.exports = (client, messageReaction, user, added=true) => {
 
     // Grab the guild this reaction is a part of
     const guild = messageReaction.message.guild;
-
-    // If this reaction does not belong to a #role-request channel, do nothing
-    if (messageReaction.message.channel.name !== config.roleRequestChannel) { return; }
 
     // Ensure the emoji is usable by the server, not just the user
     const emoji = parseEmoji(guild, messageReaction.emoji.toString());
@@ -23,13 +19,12 @@ module.exports = (client, messageReaction, user, added=true) => {
                 JOIN role_systems rs ON rc.roleSystemId = rs.id
                 JOIN guild_data gd ON rs.guildDataId = gd.id
                 WHERE gd.guildId=?
+                    AND rs.roleRequestChannelId=?
                     AND rc.messageId=?
                     AND r.reaction=?`;
-    client.db.get(sql, guild.id, messageReaction.message.id, emoji, (err, role) => {
+    client.db.get(sql, guild.id, messageReaction.message.channel.id, messageReaction.message.id, emoji, (err, role) => {
         if (err) { return generalErrorHandler(err); }
-        if (!role) { throw new Error(`Message with id ${messageReaction.message.id} appears to be part of a ` +
-            `${config.roleRequestChannel} channel, but does not appear in the database for guild ` +
-            `${guild.name} (${guild.id}).`); }
+        if (!role) { return; }
 
         // Get the matching role from the guild
         const roleObj = guild.roles.resolve(role.roleId);

@@ -1,5 +1,5 @@
 # AginahBot
-A Discord bot designed to help organize and moderate Z3R Multiworld Games.  
+A Discord bot designed to help organize and moderate MultiWorld-Capable Randomizer games.  
 Find it in use at [Berserker's MultiWorld Discord](https://discord.gg/B5pjMYy).
 
 [Click here to add AginahBot to your Discord server!](https://discord.com/oauth2/authorize?client_id=682767791585099776&scope=bot&permissions=285240400)
@@ -10,6 +10,10 @@ Find it in use at [Berserker's MultiWorld Discord](https://discord.gg/B5pjMYy).
 - Organization features to help schedule games
 - Alert players in game lobbies that their seeds are ready
 - Custom role system to allow users to assign themselves pingable roles to be alerted of games
+- Generate single-player or multiworld games using the `generate` command
+
+## Supported Games
+- The Legend of Zelda: A Link to the Past
 
 ## Prerequisites
 - `unrar` should be installed on your system to process `.rar` files.
@@ -26,8 +30,7 @@ Example config:
   "token": "your-token-here",
   "dbFile": "aginahBot.db.sqlite3",
   "commandPrefix": "!aginah ",
-  "moderatorRole": "Moderator",
-  "roleRequestChannel": "role-request"
+  "moderatorRole": "Moderator"
 }
 ```
 
