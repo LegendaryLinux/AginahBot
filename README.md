@@ -2,7 +2,7 @@
 A Discord bot designed to help organize and moderate MultiWorld-Capable Randomizer games.  
 Find it in use at the [MultiWorld Discord](https://discord.gg/B5pjMYy).
 
-[Click here to add AginahBot to your Discord server!](https://discord.com/oauth2/authorize?client_id=682767791585099776&scope=bot&permissions=285240400)
+[Click here to add AginahBot to your Discord server!](https://github.com/LegendaryLinux/AginahBot/wiki/Using-AginahBot-on-Your-Discord-Server)
 
 ## Current Features
 - Support dynamic MultiWorld voice and text channels, and automatic assignment of permissions on those channels
