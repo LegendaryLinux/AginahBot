@@ -39,7 +39,7 @@ module.exports = {
                 "`HH:MM TZ`: Schedule a game for the next occurrence of the provided time.\n" +
                 "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
                 "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n" +
-                "Strict ISO-8601 formatted datetime values are aso allowed.\n" +
+                "Strict ISO-8601 formatted datetime values are also allowed.\n" +
                 "Users subject to daylight savings time, be aware you may have two different timezones. EST / EDT, " +
                 "for example.\n",
             aliases: [],

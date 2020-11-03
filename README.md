@@ -1,16 +1,16 @@
 # AginahBot
-A Discord bot designed to help organize and moderate MultiWorld-Capable Randomizer games.  
+A Discord bot designed to help organize and moderate Multiplayer-Capable Randomizer games.  
 Find it in use at the [MultiWorld Discord](https://discord.gg/B5pjMYy).
 
-[Click here to add AginahBot to your Discord server!](https://github.com/LegendaryLinux/AginahBot/wiki/Using-AginahBot-on-Your-Discord-Server)
+[Click here to learn how to add AginahBot to your Discord server!](https://github.com/LegendaryLinux/AginahBot/wiki/Using-AginahBot-on-Your-Discord-Server)
 
 ## Current Features
-- Support dynamic MultiWorld voice and text channels, and automatic assignment of permissions on those channels
+- Support dynamic voice and text channels, and automatic assignment of permissions on those channels
 - Automatically delete ROM files, and compressed files containing them
 - Organization features to help schedule games
 - Alert players in game lobbies that their seeds are ready
 - Custom role system to allow users to assign themselves pingable roles to be alerted of games
-- Generate single-player or multiworld games using the `generate` command
+- Generate single-player or multiplayer games using the `generate` command
 
 ## Supported Games
 - The Legend of Zelda: A Link to the Past
