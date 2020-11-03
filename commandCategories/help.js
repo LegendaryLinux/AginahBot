@@ -62,7 +62,9 @@ module.exports = {
                 if (command.aliases.length > 0) { data.push(`**Aliases: **${command.aliases.join(', ')}`); }
                 if (command.longDescription) { data.push(`**Description:** ${command.longDescription}`) }
                 else if (command.description) { data.push(`**Description: ** ${command.description}`); }
-                if (command.usage) { data.push(`**Usage: ** ${command.usage}`); }
+                if (command.usage && typeof(command.usage) === 'object' && command.usage.length) {
+                    command.usage.forEach((usage) => data.push(`**Usage: ** ${usage}`));
+                } else if (command.usage) { data.push(`**Usage: ** ${command.usage}`); }
                 message.channel.send(data, { split: true }).then(() => {
                 }).catch((error) => errorHandlers.generalErrorHandler(error));
             },

@@ -51,7 +51,8 @@ fs.readdirSync('./voiceStateListeners').filter((file) => file.endsWith('.js')).f
 client.on('message', async(message) => {
     // Fetch message if partial
     message = await cachePartial(message);
-    message.member = await cachePartial(message.member);
+    if (message.member) { message.member = await cachePartial(message.member); }
+    if (message.author) { message.author = await cachePartial(message.author); }
 
     // Ignore all bot messages
     if (message.author.bot) { return; }

@@ -39,7 +39,7 @@ module.exports = {
   commands: [
     {
       name: 'init-role-system',
-      description: 'Create a #role-request channel for users to interact with AginahBot and request roles.',
+      description: 'Create a role-request channel for users to interact with AginahBot and request roles.',
       longDescription: 'Create a #role-request text channel for users to interact with AginahBot and request ' +
         'roles. This channel will be used to post role category messages users can react to to add or ' +
         'remove roles.',

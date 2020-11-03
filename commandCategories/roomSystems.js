@@ -2,7 +2,7 @@ const { generalErrorHandler } = require('../errorHandlers');
 
 const DEFAULT_ROLE_NAME = "Dynamic Room Category"
 const PLANNING_CHANNEL_NAME = 'Planning';
-const VOICE_CHANNEL_NAME = 'Create New Room';
+const VOICE_CHANNEL_NAME = 'Start Game';
 
 module.exports = {
     category: "Dynamic Room Systems",
