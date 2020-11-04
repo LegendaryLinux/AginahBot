@@ -1,7 +1,8 @@
 const {generalErrorHandler} = require('../errorHandlers');
+const moment = require('moment-timezone');
 
 // Return the offset in hours of a given timezone
-const getZoneOffset = (zone) => 0 - new Date(`01/01/1970 00:00 ${zone}`).getTime() / 1000 / 60 / 60;
+const getZoneOffset = (zone) => 0 - moment.tz('1970-01-01 00:00', zone).toDate().getTime() / 1000 / 60 / 60;
 
 const sendScheduleMessage = (message, targetDate) => message.channel.send([
     `${message.author} wants to schedule a game for ` +
@@ -104,7 +105,25 @@ module.exports = {
                 // Format XX:30
                 const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})$/);
 
-                if (timeString.search(iso8601Pattern) > -1 || timeString.search(mdyPattern) > -1) {
+                if (timeString.search(iso8601Pattern) > -1) {
+                    const targetDate = new Date(timeString);
+                    if (isNaN(targetDate.getTime())) {
+                        return message.channel.send("The date you provided is invalid.");
+                    }
+
+                    if (targetDate.getTime() < currentDate.getTime()) {
+                        return message.channel.send("You can't schedule a game in the past!");
+                    }
+
+                    return sendScheduleMessage(message, targetDate);
+
+                } else if (timeString.search(mdyPattern) > -1) {
+                    const patternParts = timeString.match(mdyPattern);
+                    if (!moment.tz.zone(patternParts[6])) {
+                        return message.channel.send("I don't recognize that timezone! Does your timezone " +
+                            "change for daylight savings time?");
+                    }
+
                     const targetDate = new Date(timeString);
                     if (isNaN(targetDate.getTime())) {
                         return message.channel.send("The date you provided is invalid.");
@@ -118,9 +137,14 @@ module.exports = {
 
                 } else if (timeString.search(isoSimplePattern) > -1) {
                     const patternParts = timeString.match(isoSimplePattern);
+                    if (!moment.tz.zone(patternParts[6])) {
+                        return message.channel.send("I don't recognize that timezone! Does your timezone " +
+                            "change for daylight savings time?");
+                    }
                     const zoneOffset = getZoneOffset(patternParts[6]);
                     if (isNaN(zoneOffset)) {
-                        return message.channel.send("I don't recognize that timezone!");
+                        return message.channel.send("I couldn't schedule your game because the timezone provided " +
+                            "could not be used to create a valid date object.");
                     }
 
                     const sign = zoneOffset < 1 ? '-' : '+';
@@ -144,9 +168,14 @@ module.exports = {
                         return message.channel.send("There are only 60 minutes in an hour!");
                     }
 
+                    if (!moment.tz.zone(patternParts[3])) {
+                        return message.channel.send("I don't recognize that timezone! Does your timezone " +
+                            "change for daylight savings time?");
+                    }
                     const zoneOffset = getZoneOffset(patternParts[3]);
                     if (isNaN(zoneOffset)) {
-                        return message.channel.send("I don't recognize that timezone!");
+                        return message.channel.send("I couldn't schedule your game because the timezone provided " +
+                            "could not be used to create a valid date object.");
                     }
 
                     const targetDate = new Date(currentDate.getTime());
