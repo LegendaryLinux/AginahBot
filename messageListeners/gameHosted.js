@@ -1,8 +1,13 @@
 const { supportedGames } = require('../assets/supportedGames.json');
 
 module.exports = (client, message) => {
-    for (let game of Object.entries(supportedGames)) {
-        if (message.content.search(game.seedDownloadUrl) !== -1) {
+    const watchedUrls = [];
+    Object.keys(supportedGames).forEach((game) => {
+        watchedUrls.push(supportedGames[game].seedDownloadUrl);
+    });
+
+    for (let url of watchedUrls) {
+        if (message.content.search(url) > -1) {
             // Ping the channel role to alert the seed has been generated
             const sql = `SELECT rsg.roleId AS roleId
                     FROM room_systems rs
