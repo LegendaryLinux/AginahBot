@@ -168,8 +168,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 0,
@@ -476,8 +476,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 50,
@@ -784,8 +784,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 50,
@@ -1102,8 +1102,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 50,
@@ -1420,8 +1420,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 50,
@@ -1738,8 +1738,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 50,
@@ -2046,8 +2046,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 50,
@@ -2364,8 +2364,8 @@
           "expert": 0
         },
         "progression_balancing": {
-          "on": 0,
-          "off": 1
+          "on": 1,
+          "off": 0
         },
         "boss_shuffle": {
           "none": 50,
