@@ -60,8 +60,13 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     channelId VARCHAR(64) NOT NULL,
     messageId VARCHAR(64) NOT NULL,
     schedulingUserId VARCHAR(64) NOT NULL,
-    schedulingUserTag VARCHAR(128) NOT NULL,
-    rsvpCount INTEGER NOT NULL DEFAULT 0
+    schedulingUserTag VARCHAR(128) NOT NULL
+)`;
+
+const eventAttendees = `CREATE TABLE IF NOT EXISTS event_attendees (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    eventId INTEGER NOT NULL,
+    userId VARCHAR(64) NOT NULL
 )`;
 
 module.exports = () => {
@@ -75,5 +80,6 @@ module.exports = () => {
         db.run(roomSystemGames);
         db.run(roomSystemReadyChecks);
         db.run(scheduledEvents);
+        db.run(eventAttendees);
     });
 };

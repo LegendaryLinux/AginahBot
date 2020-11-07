@@ -50,7 +50,8 @@ module.exports = {
             adminOnly: false,
             execute(message, args) {
                 if (args.length === 0) {
-                    let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.rsvpCount
+                    let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId,
+                                    (SELECT COUNT(*) FROM event_attendees WHERE eventId=se.id) AS rsvpCount
                                 FROM scheduled_events se
                                 JOIN guild_data gd ON se.guildDataId = gd.id
                                 WHERE gd.guildId=?

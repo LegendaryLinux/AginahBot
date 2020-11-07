@@ -37,7 +37,7 @@ Example config:
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
-permissions granted by the permissions integer `285240400`.
+permissions granted by the permissions integer `285273168`.
 
 The following permissions will be granted
 to AginahBot:
@@ -47,6 +47,7 @@ to AginahBot:
 - Send Messages
 - Manage Messages
 - Embed Links
+- Attach Files
 - Add Reactions
 - Move Members (Voice Channels)
 

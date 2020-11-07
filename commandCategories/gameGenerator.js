@@ -162,7 +162,7 @@ module.exports = {
                         return message.channel.send({
                             files: [
                                 {
-                                    name: args[0].toLowerCase()+(preferYaml ? '.yaml' : '.json'),
+                                    name: args[1].toLowerCase()+(preferYaml ? '.yaml' : '.json'),
                                     attachment: tmpFilePath,
                                 }
                             ],

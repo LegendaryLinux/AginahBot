@@ -65,7 +65,9 @@ module.exports = (client, oldState, newState) => {
                         channels[1].send(`Hello! Use this channel to discuss the ${channelName} game.\n` +
                             '`.ready` to show you are ready to begin\n' +
                             '`.unready` to change your mind\n' +
-                            '`.readycheck` to see who is ready');
+                            '`.readycheck` to see who is ready\n' +
+                            '`.close` to close this channel and prevent others from joining\n' +
+                            '`.open` to reopen the channel');
 
                         let sql = `INSERT INTO room_system_games (roomSystemId, voiceChannelId, textChannelId, roleId)
                                 VALUES (?, ?, ?, ?)`;
