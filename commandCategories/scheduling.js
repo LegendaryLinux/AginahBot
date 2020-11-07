@@ -4,9 +4,12 @@ const moment = require('moment-timezone');
 // Return the offset in hours of a given timezone
 const getZoneOffset = (zone) => 0 - moment.tz('1970-01-01 00:00', zone).toDate().getTime() / 1000 / 60 / 60;
 
+const months = { 0: 'January', 1: 'February', 2: 'March', 3: 'April', 4: 'May', 5: 'June', 6: 'July', 7: 'August',
+    8: 'September', 9: 'October', 10: 'November', 11: 'December' };
+
 const sendScheduleMessage = (message, targetDate) => message.channel.send([
     `${message.author} wants to schedule a game for ` +
-    `${targetDate.getUTCMonth()+1}/${targetDate.getUTCDate()}/${targetDate.getUTCFullYear()} at `+
+    `${months[targetDate.getUTCMonth()]} ${targetDate.getUTCDate()}, ${targetDate.getUTCFullYear()} at ` +
     `${targetDate.getUTCHours()}:${targetDate.getUTCMinutes().toString().padStart(2,'0')} UTC`,
     `https://gametimes.multiworld.link/?timestamp=${targetDate.getTime()}`,
     'React with ⚔ if you intend to join this game.',
