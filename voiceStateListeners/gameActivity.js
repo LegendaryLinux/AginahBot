@@ -63,11 +63,14 @@ module.exports = (client, oldState, newState) => {
                         })
                     ]).then((channels) => {
                         channels[1].send(`Hello! Use this channel to discuss the ${channelName} game.\n` +
+                            '__Ready Checks:__\n' +
                             '`.ready` to show you are ready to begin\n' +
                             '`.unready` to change your mind\n' +
-                            '`.readycheck` to see who is ready\n' +
-                            '`.close` to close this channel and prevent others from joining\n' +
-                            '`.open` to reopen the channel');
+                            '`.readycheck` to see who is ready\n\n' +
+                            '__Privacy Controls:__\n' +
+                            '`.close` to close this channel\n' +
+                            '`.lock` to prevent others from joining\n' +
+                            '`.unlock` to allow people to join again');
 
                         let sql = `INSERT INTO room_system_games (roomSystemId, voiceChannelId, textChannelId, roleId)
                                 VALUES (?, ?, ?, ?)`;

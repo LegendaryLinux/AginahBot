@@ -3,7 +3,7 @@ const { getModeratorRole } = require('../lib');
 module.exports = (client, message) => {
     if (!message.guild) { return; }
 
-    const commands = ['.ready', '.unready', '.readycheck', '.open', '.close'];
+    const commands = ['.ready', '.unready', '.readycheck', '.close', '.lock', '.unlock'];
     if (commands.indexOf(message.content) === -1) { return; }
 
     let sql = `SELECT rsrc.id AS checkId, rsg.id AS gameId, rsg.voiceChannelId, rs.planningChannelId
@@ -57,10 +57,8 @@ module.exports = (client, message) => {
                     return message.channel.send(output);
                 });
 
-            // Close a dynamic voice channel, preventing anyone except moderators from joining
-            case '.close':
-                message.guild.channels.resolve(roomSystem.planningChannelId)
-                    .send(`${message.channel.name.replace(/\b\w/g, c => c.toUpperCase())} is now closed.`);
+            // Lock a dynamic voice channel, preventing anyone except moderators from joining
+            case '.lock':
                 return message.guild.channels.resolve(roomSystem.voiceChannelId).overwritePermissions([
                     {
                         // @everyone may not join the voice channel
@@ -80,10 +78,16 @@ module.exports = (client, message) => {
                 ]);
 
             // Reopen a dynamic voice channel, allowing anyone to join
-            case '.open':
-                message.guild.channels.resolve(roomSystem.planningChannelId)
-                    .send(`${message.channel.name.replace(/\b\w/g, c => c.toUpperCase())} has reopened.`);
+            case '.unlock':
                 return message.guild.channels.resolve(roomSystem.voiceChannelId).overwritePermissions([]);
+
+            case '.close':
+                let voiceChannel = message.guild.channels.resolve(roomSystem.voiceChannelId);
+                // Do not re-close an already closed channel
+                if (voiceChannel.name.search(/ \(Closed\)$/g) > -1) { return; }
+                message.guild.channels.resolve(roomSystem.planningChannelId)
+                    .send(`${message.channel.name.replace(/\b\w/g, c => c.toUpperCase())} is now closed.`);
+                return voiceChannel.edit({ name: `${voiceChannel.name.toString()} (Closed)` });
         }
     });
 };

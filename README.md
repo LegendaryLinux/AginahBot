@@ -6,6 +6,8 @@ Find it in use at the [MultiWorld Discord](https://discord.gg/B5pjMYy).
 
 ## Current Features
 - Support dynamic voice and text channels, and automatic assignment of permissions on those channels
+- Ready check system for users in dynamic game channels
+- Privacy controls for users in dynamic game channels
 - Automatically delete ROM files, and compressed files containing them
 - Organization features to help schedule games
 - Alert players in game lobbies that their seeds are ready
