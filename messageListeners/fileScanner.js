@@ -1,5 +1,4 @@
 const {generalErrorHandler} = require('../errorHandlers');
-const { verifyModeratorRole } = require('../lib');
 const https = require('https');
 const tmp = require('tmp');
 const fs = require('fs');
@@ -36,11 +35,6 @@ const deleteRomFile = (message) => {
     return message.delete();
 };
 
-const deleteArchiveFile = (message) => {
-    message.channel.send(`${message.author}: Archives containing other archives are not permitted.`);
-    return message.delete();
-};
-
 module.exports = (client, message) => {
     try{
         return message.attachments.each((attachment) => {
@@ -50,12 +44,6 @@ module.exports = (client, message) => {
             }
 
             if (isArchiveFile(attachment.name)) {
-                // Disallow archive files larger than five Megabytes (Windows MB, not real ones)
-                if (attachment.size > 5242880 && message.member && !verifyModeratorRole(message.member)) {
-                    message.channel.send("Your archive files are too powerful! (Archive files are limited to 5MB)");
-                    return message.delete();
-                }
-
                 // Download the file so it can be locally analyzed
                 return https.get(attachment.url, (response) => {
                     if (response.statusCode !== 200) {
@@ -82,11 +70,6 @@ module.exports = (client, message) => {
                                                 fileDeleted = true;
                                                 return deleteRomFile(message);
                                             }
-                                            if (isArchiveFile(file.path) && !fileDeleted) {
-                                                console.log('Archive file. Deleting.');
-                                                fileDeleted = true;
-                                                return deleteArchiveFile(message);
-                                            }
                                     })
 
                                 case 'rar':
@@ -103,10 +86,6 @@ module.exports = (client, message) => {
                                                 fileDeleted = true;
                                                 deleteRomFile(message);
                                             }
-                                            if (isArchiveFile(file.name)) {
-                                                fileDeleted = true;
-                                                deleteArchiveFile(message);
-                                            }
                                         });
                                     });
 
@@ -117,10 +96,6 @@ module.exports = (client, message) => {
                                             if (isRomFile(entry.header.path) && !fileDeleted) {
                                                 fileDeleted = true;
                                                 deleteRomFile(message);
-                                            }
-                                            if (isArchiveFile(entry.header.path) && !fileDeleted) {
-                                                fileDeleted = true;
-                                                deleteArchiveFile(message);
                                             }
                                         },
                                     })
@@ -138,10 +113,6 @@ module.exports = (client, message) => {
                                         if (isRomFile(data.file) && !fileDeleted) {
                                             fileDeleted = true;
                                             deleteRomFile(message);
-                                        }
-                                        if (isArchiveFile(data.file) && !fileDeleted) {
-                                            fileDeleted = true;
-                                            deleteArchiveFile(message);
                                         }
                                     });
                             }
