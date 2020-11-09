@@ -71,12 +71,22 @@ module.exports = (client, message) => {
                     writeStream.on('finish', () => {
                         writeStream.close(() => {
                             const fileExt = attachment.name.split('.').pop();
+                            let fileDeleted = false;
                             switch (fileExt) {
                                 case 'zip':
                                     return fs.createReadStream(tempFile.name).pipe(unZipper.Parse())
                                         .on('entry', (file) => {
-                                        if (isRomFile(file.path)) { return deleteRomFile(message); }
-                                        if (isArchiveFile(file.path)) { return deleteArchiveFile(message); }
+                                            console.log(file.path+':');
+                                            if (isRomFile(file.path) && !fileDeleted) {
+                                                console.log('Rom file. Deleting.');
+                                                fileDeleted = true;
+                                                return deleteRomFile(message);
+                                            }
+                                            if (isArchiveFile(file.path) && !fileDeleted) {
+                                                console.log('Archive file. Deleting.');
+                                                fileDeleted = true;
+                                                return deleteArchiveFile(message);
+                                            }
                                     })
 
                                 case 'rar':
@@ -88,8 +98,15 @@ module.exports = (client, message) => {
                                             return message.delete();
                                         }
                                         files.forEach((file) => {
-                                            if (isRomFile(file.name)) { deleteRomFile(message); }
-                                            if (isArchiveFile(file.name)) { deleteArchiveFile(message); }
+                                            if (fileDeleted) { return; }
+                                            if (isRomFile(file.name)) {
+                                                fileDeleted = true;
+                                                deleteRomFile(message);
+                                            }
+                                            if (isArchiveFile(file.name)) {
+                                                fileDeleted = true;
+                                                deleteArchiveFile(message);
+                                            }
                                         });
                                     });
 
@@ -97,10 +114,12 @@ module.exports = (client, message) => {
                                     return tar.list({
                                         file: tempFile.name,
                                         onentry: (entry) => {
-                                            if (isRomFile(entry.header.path)) {
+                                            if (isRomFile(entry.header.path) && !fileDeleted) {
+                                                fileDeleted = true;
                                                 deleteRomFile(message);
                                             }
-                                            if (isArchiveFile(entry.header.path)) {
+                                            if (isArchiveFile(entry.header.path) && !fileDeleted) {
+                                                fileDeleted = true;
                                                 deleteArchiveFile(message);
                                             }
                                         },
@@ -116,8 +135,14 @@ module.exports = (client, message) => {
                                         $bin: require('7zip-bin').path7za,
                                     });
                                     return contents.on('data', (data) => {
-                                        if (isRomFile(data.file)) { deleteRomFile(message); }
-                                        if (isArchiveFile(data.file)) { deleteArchiveFile(message); }
+                                        if (isRomFile(data.file) && !fileDeleted) {
+                                            fileDeleted = true;
+                                            deleteRomFile(message);
+                                        }
+                                        if (isArchiveFile(data.file) && !fileDeleted) {
+                                            fileDeleted = true;
+                                            deleteArchiveFile(message);
+                                        }
                                     });
                             }
                         });
