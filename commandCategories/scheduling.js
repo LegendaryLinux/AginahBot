@@ -60,12 +60,11 @@ module.exports = {
                                 JOIN guild_data gd ON se.guildDataId = gd.id
                                 WHERE gd.guildId=?
                                     AND se.timestamp > ?`;
-                    let gameCount = 0;
-                    return message.client.db.query(sql, [message.guild.id, new Date().getTime()], (err, games) => {
+                    message.client.db.query(sql, [message.guild.id, new Date().getTime()], (err, games) => {
                         if (err) { throw new Error(err); }
                         games.forEach((game) => {
-                            message.guild.channels.resolve(game.channelId).messages.fetch(game.messageId)
-                                .then((scheduleMessage) => {
+                            message.guild.channels.resolve(game.channelId).messages.fetch(game.messageId).then(
+                                (scheduleMessage) => {
                                     const gameTime = new Date(parseInt(game.timestamp, 10));
                                     message.channel.send(
                                         `> **${game.schedulingUserTag}** scheduled a game for **` +
@@ -78,13 +77,13 @@ module.exports = {
                                         `> RSVP Link: ${scheduleMessage.url}\n` +
                                         `> Current RSVPs: ${game.rsvpCount}`);
                                 }).catch((err) => generalErrorHandler(err));
-                            gameCount++;
                         });
-                    }, () => {
-                        if (gameCount === 0) {
+
+                        if (games.length === 0) {
                             message.channel.send("There are currently no games scheduled.");
                         }
                     });
+                    return;
                 }
 
                 if (args.length < 2) {

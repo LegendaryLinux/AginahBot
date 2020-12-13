@@ -4,7 +4,7 @@ module.exports = (client, messageReaction, user, added) => {
 
     // Make sure we are acting upon the proper reaction
     if (messageReaction.emoji.name === '⚔') {
-        // Identify the event this reaction is identified with
+        // Identify the event this reaction is associated with
         let sql = `SELECT se.id
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
@@ -15,6 +15,7 @@ module.exports = (client, messageReaction, user, added) => {
             [messageReaction.message.guild.id, messageReaction.message.channel.id, messageReaction.message.id],
             (err, evt) => {
                 if (err) { throw new Error(err); }
+                evt = evt[0];
 
                 // Reaction was added, so add user to event_attendees table
                 if (added) {
