@@ -11,21 +11,23 @@ module.exports = (client, messageReaction, user, added) => {
                         WHERE gd.guildId = ?
                         AND se.channelId = ?
                         AND se.messageId = ?`;
-        client.db.get(sql, messageReaction.message.guild.id, messageReaction.message.channel.id,
-            messageReaction.message.id, (err, evt) => {
+        client.db.query(sql,
+            [messageReaction.message.guild.id, messageReaction.message.channel.id, messageReaction.message.id],
+            (err, evt) => {
                 if (err) { throw new Error(err); }
 
                 // Reaction was added, so add user to event_attendees table
                 if (added) {
                     let sql = `INSERT INTO event_attendees (eventId, userId) VALUES (?, ?)`;
-                    return client.db.run(sql, evt.id, user.id);
+                    return client.db.execute(sql, [evt.id, user.id]);
                 }
 
                 // Reaction was removed, so remove user from event_attendees table
                 if (!added) {
                     let sql = `DELETE FROM event_attendees WHERE eventId=? AND userId=?`;
-                    return client.db.run(sql, evt.id, user.id);
+                    return client.db.execute(sql, [evt.id, user.id]);
                 }
-            });
+            }
+        );
     }
 };

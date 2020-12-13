@@ -2,16 +2,16 @@
   "supportedGames": {
     "zelda3": {
       "friendlyName": "The Legend of Zelda: A Link to the Past Multiworld Randomizer",
-      "website": "https://berserkermulti.world",
-      "setupGuide": "https://berserkermulti.world/tutorial",
+      "website": "https://archipelago.gg",
+      "setupGuide": "https://archipelago.gg/tutorial",
       "repositories": [
         "Randomizer Repo: https://github.com/Berserker66/MultiWorld-Utilities",
         "Enemizer Repo: https://github.com/Ijwu/Enemizer",
         "Assembler Repo: https://github.com/CaitSith2/z3randomizer",
         "AginahBot Repo: https://github.com/LegendaryLinux/AginahBot"
       ],
-      "apiEndpoint": "https://berserkermulti.world/api/generate",
-      "seedDownloadUrl": "berserkermulti.world/hosted",
+      "apiEndpoint": "https://archipelago.gg/api/generate",
+      "seedDownloadUrl": "archipelago.gg/hosted",
       "preferYaml": true
     }
   }

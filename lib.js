@@ -32,57 +32,60 @@ module.exports = {
                 },
             }).then((moderatorRole) => {
                 let sql = `INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)`;
-                client.db.run(sql, guild.id, moderatorRole.id, (err) => {
+                client.db.execute(sql, [guild.id, moderatorRole.id], (err) => {
                     if (err) { return generalErrorHandler(err); }
                 });
             }).catch((err) => generalErrorHandler(err));
         }
 
         let sql = `INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)`;
-        client.db.run(sql, guild.id, moderatorRole.id, (err) => {
+        client.db.execute(sql, [guild.id, moderatorRole.id], (err) => {
             if (err) { return generalErrorHandler(err); }
         });
     },
 
     handleGuildDelete: (client, guild) => {
-        client.db.get(`SELECT id FROM guild_data WHERE guildId=?`, guild.id, (err, guildData) => {
+        client.db.query(`SELECT id FROM guild_data WHERE guildId=?`, [guild.id], (err, guildData) => {
             if (err) { return generalErrorHandler(err); }
-            if (!guildData) {
+            if (!guildData.length) {
                 throw new Error(`No guild data could be found when trying to delete data for guild:` +
                     `${guild.name} (${guild.id}).`);
             }
 
             // Delete dynamic game system data
-            client.db.get(`SELECT id FROM room_systems WHERE guildDataId=?`, guildData.id, (err, category) => {
+            client.db.query(`SELECT id FROM room_systems WHERE guildDataId=?`, [guildData.id], (err, category) => {
                 if (err) { return generalErrorHandler(err); }
-                if (!category) { return; }
-                client.db.run(`DELETE FROM room_system_games WHERE roomSystemId=?`, category.id);
-                client.db.run(`DELETE FROM room_systems WHERE id=?`, category.id);
+                if (!category.length) { return; }
+                client.db.execute(`DELETE FROM room_system_games WHERE roomSystemId=?`, [category.id]);
+                client.db.execute(`DELETE FROM room_systems WHERE id=?`, [category.id]);
             });
 
             // Delete role requestor system data
-            client.db.get(`SELECT id FROM role_systems WHERE guildDataId=?`, guildData.id, (err, roleSystem) =>{
+            client.db.query(`SELECT id FROM role_systems WHERE guildDataId=?`, [guildData.id], (err, roleSystem) =>{
                 if (err) { return generalErrorHandler(err); }
-                if (!roleSystem) { return; }
-                client.db.get(`SELECT id FROM role_categories WHERE roleSystemId=?`, roleSystem.id, (err, category) => {
-                    if (err) { return generalErrorHandler(err); }
-                    if (!category) { return; }
-                    client.db.run(`DELETE FROM roles WHERE categoryId=?`, category.id);
-                });
-                client.db.run(`DELETE FROM role_categories WHERE roleSystemId=?`, roleSystem.id);
-                client.db.run(`DELETE FROM role_systems WHERE id=?`, roleSystem.id);
+                if (!roleSystem.length) { return; }
+                client.db.query(`SELECT id FROM role_categories WHERE roleSystemId=?`,
+                    [roleSystem.id],
+                    (err, category) => {
+                        if (err) { return generalErrorHandler(err); }
+                        if (!category.length) { return; }
+                        client.db.execute(`DELETE FROM roles WHERE categoryId=?`, [category.id]);
+                    }
+                );
+                client.db.execute(`DELETE FROM role_categories WHERE roleSystemId=?`, [roleSystem.id]);
+                client.db.execute(`DELETE FROM role_systems WHERE id=?`, [roleSystem.id]);
             });
 
             // Delete guild data
-            client.db.run(`DELETE FROM guild_data WHERE id=?`, guildData.id);
+            client.db.execute(`DELETE FROM guild_data WHERE id=?`, [guildData.id]);
         });
     },
 
     verifyGuildSetups: (client) => {
         client.guilds.cache.each((guild) => {
-            client.db.get(`SELECT 1 FROM guild_data WHERE guildId=?`, guild.id, (err, row) => {
+            client.db.query(`SELECT guildId FROM guild_data WHERE guildId=?`, [guild.id], (err, row) => {
                 if (err) { return generalErrorHandler(err); }
-                if (!row) { module.exports.handleGuildCreate(client, guild); }
+                if (!row.length) { module.exports.handleGuildCreate(client, guild); }
             });
         });
     },

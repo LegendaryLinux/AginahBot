@@ -22,18 +22,22 @@ module.exports = (client, messageReaction, user, added) => {
                     AND rs.roleRequestChannelId=?
                     AND rc.messageId=?
                     AND r.reaction=?`;
-    client.db.get(sql, guild.id, messageReaction.message.channel.id, messageReaction.message.id, emoji, (err, role) => {
-        if (err) { return generalErrorHandler(err); }
-        if (!role) { return; }
+    client.db.query(sql,
+        [guild.id, messageReaction.message.channel.id, messageReaction.message.id, emoji],
+        (err, role) => {
+            if (err) { return generalErrorHandler(err); }
+            if (!role.length) { return; }
+            role = role[0];
 
-        // Get the matching role from the guild
-        const roleObj = guild.roles.resolve(role.roleId);
-        if (!roleObj) { throw new Error(`Guild ${guild.name} (${guild.id}) does not have a role ${role.roleName} ` +
-            `(${role.roleId})`); }
+            // Get the matching role from the guild
+            const roleObj = guild.roles.resolve(role.roleId);
+            if (!roleObj) { throw new Error(`Guild ${guild.name} (${guild.id}) does not have a role ${role.roleName} ` +
+                `(${role.roleId})`); }
 
-        // Add the role to the user
-        return added ?
-            guild.members.resolve(user.id).roles.add(roleObj) :
-            guild.members.resolve(user.id).roles.remove(roleObj);
-    });
+            // Add the role to the user
+            return added ?
+                guild.members.resolve(user.id).roles.add(roleObj) :
+                guild.members.resolve(user.id).roles.remove(roleObj);
+        }
+    );
 };

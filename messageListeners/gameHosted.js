@@ -15,10 +15,10 @@ module.exports = (client, message) => {
                     JOIN guild_data gd ON rs.guildDataId=gd.id
                     WHERE gd.guildId=?
                       AND rsg.textChannelId=?`;
-            return client.db.get(sql, message.guild.id, message.channel.id, (err, roleData) => {
+            return client.db.query(sql, [message.guild.id, message.channel.id], (err, roleData) => {
                 if (err) { throw new Error(err); }
-                if (roleData) {
-                    message.channel.send(`${message.guild.roles.resolve(roleData.roleId)}: ` +
+                if (roleData.length) {
+                    message.channel.send(`${message.guild.roles.resolve(roleData[0].roleId)}: ` +
                         `The seeds have been posted!`);
 
                     // Pin the message to the channel

@@ -14,18 +14,21 @@ module.exports = (client, message) => {
                 WHERE rsrc.playerId=?
                     AND rsg.textChannelId=?
                     AND gd.guildId=?`
-    client.db.get(sql, message.author.id, message.channel.id, message.guild.id, (err, roomSystem) => {
+    client.db.query(sql, [message.author.id, message.channel.id, message.guild.id], (err, roomSystem) => {
         if (err) { throw new Error(err); }
         if (!roomSystem) { return; }
+        roomSystem = roomSystem[0];
 
         switch(message.content) {
             // Player has indicated they are ready to begin
             case '.ready':
-                return client.db.run(`UPDATE room_system_ready_checks SET readyState=1 WHERE id=?`, roomSystem.checkId);
+                return client.db.execute(`UPDATE room_system_ready_checks SET readyState=1 WHERE id=?`,
+                    [roomSystem.checkId]);
 
             // Player has indicated they are no longer ready to begin
             case '.unready':
-                return client.db.run(`UPDATE room_system_ready_checks SET readyState=0 WHERE id=?`, roomSystem.checkId);
+                return client.db.execute(`UPDATE room_system_ready_checks SET readyState=0 WHERE id=?`,
+                    [roomSystem.checkId]);
 
             // Print a list of players who are and are not ready
             case '.readycheck':
@@ -34,13 +37,15 @@ module.exports = (client, message) => {
 
                 // Find each player's ready state
                 let sql = `SELECT playerTag, readyState FROM room_system_ready_checks WHERE gameId=?`;
-                return client.db.each(sql, roomSystem.gameId, (err, player) => {
+                return client.db.query(sql, [roomSystem.gameId], (err, players) => {
                     if (err) { throw new Error(err); }
-                    if (parseInt(player.readyState, 10) === 1) {
-                        ready.push(player.playerTag);
-                    } else {
-                        notReady.push(player.playerTag);
-                    }
+                    players.forEach((player) => {
+                        if (parseInt(player.readyState, 10) === 1) {
+                            ready.push(player.playerTag);
+                        } else {
+                            notReady.push(player.playerTag);
+                        }
+                    });
                 }, () => {
                     const output = ['**Ready:**'];
                     ready.length === 0 ?

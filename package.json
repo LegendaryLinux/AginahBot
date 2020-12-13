@@ -2,6 +2,10 @@
   "name": "aginah-bot",
   "version": "1.0.0",
   "license": "MIT",
+  "scripts": {
+    "production": "node bot.js",
+    "dev": "node bot.js dev"
+  },
   "dependencies": {
     "7zip-bin": "^5.0.3",
     "axios": "^0.21.0",
@@ -10,6 +14,7 @@
     "js-yaml": "^3.14.0",
     "memfs": "^3.2.0",
     "moment-timezone": "^0.5.31",
+    "mysql2": "^2.2.5",
     "node-7z": "^2.1.2",
     "node-emoji": "^1.10.0",
     "request": "^2.88.2",

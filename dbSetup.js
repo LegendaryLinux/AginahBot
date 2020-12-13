@@ -1,28 +1,28 @@
-const sqlite3 = require('sqlite3');
-const { dbFile } = require('./config.json');
+const mysql = require('mysql2');
+const config = require('./config.json');
 
 const guildData = `CREATE TABLE IF NOT EXISTS guild_data (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildId VARCHAR(128) NOT NULL UNIQUE,
     moderatorRoleId VARCHAR(128) NOT NULL
 )`;
 
 const roleSystems = `CREATE TABLE IF NOT EXISTS role_systems (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    guildDataId INTEGER NOT NULL UNIQUE,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId BIGINT NOT NULL UNIQUE,
     roleRequestChannelId VARCHAR(128) NOT NULL
 )`;
 
 const roleCategories = `CREATE TABLE IF NOT EXISTS role_categories (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     roleSystemId VARCHAR(128) NOT NULL,
     categoryName VARCHAR(128) NOT NULL,
     messageId VARCHAR(128) NOT NULL
 )`;
 
 const roles = `CREATE TABLE IF NOT EXISTS roles (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    categoryId INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    categoryId BIGINT NOT NULL,
     roleId VARCHAR(128) NOT NULL,
     roleName VARCHAR(128) NOT NULL,
     reaction VARCHAR(128) NOT NULL,
@@ -30,33 +30,33 @@ const roles = `CREATE TABLE IF NOT EXISTS roles (
 )`;
 
 const roomSystems = `CREATE TABLE IF NOT EXISTS room_systems (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    guildDataId INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId BIGINT NOT NULL,
     channelCategoryId VARCHAR(128) NOT NULL,
     planningChannelId VARCHAR(128) NOT NULL,
     newGameChannelId VARCHAR(128) NOT NULL
 )`;
 
 const roomSystemGames = `CREATE TABLE IF NOT EXISTS room_system_games (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    roomSystemId INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    roomSystemId BIGINT NOT NULL,
     voiceChannelId VARCHAR(128) NOT NULL,
     textChannelId VARCHAR(128) NOT NULL,
     roleId VARCHAR(128) NOT NULL
 )`;
 
 const roomSystemReadyChecks = `CREATE TABLE IF NOT EXISTS room_system_ready_checks (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    gameId INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    gameId BIGINT NOT NULL,
     playerId VARCHAR(64) NOT NULL,
     playerTag VARCHAR(256) NOT NULL,
-    readyState INTEGER NOT NULL DEFAULT 0
+    readyState INT NOT NULL DEFAULT 0
 )`;
 
 const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    guildDataId INTEGER NOT NULL,
-    timestamp VARCHAR(64) NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId BIGINT NOT NULL,
+    timestamp BIGINT NOT NULL,
     channelId VARCHAR(64) NOT NULL,
     messageId VARCHAR(64) NOT NULL,
     schedulingUserId VARCHAR(64) NOT NULL,
@@ -64,22 +64,33 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
 )`;
 
 const eventAttendees = `CREATE TABLE IF NOT EXISTS event_attendees (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    eventId INTEGER NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    eventId BIGINT NOT NULL,
     userId VARCHAR(64) NOT NULL
 )`;
 
-module.exports = () => {
-    const db = new sqlite3.Database(dbFile);
-    db.serialize(() => {
-        db.run(guildData);
-        db.run(roleSystems);
-        db.run(roleCategories);
-        db.run(roles);
-        db.run(roomSystems);
-        db.run(roomSystemGames);
-        db.run(roomSystemReadyChecks);
-        db.run(scheduledEvents);
-        db.run(eventAttendees);
-    });
+const db = mysql.createConnection({
+    host: config.dbHost,
+    user: config.dbAdminUser,
+    password: config.dbAdminPass,
+    database: (process.argv[2] && process.argv[2] === 'dev') ? config.dbTestName : config.dbName,
+    supportBigNumbers: true,
+    bigNumberStrings: true,
+});
+
+const handler = (err) => {
+    if (err) {
+        console.log(err);
+    }
 };
+
+db.query(guildData, handler);
+db.query(roleSystems, handler);
+db.query(roleCategories, handler);
+db.query(roles, handler);
+db.query(roomSystems, handler);
+db.query(roomSystemGames, handler);
+db.query(roomSystemReadyChecks, handler);
+db.query(scheduledEvents, handler);
+db.query(eventAttendees, handler);
+db.end();

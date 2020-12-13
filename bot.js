@@ -1,6 +1,5 @@
 const { Client, Collection } = require('discord.js')
-const sqlite3 = require('sqlite3');
-const dbSetup = require('./dbSetup')
+const mysql = require('mysql2');
 const config = require('./config.json');
 const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
@@ -10,11 +9,15 @@ const fs = require('fs');
 // Catch all unhandled errors
 process.on('uncaughtException', (err) => generalErrorHandler(err));
 
-// Build the database if it does not exist
-dbSetup();
-
 const client = new Client({ partials: [ 'GUILD_MEMBER', 'MESSAGE', 'REACTION' ] });
-client.db = new sqlite3.Database(config.dbFile);
+client.db = mysql.createConnection({
+    host: config.dbHost,
+    user: config.dbAdminUser,
+    password: config.dbAdminPass,
+    database: (process.argv[2] && process.argv[2] === 'dev') ? config.dbTestName : config.dbName,
+    supportBigNumbers: true,
+    bigNumberStrings: true,
+});
 client.commands = new Collection();
 client.commandCategories = [];
 client.messageListeners = [];

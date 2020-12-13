@@ -16,15 +16,16 @@ const sendScheduleMessage = (message, targetDate) => message.channel.send([
     'React with 🐔 if you don\'t know yet.'
 ]).then((scheduleMessage) => {
     // Save scheduled game to database
-    message.client.db.get(`SELECT id FROM guild_data WHERE guildId=?`, message.guild.id, (err, guildData) => {
+    message.client.db.query(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id], (err, guildData) => {
         if (err) { throw new Error(err); }
-        if (!guildData) { throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) ` +
+        if (!guildData.length) { throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) ` +
             `in guild_data table.`); }
+        guildData = guildData[0];
         let sql = `INSERT INTO scheduled_events
                     (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag)
                     VALUES (?, ?, ?, ?, ?, ?)`;
-        message.client.db.run(sql, guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-            message.member.user.id, message.member.user.tag);
+        message.client.db.execute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
+            message.member.user.id, message.member.user.tag]);
     });
 
     // Put appropriate reactions onto the message
@@ -60,22 +61,25 @@ module.exports = {
                                 WHERE gd.guildId=?
                                     AND se.timestamp > ?`;
                     let gameCount = 0;
-                    return message.client.db.each(sql, message.guild.id, new Date().getTime(), (err, game) => {
+                    return message.client.db.query(sql, [message.guild.id, new Date().getTime()], (err, games) => {
                         if (err) { throw new Error(err); }
-                        message.guild.channels.resolve(game.channelId).messages.fetch(game.messageId)
-                            .then((scheduleMessage) => {
-                                const gameTime = new Date(parseInt(game.timestamp, 10));
-                                message.channel.send(
-                                    `> **${game.schedulingUserTag}** scheduled a game for **` +
-                                    `${gameTime.getUTCMonth()+1}/${gameTime.getUTCDate()}/` +
-                                    `${gameTime.getUTCFullYear()} ${gameTime.getUTCHours()}:` +
-                                    `${gameTime.getUTCMinutes().toString().padStart(2, '0')} UTC**.\n` +
-                                    `> In your timezone: ` +
-                                    `https://gametimes.multiworld.link/?timestamp=${parseInt(game.timestamp, 10)}\n` +
-                                    `> RSVP Link: ${scheduleMessage.url}\n` +
-                                    `> Current RSVPs: ${game.rsvpCount}`);
-                            }).catch((err) => generalErrorHandler(err));
-                        gameCount++;
+                        games.forEach((game) => {
+                            message.guild.channels.resolve(game.channelId).messages.fetch(game.messageId)
+                                .then((scheduleMessage) => {
+                                    const gameTime = new Date(parseInt(game.timestamp, 10));
+                                    message.channel.send(
+                                        `> **${game.schedulingUserTag}** scheduled a game for **` +
+                                        `${gameTime.getUTCMonth()+1}/${gameTime.getUTCDate()}/` +
+                                        `${gameTime.getUTCFullYear()} ${gameTime.getUTCHours()}:` +
+                                        `${gameTime.getUTCMinutes().toString().padStart(2, '0')} UTC**.\n` +
+                                        `> In your timezone: ` +
+                                        `https://gametimes.multiworld.link/` +
+                                        `?timestamp=${parseInt(game.timestamp, 10)}\n` +
+                                        `> RSVP Link: ${scheduleMessage.url}\n` +
+                                        `> Current RSVPs: ${game.rsvpCount}`);
+                                }).catch((err) => generalErrorHandler(err));
+                            gameCount++;
+                        });
                     }, () => {
                         if (gameCount === 0) {
                             message.channel.send("There are currently no games scheduled.");

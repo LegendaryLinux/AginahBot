@@ -26,11 +26,11 @@ module.exports = {
                         message.guild.channels.create(VOICE_CHANNEL_NAME, { type: 'voice', parent: category }),
                     ]).then((channels) => {
                         const db = message.client.db;
-                        db.get(`SELECT id FROM guild_data WHERE guildId=?`, message.guild.id, (err, row) => {
+                        db.query(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id], (err, row) => {
                             if (err) { return generalErrorHandler(err); }
                             let sql = `INSERT INTO room_systems (guildDataId, channelCategoryId, planningChannelId,
                                             newGameChannelId) VALUES (?, ?, ?, ?) `;
-                            db.run(sql, row.id, category.id, channels[0].id, channels[1].id);
+                            db.execute(sql, [row[0].id, category.id, channels[0].id, channels[1].id]);
                         });
                     }).catch((error) => generalErrorHandler(error));
                 });
@@ -64,16 +64,16 @@ module.exports = {
                                JOIN guild_data gd ON rs.guildDataId = gd.id
                                WHERE channelCategoryId=?
                                     AND gd.guildId=?`;
-                    db.get(sql, category.id, message.guild.id, (err, row) => {
-                        if (!row) {
+                    db.query(sql, [category.id, message.guild.id], (err, row) => {
+                        if (!row.length) {
                             return message.channel.send('Your server does not have a dynamic room category ' +
                                 'with that name.');
                         }
 
                         category.children.forEach((channel) => channel.delete());
                         category.delete();
-                        db.run(`DELETE FROM room_system_games WHERE roomSystemId=?`, row.id);
-                        db.run(`DELETE FROM room_systems WHERE id=?`, row.id);
+                        db.execute(`DELETE FROM room_system_games WHERE roomSystemId=?`, [row[0].id]);
+                        db.execute(`DELETE FROM room_systems WHERE id=?`, [row[0].id]);
                     });
                 }).catch((e) => generalErrorHandler(e));
             }

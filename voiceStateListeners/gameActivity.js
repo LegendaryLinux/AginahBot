@@ -22,9 +22,10 @@ module.exports = (client, oldState, newState) => {
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE gd.guildId=?
                         AND rs.newGameChannelId=?`;
-        client.db.get(sql, newState.guild.id, newState.channel.id, (err, roomSystem) => {
+        client.db.query(sql, [newState.guild.id, newState.channel.id], (err, roomSystem) => {
             if (err) { return generalErrorHandler(err); }
-            if (roomSystem) {
+            if (roomSystem.length) {
+                roomSystem = roomSystem[0];
                 const channelName = channelNames[randInRange(0, channelNames.length - 1)];
                 newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
                     Promise.all([
@@ -74,7 +75,7 @@ module.exports = (client, oldState, newState) => {
 
                         let sql = `INSERT INTO room_system_games (roomSystemId, voiceChannelId, textChannelId, roleId)
                                 VALUES (?, ?, ?, ?)`;
-                        client.db.run(sql, roomSystem.id, channels[0].id, channels[1].id, role.id);
+                        client.db.execute(sql, [roomSystem.id, channels[0].id, channels[1].id, role.id]);
                         newState.member.voice.setChannel(channels[0]);
                         newState.member.roles.add(role);
                     }).catch((error) => generalErrorHandler(error));
@@ -89,13 +90,15 @@ module.exports = (client, oldState, newState) => {
                JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE rsg.voiceChannelId=?
                     AND gd.guildId=?`;
-        client.db.get(sql, newState.channel.id, newState.guild.id, (err, roomSystem) => {
+        client.db.query(sql, [newState.channel.id, newState.guild.id], (err, roomSystem) => {
             if (err) { return generalErrorHandler(err); }
-            if (roomSystem) {
+            if (roomSystem.length) {
+                roomSystem = roomSystem[0];
                 sql = `SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?`;
-                client.db.get(sql, roomSystem.id, newState.channel.id, (err, gameData) => {
+                client.db.query(sql, [roomSystem.id, newState.channel.id], (err, gameData) => {
                     // If the voice channel the user entered is not a game channel, do nothing
-                    if (!gameData) { return; }
+                    if (!gameData.length) { return; }
+                    gameData = gameData[0];
 
                     // Grant the user the channel role
                     const role = newState.guild.roles.resolve(gameData.roleId);
@@ -103,7 +106,7 @@ module.exports = (client, oldState, newState) => {
 
                     // Add the user to the ready checks table
                     let sql = `INSERT INTO room_system_ready_checks (gameId, playerId, playerTag) VALUES (?,?,?)`;
-                    client.db.run(sql, gameData.id, newState.member.id, newState.member.user.tag);
+                    client.db.execute(sql, [gameData.id, newState.member.id, newState.member.user.tag]);
                 });
             }
         });
@@ -117,18 +120,20 @@ module.exports = (client, oldState, newState) => {
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE rsg.voiceChannelId=?
                         AND gd.guildId=?`;
-        client.db.get(sql, oldState.channel.id, oldState.guild.id, (err, roomSystem) => {
+        client.db.query(sql, [oldState.channel.id, oldState.guild.id], (err, roomSystem) => {
             if (err) { return generalErrorHandler(err); }
-            if (roomSystem) {
+            if (roomSystem.length) {
+                roomSystem = roomSystem[0];
                 let sql = `SELECT id, roleId, textChannelId, voiceChannelId
                            FROM room_system_games
                            WHERE roomSystemId=?
                                 AND voiceChannelId=?`;
-                client.db.get(sql, roomSystem.id, oldState.channel.id, (err, channelData) => {
+                client.db.query(sql, [roomSystem.id, oldState.channel.id], (err, channelData) => {
                     if (err) { return generalErrorHandler(err); }
 
                     // If the voice channel the user left was not a game channel, do nothing
-                    if (!channelData) { return; }
+                    if (!channelData.length) { return; }
+                    channelData = channelData[0];
 
                     // Remove channel role from this user
                     const role = oldState.guild.roles.resolve(channelData.roleId);
@@ -136,9 +141,9 @@ module.exports = (client, oldState, newState) => {
 
                     // Remove user from ready_checks table
                     let sql = `SELECT id FROM room_system_games WHERE voiceChannelId=? AND roomSystemId=?`;
-                    client.db.get(sql, oldState.channel.id, roomSystem.id, (err, game) => {
+                    client.db.query(sql, [oldState.channel.id, roomSystem.id], (err, game) => {
                         let sql = `DELETE FROM room_system_ready_checks WHERE gameId=? AND playerId=?`;
-                        client.db.run(sql, game.id, oldState.member.id);
+                        client.db.execute(sql, [game[0].id, oldState.member.id]);
                     });
 
                     // If the voice channel is now empty, destroy the role and channels
@@ -148,7 +153,7 @@ module.exports = (client, oldState, newState) => {
                         oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
 
                         // Delete the database for for this channel
-                        client.db.run(`DELETE FROM room_system_games WHERE id=?`, channelData.id);
+                        client.db.execute(`DELETE FROM room_system_games WHERE id=?`, [channelData.id]);
                     }
                 });
             }
