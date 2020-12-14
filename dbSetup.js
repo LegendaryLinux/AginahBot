@@ -73,7 +73,7 @@ const db = mysql.createConnection({
     host: config.dbHost,
     user: config.dbAdminUser,
     password: config.dbAdminPass,
-    database: (process.argv[2] && process.argv[2] === 'dev') ? config.dbTestName : config.dbName,
+    database: (process.argv[2] && process.argv[2] === 'dev') ? config.dbDevName : config.dbName,
     supportBigNumbers: true,
     bigNumberStrings: true,
 });

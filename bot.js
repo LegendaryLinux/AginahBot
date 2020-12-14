@@ -1,5 +1,4 @@
 const { Client, Collection } = require('discord.js')
-const mysql = require('mysql2');
 const config = require('./config.json');
 const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
@@ -10,14 +9,7 @@ const fs = require('fs');
 process.on('uncaughtException', (err) => generalErrorHandler(err));
 
 const client = new Client({ partials: [ 'GUILD_MEMBER', 'MESSAGE', 'REACTION' ] });
-client.db = mysql.createConnection({
-    host: config.dbHost,
-    user: config.dbAdminUser,
-    password: config.dbAdminPass,
-    database: (process.argv[2] && process.argv[2] === 'dev') ? config.dbTestName : config.dbName,
-    supportBigNumbers: true,
-    bigNumberStrings: true,
-});
+client.devMode = process.argv[2] && process.argv[2] === 'dev';
 client.commands = new Collection();
 client.commandCategories = [];
 client.messageListeners = [];

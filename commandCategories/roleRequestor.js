@@ -1,37 +1,32 @@
 const config = require('../config.json');
 const {generalErrorHandler} = require('../errorHandlers');
-const {parseEmoji} = require('../lib');
+const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
 
-const updateCategoryMessage = (client, guild, messageId) => {
+const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
   let sql = `SELECT rc.id, rc.categoryName, rs.roleRequestChannelId FROM role_categories rc
               JOIN role_systems rs ON rc.roleSystemId = rs.id
               JOIN guild_data gd ON rs.guildDataId = gd.id
               WHERE gd.guildId=?
                 AND rc.messageId=?`;
-  client.db.query(sql, [guild.id, messageId], (err, roleCategory) => {
-    if (err) { return generalErrorHandler(err); }
-    if (!roleCategory.length) { throw Error("Unable to update category message. Role category could not be found."); }
+  const roleCategory = await dbQueryOne(sql, [guild.id, messageId]);
+  if (!roleCategory) { throw Error("Unable to update category message. Role category could not be found."); }
 
-    roleCategory = roleCategory[0];
-    const roleInfo = [`> __${roleCategory.categoryName}__`];
-    let sql = `SELECT r.roleId, r.reaction, r.description FROM roles r WHERE r.categoryId=?`;
-    client.db.query(sql, [roleCategory.id], (err, roles) => {
-      if (err) { return generalErrorHandler(err); }
-      roles.forEach((role) => {
-        roleInfo.push(`> ${role.reaction} ${guild.roles.resolve(role.roleId)}` +
-            `${role.description ? `: ${role.description}` : ''}`);
-      });
-
-      // If there are no roles in this category, mention that there are none
-      if (roleInfo.length === 1) { roleInfo.push("> There are no roles in this category yet."); }
-
-      // Fetch and edit the category message
-      guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(messageId)
-          .then((categoryMessage) => categoryMessage.edit(roleInfo)
-              .then().catch((err) => generalErrorHandler(err)));
-    });
+  const roleInfo = [`> __${roleCategory.categoryName}__`];
+  sql = `SELECT r.roleId, r.reaction, r.description FROM roles r WHERE r.categoryId=?`;
+  const roles = await dbQueryAll(sql, [roleCategory.id]);
+  roles.forEach((role) => {
+    roleInfo.push(`> ${role.reaction} ${guild.roles.resolve(role.roleId)}` +
+        `${role.description ? `: ${role.description}` : ''}`);
   });
+
+  // If there are no roles in this category, mention that there are none
+  if (roleInfo.length === 1) { roleInfo.push("> There are no roles in this category yet."); }
+
+  // Fetch and edit the category message
+  guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(messageId)
+      .then((categoryMessage) => categoryMessage.edit(roleInfo)
+          .then().catch((err) => generalErrorHandler(err)));
 };
 
 module.exports = {
@@ -48,42 +43,39 @@ module.exports = {
       minimumRole: null,
       adminOnly: true,
       guildOnly: true,
-      execute(message) {
+      async execute(message) {
         let sql = `SELECT gd.id AS guildDataId, rs.id AS roleSystemId
                     FROM guild_data gd
                     LEFT JOIN role_systems rs ON gd.id = rs.guildDataId
                     WHERE gd.guildId=?`;
-        message.client.db.query(sql, [message.guild.id], (err, row) => {
-          if (err) { return generalErrorHandler(err); }
-          // If the role system already exists, do not attempt to re-create it
-          if (!row.length) { throw new Error(); }
-          if (row[0].roleSystemId) {
-            return message.channel.send("The role system has already been set up on your server.");
-          }
-          message.guild.channels.create('role-request', {
-            type: 'text',
-            topic: 'Request roles so that you may be pinged for various notifications.',
-            reason: 'Role Request system created.',
-            permissionOverwrites: [
-              {
-                id: message.client.user.id,
-                allow: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ],
-              },
-              {
-                id: message.guild.roles.everyone.id,
-                deny: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ]
-              }
-            ],
-          }).then((channel) => {
-            // Add role system data to the database
-            let sql = `INSERT INTO role_systems (guildDataId, roleRequestChannelId) VALUES(?, ?)`
-            message.client.db.execute(sql, [row[0].guildDataId, channel.id]);
-            channel.send(`The following roles are available on this server. If you would like to be ` +
-                `assigned a role, please react to the appropriate message with the indicated ` +
-                `emoji. All roles are pingable by everyone on the server. Remember, with great ` +
-                `power comes great responsibility.`);
-          }).catch((error) => generalErrorHandler(error));
-        });
+        const row = await dbQueryOne(sql, [message.guild.id]);
+        if (!row) { throw new Error(); }
+        if (row.roleSystemId) {
+          return message.channel.send("The role system has already been set up on your server.");
+        }
+        message.guild.channels.create('role-request', {
+          type: 'text',
+          topic: 'Request roles so that you may be pinged for various notifications.',
+          reason: 'Role Request system created.',
+          permissionOverwrites: [
+            {
+              id: message.client.user.id,
+              allow: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ],
+            },
+            {
+              id: message.guild.roles.everyone.id,
+              deny: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ]
+            }
+          ],
+        }).then(async (channel) => {
+          // Add role system data to the database
+          let sql = `INSERT INTO role_systems (guildDataId, roleRequestChannelId) VALUES(?, ?)`
+          await dbExecute(sql, [row.guildDataId, channel.id]);
+          channel.send(`The following roles are available on this server. If you would like to be ` +
+              `assigned a role, please react to the appropriate message with the indicated ` +
+              `emoji. All roles are pingable by everyone on the server. Remember, with great ` +
+              `power comes great responsibility.`);
+        }).catch((error) => generalErrorHandler(error));
       }
     },
     {
@@ -95,38 +87,33 @@ module.exports = {
       minimumRole: null,
       adminOnly: true,
       guildOnly: true,
-      execute(message) {
+      async execute(message) {
         let sql = `SELECT rs.id, rs.roleRequestChannelId FROM role_systems rs
                     JOIN guild_data gd ON rs.guildDataId = gd.id
                     WHERE gd.guildId=?`;
-        message.client.db.query(sql, [message.guild.id], (err, roleSystem) => {
-          if (err) { return generalErrorHandler(err); }
-          if (!roleSystem.length) {
-            // If the role system does not exist, there is no need to attempt to delete it
-            return message.channel.send("The role system is not currently installed on this server.");
-          }
-          roleSystem = roleSystem[0];
-          // Loop over the role categories and delete them
-          let sql = `SELECT id FROM role_categories WHERE roleSystemId=?`;
-          message.client.db.query(sql, [roleSystem.id], (err, roleCategory) => {
-            if (err) { return generalErrorHandler(err); }
-            if (!roleCategory.length) { return; }
-            roleCategory = roleCategory[0];
-            // Loop over the roles in each category and delete them from the server
-            let sql = `SELECT roleId FROM roles WHERE categoryId=?`;
-            message.client.db.query(sql, [roleCategory.id], (err, roles) => {
-              if (err) { return generalErrorHandler(err); }
-              roles.forEach((role) => {
-                message.guild.roles.resolve(role.roleId).delete();
-              });
-            });
-            message.client.db.execute(`DELETE FROM roles WHERE categoryId=?`, [roleCategory.id]);
-          });
-          // Database cleanup
-          message.client.db.execute(`DELETE FROM role_categories WHERE roleSystemId=?`, [roleSystem.id]);
-          message.guild.channels.resolve(roleSystem.roleRequestChannelId).delete();
-          message.client.db.execute(`DELETE FROM role_systems WHERE id=?`, [roleSystem.id]);
+        const roleSystem = await dbQueryOne(sql, [message.guild.id]);
+        if (!roleSystem.length) {
+          // If the role system does not exist, there is no need to attempt to delete it
+          return message.channel.send("The role system is not currently installed on this server.");
+        }
+
+        // Loop over the role categories and delete them
+        sql = `SELECT id FROM role_categories WHERE roleSystemId=?`;
+        const roleCategory = await dbQueryOne(sql, [roleSystem.id]);
+        if (!roleCategory) { return; }
+
+        // Loop over the roles in each category and delete them from the server
+        sql = `SELECT roleId FROM roles WHERE categoryId=?`;
+        const roles = await dbQueryAll(sql, [roleCategory.id]);
+        roles.forEach((role) => {
+          message.guild.roles.resolve(role.roleId).delete();
         });
+        await dbExecute(`DELETE FROM roles WHERE categoryId=?`, [roleCategory.id]);
+
+        // Database cleanup
+        await dbExecute(`DELETE FROM role_categories WHERE roleSystemId=?`, [roleSystem.id]);
+        message.guild.channels.resolve(roleSystem.roleRequestChannelId).delete();
+        await dbExecute(`DELETE FROM role_systems WHERE id=?`, [roleSystem.id]);
       }
     },
     {
@@ -139,37 +126,32 @@ module.exports = {
       minimumRole: config.moderatorRole,
       adminOnly: false,
       guildOnly: true,
-      execute(message, args) {
+      async execute(message, args) {
         let sql = `SELECT 1 FROM role_categories rc
                     JOIN role_systems rs ON rc.roleSystemId = rs.id
                     JOIN guild_data gd ON rs.guildDataId = gd.id
                     WHERE gd.guildId=?
                       AND rc.categoryName=?`;
-        message.client.db.query(sql, [message.guild.id, args[0]], (err, row) => {
-          if (err) { return generalErrorHandler(err); }
-          if (row.length) { return message.channel.send("That category already exists!"); }
+        const row = await dbQueryOne(sql, [message.guild.id, args[0]]);
+        if (row) { return message.channel.send("That category already exists!"); }
 
-          let sql = `SELECT rs.id, rs.roleRequestChannelId
+        sql = `SELECT rs.id, rs.roleRequestChannelId
                       FROM role_systems rs
                       JOIN guild_data gd ON rs.guildDataId=gd.id
                       WHERE gd.guildId=?`;
-          message.client.db.query(sql, [message.guild.id], (err, roleSystem) => {
-            if (err) { return generalErrorHandler(err); }
-            if (!roleSystem.length) {
-              return message.channel.send("The role system has not been setup on this server.");
-            }
-            roleSystem = roleSystem[0];
+        const roleSystem = await dbQueryOne(sql, [message.guild.id]);
+        if (!roleSystem) {
+          return message.channel.send("The role system has not been setup on this server.");
+        }
 
-            // Add the category message to the #role-request channel
-            message.guild.channels.resolve(roleSystem.roleRequestChannelId).send("Creating new category...")
-              .then((categoryMessage) => {
-                // Update database with new category message data
-                let sql = `INSERT INTO role_categories (roleSystemId, categoryName, messageId) VALUES (?, ?, ?)`;
-                message.client.db.execute(sql, [roleSystem.id, args[0], categoryMessage.id]);
-                updateCategoryMessage(message.client, message.guild, categoryMessage.id);
-              });
+        // Add the category message to the #role-request channel
+        message.guild.channels.resolve(roleSystem.roleRequestChannelId).send("Creating new category...")
+          .then(async (categoryMessage) => {
+            // Update database with new category message data
+            let sql = `INSERT INTO role_categories (roleSystemId, categoryName, messageId) VALUES (?, ?, ?)`;
+            await dbExecute(sql, [roleSystem.id, args[0], categoryMessage.id]);
+            await updateCategoryMessage(message.client, message.guild, categoryMessage.id);
           });
-        });
       }
     },
     {
@@ -181,23 +163,19 @@ module.exports = {
       minimumRole: config.moderatorRole,
       adminOnly: false,
       guildOnly: true,
-      execute(message, args) {
+      async execute(message, args) {
         // Get the role category data
         let sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
                     JOIN role_systems rs ON rc.roleSystemId = rs.id
                     JOIN guild_data gd ON rs.guildDataId = gd.id
                     WHERE gd.guildId=?
                       AND rc.categoryName=?`;
-        message.client.db.query(sql, [message.guild.id, args[0]], (err, roleCategory) => {
-          if (err) { return generalErrorHandler(err); }
-          // If the category does not exist, warn the user and do nothing
-          if (!roleCategory.length) { return message.channel.send("That category does not exist!"); }
-          roleCategory = roleCategory[0];
-          message.client.db.execute(`DELETE FROM roles WHERE categoryId=?`, [roleCategory.id]);
-          message.client.db.execute(`DELETE FROM role_categories WHERE id=?`, [roleCategory.id]);
-          message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
-              .then((categoryMessage) => categoryMessage.delete()).catch((err) => generalErrorHandler(err));
-        });
+        const roleCategory = await dbQueryOne(sql, [message.guild.id, args[0]]);
+        if (!roleCategory) { return message.channel.send("That category does not exist!"); }
+        await dbExecute(`DELETE FROM roles WHERE categoryId=?`, [roleCategory.id]);
+        await dbExecute(`DELETE FROM role_categories WHERE id=?`, [roleCategory.id]);
+        message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
+          .then((categoryMessage) => categoryMessage.delete()).catch((err) => generalErrorHandler(err));
       }
     },
     {
@@ -209,7 +187,7 @@ module.exports = {
       minimumRole: config.moderatorRole,
       adminOnly: false,
       guildOnly: true,
-      execute(message, args) {
+      async execute(message, args) {
         // Check for existing role
         let sql = `SELECT 1 FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
@@ -218,48 +196,43 @@ module.exports = {
                     WHERE gd.guildId=?
                       AND rc.categoryName=?
                       AND r.roleName=?`;
-        message.client.db.query(sql, [message.guild.id, args[0], args[1]], (err, row) => {
-          if (err) { return generalErrorHandler(error); }
-          // If the role already exists, do nothing
-          if (row.length) { return message.channel.send("That role already exists!"); }
+        const row = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
+        // If the role already exists, do nothing
+        if (row) { return message.channel.send("That role already exists!"); }
 
-          // Verify the requested emoji is available on this server
-          const emoji = parseEmoji(message.guild, args[2]);
-          if (!emoji) { return message.channel.send("That emoji is not available on this server!"); }
+        // Verify the requested emoji is available on this server
+        const emoji = parseEmoji(message.guild, args[2]);
+        if (!emoji) { return message.channel.send("That emoji is not available on this server!"); }
 
-          let sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
+        sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
                       JOIN role_systems rs ON rc.roleSystemId = rs.id
                       JOIN guild_data gd ON rs.guildDataId = gd.id
                       WHERE gd.guildId=?
                         AND rc.categoryName=?`;
-          message.client.db.query(sql, [message.guild.id, args[0]], (err, roleCategory) => {
-            if (err) { return generalErrorHandler(error); }
-            // If there is no such category, warn the user and do nothing
-            if (!roleCategory.length) { return message.channel.send("That category doesn't exist!"); }
-            roleCategory = roleCategory[0];
+        const roleCategory = await dbQueryOne(sql, [message.guild.id, args[0]]);
+        // If there is no such category, warn the user and do nothing
+        if (!roleCategory) { return message.channel.send("That category doesn't exist!"); }
 
-            // Create the role on the server
-            message.guild.roles.create({
-              data: {
-                name: args[1],
-                mentionable: true,
-              },
-              reason: 'Added as part of role-request system.',
-            }).then((role) => {
-              // Add the role to the database
-              message.client.db.execute(
-                  `INSERT INTO roles (categoryId, roleId, roleName, reaction, description) VALUES (?, ?, ?, ?, ?)`,
-                  [roleCategory.id, role.id, args[1], emoji, (args[3] ? args.slice(3).join(' ') : null)]
-              );
-              updateCategoryMessage(message.client, message.guild, roleCategory.messageId);
+        // Create the role on the server
+        message.guild.roles.create({
+          data: {
+            name: args[1],
+            mentionable: true,
+          },
+          reason: 'Added as part of role-request system.',
+        }).then(async (role) => {
+          // Add the role to the database
+          await dbExecute(
+              `INSERT INTO roles (categoryId, roleId, roleName, reaction, description) VALUES (?, ?, ?, ?, ?)`,
+              [roleCategory.id, role.id, args[1], emoji, (args[3] ? args.slice(3).join(' ') : null)]
+          );
+          await updateCategoryMessage(message.client, message.guild, roleCategory.messageId);
 
-              // Add the reaction to the category message
-              message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
-                  .then((categoryMessage) => categoryMessage.react(emoji).catch((err) => generalErrorHandler(err)));
-            }).catch((error) => {
-              throw new Error(`Unable to create guild role. Error: ${error}`);
-            });
-          });
+          // Add the reaction to the category message
+          message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
+              .then((categoryMessage) => categoryMessage.react(emoji).catch((err) => generalErrorHandler(err)));
+        }).catch((error) => {
+          throw new Error(`Unable to create guild role. Error: ${error}`);
         });
       }
     },
@@ -272,7 +245,7 @@ module.exports = {
       minimumRole: config.moderatorRole,
       adminOnly: false,
       guildOnly: true,
-      execute(message, args) {
+      async execute(message, args) {
         // Check for existing role
         let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId, r.reaction FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
@@ -281,30 +254,27 @@ module.exports = {
                     WHERE gd.guildId=?
                       AND rc.categoryName=?
                       AND r.roleName=?`;
-        message.client.db.query(sql, [message.guild.id, args[0], args[1]], (err, role) => {
-          if (err) { return generalErrorHandler(error); }
-          // If the role already exists, do nothing
-          if (!role.length) { return message.channel.send("That role does not exist!"); }
-          role = role[0];
+        const role = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
+        // If the role already exists, do nothing
+        if (!role) { return message.channel.send("That role does not exist!"); }
 
-          // Verify the requested emoji is available on this server
-          const emoji = parseEmoji(message.guild, args[2]);
-          if (!emoji) { return message.channel.send("That emoji is not available on this server!"); }
+        // Verify the requested emoji is available on this server
+        const emoji = parseEmoji(message.guild, args[2]);
+        if (!emoji) { return message.channel.send("That emoji is not available on this server!"); }
 
-          // Remove reactions from the role category message
-          message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
-            .then((categoryMessage) => {
-              categoryMessage.reactions.cache.each((reaction) => {
-                if (reaction.emoji.toString() === role.reaction) { reaction.remove(); }
-              });
+        // Remove reactions from the role category message
+        message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
+          .then((categoryMessage) => {
+            categoryMessage.reactions.cache.each((reaction) => {
+              if (reaction.emoji.toString() === role.reaction) { reaction.remove(); }
+            });
 
-              // Add new reaction to message
-              categoryMessage.react(emoji);
-            }).catch((err) => generalErrorHandler(err));
+            // Add new reaction to message
+            categoryMessage.react(emoji);
+          }).catch((err) => generalErrorHandler(err));
 
-          message.client.db.execute(`UPDATE roles SET reaction=? WHERE id=?`, [emoji.toString(), role.id]);
-          updateCategoryMessage(message.client, message.guild, role.messageId);
-        });
+        await dbExecute(`UPDATE roles SET reaction=? WHERE id=?`, [emoji.toString(), role.id]);
+        await updateCategoryMessage(message.client, message.guild, role.messageId);
       }
     },
     {
@@ -316,7 +286,7 @@ module.exports = {
       minimumRole: config.moderatorRole,
       adminOnly: false,
       guildOnly: true,
-      execute(message, args) {
+      async execute(message, args) {
         // Check for existing role
         let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
@@ -325,15 +295,12 @@ module.exports = {
                     WHERE gd.guildId=?
                       AND rc.categoryName=?
                       AND r.roleName=?`;
-        message.client.db.query(sql, [message.guild.id, args[0], args[1]], (err, role) => {
-          if (err) { return generalErrorHandler(err); }
-          if (!role.length) { return message.channel.send("That role does not exist!"); }
-          role = role[0];
+        const role = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
+        if (!role) { return message.channel.send("That role does not exist!"); }
 
-          let sql = `UPDATE roles SET description=? WHERE id=?`;
-          message.client.db.execute(sql, [(args[2] ? args.slice(2).join(' ') : null), role.id]);
-          updateCategoryMessage(message.client, message.guild, role.messageId);
-        });
+        sql = `UPDATE roles SET description=? WHERE id=?`;
+        await dbExecute(sql, [(args[2] ? args.slice(2).join(' ') : null), role.id]);
+        await updateCategoryMessage(message.client, message.guild, role.messageId);
       }
     },
     {
@@ -345,7 +312,7 @@ module.exports = {
       minimumRole: config.moderatorRole,
       adminOnly: false,
       guildOnly: true,
-      execute(message, args) {
+      async execute(message, args) {
         let sql = `SELECT r.id, rc.id AS categoryId, rc.messageId, r.reaction, r.roleId, rs.roleRequestChannelId
                     FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
@@ -354,23 +321,20 @@ module.exports = {
                     WHERE gd.guildId=?
                       AND rc.categoryName=?
                       AND r.roleName=?`;
-        message.client.db.query(sql, [message.guild.id, args[0], args[1]], (err, role) => {
-          if (err) { return generalErrorHandler(err); }
-          if (!role.length) { return message.channel.send("That role does not exist!"); }
-          role = role[0];
+        const role = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
+        if (!role) { return message.channel.send("That role does not exist!"); }
 
-          // Remove reactions from the role category message
-          message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
-            .then((categoryMessage) => categoryMessage.reactions.resolve(role.reaction).remove())
-            .catch((err) => generalErrorHandler(err));
+        // Remove reactions from the role category message
+        message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
+          .then((categoryMessage) => categoryMessage.reactions.resolve(role.reaction).remove())
+          .catch((err) => generalErrorHandler(err));
 
-          // Remove the role from the guild
-          message.guild.roles.resolve(role.roleId).delete();
+        // Remove the role from the guild
+        message.guild.roles.resolve(role.roleId).delete();
 
-          // Delete rows from the roles table and update role category message
-          message.client.db.execute(`DELETE FROM roles WHERE categoryId=?`, [role.categoryId]);
-          updateCategoryMessage(message.client, message.guild, role.messageId);
-        });
+        // Delete rows from the roles table and update role category message
+        await dbExecute(`DELETE FROM roles WHERE categoryId=?`, [role.categoryId]);
+        await updateCategoryMessage(message.client, message.guild, role.messageId);
       }
     },
   ],
