@@ -19,13 +19,13 @@ module.exports = async (client, oldState, newState) => {
     // If a user has entered the "Start Game" channel
     let sql = `SELECT rs.id, rs.channelCategoryId
                FROM room_systems rs
-                        JOIN guild_data gd ON rs.guildDataId = gd.id
+               JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE gd.guildId=?
                  AND rs.newGameChannelId=?`;
     let roomSystem = await dbQueryOne(sql, [newState.guild.id, newState.channel.id]);
     if (roomSystem) {
       const channelName = channelNames[randInRange(0, channelNames.length - 1)];
-      newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
+      return newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
         Promise.all([
           // Voice channel
           newState.guild.channels.create(channelName, {
@@ -89,7 +89,7 @@ module.exports = async (client, oldState, newState) => {
              AND gd.guildId=?`;
     roomSystem = await dbQueryOne(sql, [newState.channel.id, newState.guild.id]);
     if (roomSystem) {
-      sql = `SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?`;
+      let sql = `SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?`;
       const gameData = await dbQueryOne(sql, [roomSystem.id, newState.channel.id]);
       // If the voice channel the user entered is not a game channel, do nothing
       if (!gameData.length) { return; }
@@ -99,7 +99,7 @@ module.exports = async (client, oldState, newState) => {
       newState.member.roles.add(role);
 
       // Add the user to the ready checks table
-      let sql = `INSERT INTO room_system_ready_checks (gameId, playerId, playerTag) VALUES (?,?,?)`;
+      sql = `INSERT INTO room_system_ready_checks (gameId, playerId, playerTag) VALUES (?,?,?)`;
       await dbExecute(sql, [gameData.id, newState.member.id, newState.member.user.tag]);
     }
   }
@@ -113,7 +113,7 @@ module.exports = async (client, oldState, newState) => {
                WHERE rsg.voiceChannelId=?
                  AND gd.guildId=?`;
     const roomSystem = await dbQueryOne(sql, [oldState.channel.id, oldState.guild.id]);
-    if (roomSystem.length) {
+    if (roomSystem) {
       sql = `SELECT id, roleId, textChannelId, voiceChannelId
              FROM room_system_games
              WHERE roomSystemId=?

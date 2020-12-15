@@ -92,23 +92,22 @@ module.exports = {
                     JOIN guild_data gd ON rs.guildDataId = gd.id
                     WHERE gd.guildId=?`;
         const roleSystem = await dbQueryOne(sql, [message.guild.id]);
-        if (!roleSystem.length) {
+        if (!roleSystem) {
           // If the role system does not exist, there is no need to attempt to delete it
           return message.channel.send("The role system is not currently installed on this server.");
         }
 
         // Loop over the role categories and delete them
         sql = `SELECT id FROM role_categories WHERE roleSystemId=?`;
-        const roleCategory = await dbQueryOne(sql, [roleSystem.id]);
-        if (!roleCategory) { return; }
-
-        // Loop over the roles in each category and delete them from the server
-        sql = `SELECT roleId FROM roles WHERE categoryId=?`;
-        const roles = await dbQueryAll(sql, [roleCategory.id]);
-        roles.forEach((role) => {
-          message.guild.roles.resolve(role.roleId).delete();
-        });
-        await dbExecute(`DELETE FROM roles WHERE categoryId=?`, [roleCategory.id]);
+        const roleCategories = await dbQueryAll(sql, [roleSystem.id]);
+        for (let roleCategory of roleCategories) {
+          // Loop over the roles in each category and delete them from the server
+          const roles = await dbQueryAll(`SELECT roleId FROM roles WHERE categoryId=?`, [roleCategory.id]);
+          for (let role of roles) {
+            await message.guild.roles.resolve(role.roleId).delete();
+          }
+          await dbExecute(`DELETE FROM roles WHERE categoryId=?`, [roleCategory.id]);
+        }
 
         // Database cleanup
         await dbExecute(`DELETE FROM role_categories WHERE roleSystemId=?`, [roleSystem.id]);

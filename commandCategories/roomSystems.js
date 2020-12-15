@@ -68,8 +68,8 @@ module.exports = {
 
           category.children.forEach((channel) => channel.delete());
           category.delete();
-          await dbExecute(`DELETE FROM room_system_games WHERE roomSystemId=?`, [row[0].id]);
-          await dbExecute(`DELETE FROM room_systems WHERE id=?`, [row[0].id]);
+          await dbExecute(`DELETE FROM room_system_games WHERE roomSystemId=?`, [row.id]);
+          await dbExecute(`DELETE FROM room_systems WHERE id=?`, [row.id]);
         }).catch((e) => generalErrorHandler(e));
       }
     },

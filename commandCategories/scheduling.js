@@ -77,9 +77,8 @@ module.exports = {
               }).catch((err) => generalErrorHandler(err));
           });
 
-          if (games.length === 0) {
-            return message.channel.send("There are currently no games scheduled.");
-          }
+          if (games.length === 0) { return message.channel.send("There are currently no games scheduled."); }
+          return;
         }
 
         if (args.length < 2) {
