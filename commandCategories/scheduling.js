@@ -56,12 +56,14 @@ module.exports = {
           let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId,
                             (SELECT COUNT(*) FROM event_attendees WHERE eventId=se.id) AS rsvpCount
                      FROM scheduled_events se
-                              JOIN guild_data gd ON se.guildDataId = gd.id
+                     JOIN guild_data gd ON se.guildDataId = gd.id
                      WHERE gd.guildId=?
                        AND se.timestamp > ?`;
           const games = await dbQueryAll(sql, [message.guild.id, new Date().getTime()]);
-          games.forEach((game) => {
-            message.guild.channels.resolve(game.channelId).messages.fetch(game.messageId).then(
+          for (let game of games) {
+            const channel = message.guild.channels.resolve(game.channelId);
+            if (!channel) { continue; }
+            channel.messages.fetch(game.messageId).then(
               (scheduleMessage) => {
                 const gameTime = new Date(parseInt(game.timestamp, 10));
                 message.channel.send(
@@ -75,7 +77,7 @@ module.exports = {
                   `> RSVP Link: ${scheduleMessage.url}\n` +
                   `> Current RSVPs: ${game.rsvpCount}`);
               }).catch((err) => generalErrorHandler(err));
-          });
+          }
 
           if (games.length === 0) { return message.channel.send("There are currently no games scheduled."); }
           return;
