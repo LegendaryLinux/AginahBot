@@ -20,22 +20,27 @@ Find it in use at the [MultiWorld Discord](https://discord.gg/B5pjMYy).
 # Self-Hosting
 
 ## Prerequisites
+- `node` and `npm` should be installed to run the bot and install dependencies
 - `unrar` should be installed on your system to process `.rar` files.
+- A MySQL 8 server should be installed, and a database available.
 
 ## Configuration
 A `config.json` file is required to be present in the base directory of the repository. This file should contain
-your Discord bot's secret key, a name for the SQLite database file, a command prefix, a name for the text channel
-used in the role requestor system, and a name for the Moderator role which will be created on servers the bot
-joins if it does not exist already. 
+your Discord bot's secret key, database information, a command prefix, and a name for the Moderator role which
+will be created on servers the bot joins if it does not exist already. 
 
 Example config:
 ```json
 {
-  "token": "your-token-here",
-  "dbFile": "aginahBot.db.sqlite3",
+  "token": "discord-bot-token",
+  "dbHost": "hostname-of-mysql-server",
+  "dbUser": "database-username",
+  "dbPass": "database-password",
+  "dbName": "database-name",
   "commandPrefix": "!aginah ",
   "moderatorRole": "Moderator"
 }
+
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
@@ -64,6 +69,16 @@ cd AginahBot
 # Install required packages
 npm install
 
+# Set up your config.json file
+vim config.json
+
+# Initialize the database
+node dbSetup.js
+
 # Run the bot
 node bot.js
 ```
+
+Note that `dbSetup.js` requires a database user with the `CREATE TABLE` permission, but normal operation requires
+only `SELECT`, `INSERT`, `UPDATE`, and `DELETE` on your target database. It is recommended to use an administrative
+user to configure the database, and a non-admin user with restricted permissions during normal operation.
