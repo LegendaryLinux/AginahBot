@@ -71,9 +71,9 @@ const eventAttendees = `CREATE TABLE IF NOT EXISTS event_attendees (
 
 const db = mysql.createConnection({
     host: config.dbHost,
-    user: config.dbAdminUser,
-    password: config.dbAdminPass,
-    database: (process.argv[2] && process.argv[2] === 'dev') ? config.dbDevName : config.dbName,
+    user: config.dbUser,
+    password: config.dbPass,
+    database: config.dbName,
     supportBigNumbers: true,
     bigNumberStrings: true,
 });

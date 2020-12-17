@@ -107,9 +107,9 @@ module.exports = {
 
   dbConnect: () => mysql.createConnection({
     host: config.dbHost,
-    user: (process.argv[2] && process.argv[2] === 'dev') ? config.dbAdminUser : config.dbUser,
-    password: (process.argv[2] && process.argv[2] === 'dev') ? config.dbAdminPass : config.dbPass,
-    database: (process.argv[2] && process.argv[2] === 'dev') ? config.dbDevName : config.dbName,
+    user: config.dbUser,
+    password: config.dbPass,
+    database: config.dbName,
     supportBigNumbers: true,
     bigNumberStrings: true,
   }),
