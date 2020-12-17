@@ -40,7 +40,6 @@ Example config:
   "commandPrefix": "!aginah ",
   "moderatorRole": "Moderator"
 }
-
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
