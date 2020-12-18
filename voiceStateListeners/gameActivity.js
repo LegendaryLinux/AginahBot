@@ -83,16 +83,16 @@ module.exports = async (client, oldState, newState) => {
     // If the user has entered a game channel
     sql = `SELECT rs.id, rs.channelCategoryId
            FROM room_system_games rsg
-                    JOIN room_systems rs ON rsg.roomSystemId = rs.id
-                    JOIN guild_data gd ON rs.guildDataId = gd.id
+           JOIN room_systems rs ON rsg.roomSystemId = rs.id
+           JOIN guild_data gd ON rs.guildDataId = gd.id
            WHERE rsg.voiceChannelId=?
              AND gd.guildId=?`;
     roomSystem = await dbQueryOne(sql, [newState.channel.id, newState.guild.id]);
     if (roomSystem) {
-      let sql = `SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?`;
+      sql = `SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?`;
       const gameData = await dbQueryOne(sql, [roomSystem.id, newState.channel.id]);
       // If the voice channel the user entered is not a game channel, do nothing
-      if (!gameData.length) { return; }
+      if (!gameData) { return; }
 
       // Grant the user the channel role
       const role = newState.guild.roles.resolve(gameData.roleId);
@@ -108,8 +108,8 @@ module.exports = async (client, oldState, newState) => {
     // User leaves a game channel
     let sql = `SELECT rs.id, rs.channelCategoryId
                FROM room_system_games rsg
-                        JOIN room_systems rs ON rsg.roomSystemId = rs.id
-                        JOIN guild_data gd ON rs.guildDataId = gd.id
+               JOIN room_systems rs ON rsg.roomSystemId = rs.id
+               JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE rsg.voiceChannelId=?
                  AND gd.guildId=?`;
     const roomSystem = await dbQueryOne(sql, [oldState.channel.id, oldState.guild.id]);
@@ -139,7 +139,7 @@ module.exports = async (client, oldState, newState) => {
         oldState.guild.channels.resolve(channelData.textChannelId).delete();
         oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
 
-        // Delete the database for for this channel
+        // Delete the database entry for for this channel
         await dbExecute(`DELETE FROM room_system_games WHERE id=?`, [channelData.id]);
       }
     }
