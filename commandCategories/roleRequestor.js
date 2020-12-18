@@ -5,10 +5,10 @@ const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
 const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
   let sql = `SELECT rc.id, rc.categoryName, rs.roleRequestChannelId FROM role_categories rc
-              JOIN role_systems rs ON rc.roleSystemId = rs.id
-              JOIN guild_data gd ON rs.guildDataId = gd.id
-              WHERE gd.guildId=?
-                AND rc.messageId=?`;
+             JOIN role_systems rs ON rc.roleSystemId = rs.id
+             JOIN guild_data gd ON rs.guildDataId = gd.id
+             WHERE gd.guildId=?
+               AND rc.messageId=?`;
   const roleCategory = await dbQueryOne(sql, [guild.id, messageId]);
   if (!roleCategory) { throw Error("Unable to update category message. Role category could not be found."); }
 
@@ -222,8 +222,8 @@ module.exports = {
         }).then(async (role) => {
           // Add the role to the database
           await dbExecute(
-              `INSERT INTO roles (categoryId, roleId, roleName, reaction, description) VALUES (?, ?, ?, ?, ?)`,
-              [roleCategory.id, role.id, args[1], emoji, (args[3] ? args.slice(3).join(' ') : null)]
+            `INSERT INTO roles (categoryId, roleId, roleName, reaction, description) VALUES (?, ?, ?, ?, ?)`,
+            [roleCategory.id, role.id, args[1], emoji.toString(), (args[3] ? args.slice(3).join(' ') : null)]
           );
           await updateCategoryMessage(message.client, message.guild, roleCategory.messageId);
 
@@ -231,7 +231,7 @@ module.exports = {
           message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
               .then((categoryMessage) => categoryMessage.react(emoji).catch((err) => generalErrorHandler(err)));
         }).catch((error) => {
-          throw new Error(`Unable to create guild role. Error: ${error}`);
+          throw new Error(`Unable to create guild role. ${error}`);
         });
       }
     },
@@ -325,14 +325,16 @@ module.exports = {
 
         // Remove reactions from the role category message
         message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
-          .then((categoryMessage) => categoryMessage.reactions.resolve(role.reaction).remove())
+          .then((categoryMessage) => categoryMessage.reactions.cache.array().forEach((r) => {
+            if (r.emoji.toString() === role.reaction) { r.remove(); }
+          }))
           .catch((err) => generalErrorHandler(err));
 
         // Remove the role from the guild
         message.guild.roles.resolve(role.roleId).delete();
 
         // Delete rows from the roles table and update role category message
-        await dbExecute(`DELETE FROM roles WHERE categoryId=?`, [role.categoryId]);
+        await dbExecute(`DELETE FROM roles WHERE id=? AND categoryId=?`, [role.id, role.categoryId]);
         await updateCategoryMessage(message.client, message.guild, role.messageId);
       }
     },

@@ -21,7 +21,8 @@ module.exports = async (client, messageReaction, user, added) => {
                AND rs.roleRequestChannelId=?
                AND rc.messageId=?
                AND r.reaction=?`;
-  const role = await dbQueryOne(sql, [guild.id, messageReaction.message.channel.id, messageReaction.message.id, emoji]);
+  const role = await dbQueryOne(sql, [guild.id, messageReaction.message.channel.id,
+    messageReaction.message.id, emoji.toString()]);
   if (!role) { return; }
 
   // Get the matching role from the guild
