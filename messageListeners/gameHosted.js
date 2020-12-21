@@ -18,7 +18,7 @@ module.exports = async (client, message) => {
                      AND rsg.textChannelId=?`;
       const roleData = await dbQueryOne(sql, [message.guild.id, message.channel.id]);
       if (roleData) {
-        message.channel.send(`${message.guild.roles.resolve(roleData[0].roleId)}: The seeds have been posted!`);
+        message.channel.send(`${message.guild.roles.resolve(roleData.roleId)}: The seeds have been posted!`);
 
         // Pin the message to the channel
         return message.pin();
