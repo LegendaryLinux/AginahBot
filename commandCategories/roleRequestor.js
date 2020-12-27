@@ -121,17 +121,24 @@ module.exports = {
       longDescription: `Create a category for roles to be added to. Each category will have its own message ` +
         `in the #role-request channel. Category names must be a single alphanumeric word.`,
       aliases: [],
-      usage: '`!aginah create-role-category CategoryName`',
+      usage: '`!aginah create-role-category Category Name`',
       minimumRole: config.moderatorRole,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
+        if (args.length === 0) {
+          return message.channel.send("You must specify a name for the category!");
+        }
+
+        // Allow category name to contain multiple words
+        const categoryName = args.join(' ');
+
         let sql = `SELECT 1 FROM role_categories rc
                     JOIN role_systems rs ON rc.roleSystemId = rs.id
                     JOIN guild_data gd ON rs.guildDataId = gd.id
                     WHERE gd.guildId=?
                       AND rc.categoryName=?`;
-        const row = await dbQueryOne(sql, [message.guild.id, args[0]]);
+        const row = await dbQueryOne(sql, [message.guild.id, categoryName]);
         if (row) { return message.channel.send("That category already exists!"); }
 
         sql = `SELECT rs.id, rs.roleRequestChannelId
@@ -148,7 +155,7 @@ module.exports = {
           .then(async (categoryMessage) => {
             // Update database with new category message data
             let sql = `INSERT INTO role_categories (roleSystemId, categoryName, messageId) VALUES (?, ?, ?)`;
-            await dbExecute(sql, [roleSystem.id, args[0], categoryMessage.id]);
+            await dbExecute(sql, [roleSystem.id, categoryName, categoryMessage.id]);
             await updateCategoryMessage(message.client, message.guild, categoryMessage.id);
           });
       }
@@ -163,13 +170,20 @@ module.exports = {
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
+        if (args.length === 0) {
+          return message.channel.send("You must specify the category to delete!");
+        }
+
+        // Allow category name to contain multiple words
+        const categoryName = args.join(' ');
+
         // Get the role category data
         let sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
                     JOIN role_systems rs ON rc.roleSystemId = rs.id
                     JOIN guild_data gd ON rs.guildDataId = gd.id
                     WHERE gd.guildId=?
                       AND rc.categoryName=?`;
-        const roleCategory = await dbQueryOne(sql, [message.guild.id, args[0]]);
+        const roleCategory = await dbQueryOne(sql, [message.guild.id, categoryName]);
         if (!roleCategory) { return message.channel.send("That category does not exist!"); }
         await dbExecute(`DELETE FROM roles WHERE categoryId=?`, [roleCategory.id]);
         await dbExecute(`DELETE FROM role_categories WHERE id=?`, [roleCategory.id]);

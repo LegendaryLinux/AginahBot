@@ -30,8 +30,10 @@ module.exports = async (client, messageReaction, user, added) => {
   if (!roleObj) { throw new Error(`Guild ${guild.name} (${guild.id}) does not have a role ${role.roleName} ` +
     `(${role.roleId})`); }
 
-  // Add the role to the user
-  return added ?
-    guild.members.resolve(user.id).roles.add(roleObj) :
-    guild.members.resolve(user.id).roles.remove(roleObj);
+  // Find the GuildMemberRoleManager object attached to the guild member, if present
+  return guild.members.resolve(user.id).fetch().then((guildMember) => {
+    return added ?
+      guildMember.roles.add(roleObj) :
+      guildMember.roles.remove(roleObj);
+  });
 };
