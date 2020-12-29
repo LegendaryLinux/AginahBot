@@ -180,15 +180,13 @@ module.exports = {
               "could not be used to create a valid date object.");
           }
 
-          const targetDate = new Date(currentDate.getTime());
-          targetDate.setUTCHours(parseInt(patternParts[1], 10));
+          const targetDate = new Date(message.createdTimestamp);
+          targetDate.setUTCHours((parseInt(patternParts[1], 10) - zoneOffset) % 24);
           targetDate.setUTCMinutes(parseInt(patternParts[2], 10));
-          targetDate.setUTCSeconds(0);
-          targetDate.setUTCMilliseconds(0);
-          targetDate.setTime(targetDate.getTime() - (zoneOffset * 60 * 60 * 1000));
 
-          while (targetDate.getTime() < currentDate.getTime()) {
-            targetDate.setTime(targetDate.getTime() + (24 * 60 * 60 * 1000));
+          // If the offset UTC hour is in the past, bump the date up by one day
+          if (targetDate.getTime() < currentDate.getTime()) {
+            targetDate.setDate(targetDate.getDate() + 1);
           }
 
           return sendScheduleMessage(message, targetDate);
