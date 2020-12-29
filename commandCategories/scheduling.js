@@ -1,3 +1,4 @@
+const Discord = require('discord.js');
 const {generalErrorHandler} = require('../errorHandlers');
 const moment = require('moment-timezone');
 const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
@@ -5,32 +6,32 @@ const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
 // Return the offset in hours of a given timezone
 const getZoneOffset = (zone) => 0 - moment.tz('1970-01-01 00:00', zone).toDate().getTime() / 1000 / 60 / 60;
 
-const months = { 0: 'January', 1: 'February', 2: 'March', 3: 'April', 4: 'May', 5: 'June', 6: 'July', 7: 'August',
-  8: 'September', 9: 'October', 10: 'November', 11: 'December' };
+const sendScheduleMessage = async (message, targetDate) => {
+  const embed = new Discord.MessageEmbed()
+    .setTitle('A new event has been scheduled!')
+    .setColor('#6081cb')
+    .setDescription(`**${message.author.username}** wants to schedule a game at the time listed below.` +
+      `\nReact with ⚔ if you intend to join this game.` +
+      `\nReact with 🐔 if you don\'t know yet.`)
+    .setTimestamp(targetDate.getTime());
 
-const sendScheduleMessage = async (message, targetDate) => message.channel.send([
-  `${message.author} wants to schedule a game for ` +
-  `${months[targetDate.getUTCMonth()]} ${targetDate.getUTCDate()}, ${targetDate.getUTCFullYear()} at ` +
-  `${targetDate.getUTCHours()}:${targetDate.getUTCMinutes().toString().padStart(2,'0')} UTC`,
-  `https://gametimes.multiworld.link/?timestamp=${targetDate.getTime()}`,
-  'React with ⚔ if you intend to join this game.',
-  'React with 🐔 if you don\'t know yet.'
-]).then(async (scheduleMessage) => {
-  // Save scheduled game to database
-  const guildData = await dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id]);
-  if (!guildData) {
-    throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) in guild_data table.`);
-  }
-  let sql = `INSERT INTO scheduled_events
+  message.channel.send(embed).then(async (scheduleMessage) => {
+    // Save scheduled game to database
+    const guildData = await dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id]);
+    if (!guildData) {
+      throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) in guild_data table.`);
+    }
+    let sql = `INSERT INTO scheduled_events
              (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag)
              VALUES (?, ?, ?, ?, ?, ?)`;
-  await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-    message.member.user.id, message.member.user.tag]);
+    await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
+      message.member.user.id, message.member.user.tag]);
 
-  // Put appropriate reactions onto the message
-  scheduleMessage.react('⚔');
-  scheduleMessage.react('🐔');
-}).catch((error) => generalErrorHandler(error));
+    // Put appropriate reactions onto the message
+    scheduleMessage.react('⚔');
+    scheduleMessage.react('🐔');
+  }).catch((error) => generalErrorHandler(error));
+};
 
 module.exports = {
   category: 'Event Scheduling',
@@ -44,8 +45,8 @@ module.exports = {
         "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
         "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n" +
         "Strict ISO-8601 formatted datetime values are also allowed.\n" +
-        "Users subject to daylight savings time, be aware you may have two different timezones. EST / EDT, " +
-        "for example.\n",
+        "If your timezone abbreviation does not work, you can use one of the zones listed on the wikipedia page " +
+        "under the `TZ database name` column.\nhttps://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
       aliases: [],
       usage: '`!aginah schedule [role date/time]`',
       guildOnly: true,
@@ -65,17 +66,14 @@ module.exports = {
             if (!channel) { continue; }
             channel.messages.fetch(game.messageId).then(
               (scheduleMessage) => {
-                const gameTime = new Date(parseInt(game.timestamp, 10));
-                message.channel.send(
-                  `> **${game.schedulingUserTag}** scheduled a game for **` +
-                  `${gameTime.getUTCMonth()+1}/${gameTime.getUTCDate()}/` +
-                  `${gameTime.getUTCFullYear()} ${gameTime.getUTCHours()}:` +
-                  `${gameTime.getUTCMinutes().toString().padStart(2, '0')} UTC**.\n` +
-                  `> In your timezone: ` +
-                  `https://gametimes.multiworld.link/` +
-                  `?timestamp=${parseInt(game.timestamp, 10)}\n` +
-                  `> RSVP Link: ${scheduleMessage.url}\n` +
-                  `> Current RSVPs: ${game.rsvpCount}`);
+                const embed = new Discord.MessageEmbed()
+                  .setTitle('Upcoming Event')
+                  .setColor('#6081cb')
+                  .setDescription(`**${message.author.username}** scheduled a game at the time listed below.`)
+                  .setURL(scheduleMessage.url)
+                  .addField('Current RSVPs', game.rsvpCount)
+                  .setTimestamp(parseInt(game.timestamp, 10));
+                message.channel.send(embed);
               }).catch((err) => generalErrorHandler(err));
           }
 
@@ -98,13 +96,13 @@ module.exports = {
         const iso8601Pattern = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(Z|([+-]\d{2}:\d{2}))$/);
 
         // Format: MM/DD/YYYY HH:II TZ
-        const mdyPattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-z]*)$/);
+        const mdyPattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-z0-9/_]*)$/);
 
         // Format: YYYY-MM-DD HH:MM TZ
-        const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z]*)$/);
+        const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z0-9/_]*)$/);
 
         // Format: HH:MM TZ
-        const specificHourPattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-z]*)$/);
+        const specificHourPattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-z0-9/_]*)$/);
 
         // Format XX:30
         const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})$/);

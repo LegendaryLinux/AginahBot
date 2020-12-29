@@ -1,5 +1,4 @@
 .idea/
 node_modules/
 config.json
-*.sqlite3
 scripts/*
