@@ -66,7 +66,7 @@ module.exports = {
       adminOnly: false,
       async execute(message, args) {
         if (args.length === 0) {
-          let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId,
+          let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode,
                             (SELECT COUNT(*) FROM event_attendees WHERE eventId=se.id) AS rsvpCount
                      FROM scheduled_events se
                      JOIN guild_data gd ON se.guildDataId = gd.id
@@ -83,6 +83,7 @@ module.exports = {
                   .setColor('#6081cb')
                   .setDescription(`**${message.author.username}** scheduled a game at the time listed below.`)
                   .setURL(scheduleMessage.url)
+                  .addField('Event Code', game.eventCode)
                   .addField('Current RSVPs', game.rsvpCount)
                   .setTimestamp(parseInt(game.timestamp, 10));
                 message.channel.send(embed);
