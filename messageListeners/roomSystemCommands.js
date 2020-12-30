@@ -3,8 +3,9 @@ const { getModeratorRole, dbQueryOne, dbQueryAll, dbExecute } = require('../lib'
 module.exports = async (client, message) => {
   if (!message.guild) { return; }
 
-  const commands = ['.ready', '.unready', '.readycheck', '.close', '.lock', '.unlock'];
-  if (commands.indexOf(message.content) === -1) { return; }
+  const command = message.content.trim().split(/ +/);
+  const dotCommands = ['.ping', '.ready', '.unready', '.readycheck', '.close', '.lock', '.unlock'];
+  if (!command[0] || dotCommands.indexOf(command[0]) === -1) { return; }
 
   let sql = `SELECT rsrc.id AS checkId, rsg.id AS gameId, rsg.voiceChannelId, rs.planningChannelId
              FROM room_system_ready_checks rsrc
@@ -17,7 +18,35 @@ module.exports = async (client, message) => {
   const roomSystem = await dbQueryOne(sql, [message.author.id, message.channel.id, message.guild.id]);
   if (!roomSystem) { return; }
 
-  switch(message.content) {
+  switch(command[0]) {
+    // Player wants to alert players a game is about to start
+    case '.ping':
+      if (!command[1]) { return message.channel.send('You must provide a room code to ping players.'); }
+
+      sql = `SELECT ea.userId
+             FROM scheduled_events se
+             JOIN event_attendees ea ON se.id = ea.eventId
+             JOIN guild_data gd ON se.guildDataId = gd.id
+             WHERE se.eventCode=?
+               AND gd.guildId=?
+               AND se.timestamp > UNIX_TIMESTAMP()*1000`;
+      const attendees = await dbQueryAll(sql, [command[1].toUpperCase(), message.guild.id]);
+      if (attendees.length === 0) {
+        return message.channel.send("Either there is no upcoming game with that code, or nobody has RSVPed.");
+      }
+
+      // Fetch member details, in case they aren't cached
+      await message.guild.members.fetch({ user: attendees.map((a) => a.userId) });
+
+      let reminderMessage = `**${message.author.tag}** would like to remind the following people a game they ` +
+        `have RSVPed for is about to start:\n`;
+      attendees.forEach((attendee) => {
+        reminderMessage += `> ${message.guild.members.resolve(attendee.userId).user}\n`;
+      });
+
+      message.guild.channels.resolve(roomSystem.planningChannelId).send(reminderMessage);
+      return message.channel.send('Reminder sent. Remember, with great power comes great responsibility.');
+
     // Player has indicated they are ready to begin
     case '.ready':
       return dbExecute(`UPDATE room_system_ready_checks SET readyState=1 WHERE id=?`, [roomSystem.checkId]);
@@ -32,7 +61,7 @@ module.exports = async (client, message) => {
       const notReady = [];
 
       // Find each player's ready state
-      let sql = `SELECT playerTag, readyState FROM room_system_ready_checks WHERE gameId=?`;
+      sql = `SELECT playerTag, readyState FROM room_system_ready_checks WHERE gameId=?`;
       const players = await dbQueryAll(sql, [roomSystem.gameId]);
       players.forEach((player) => {
         if (parseInt(player.readyState, 10) === 1) {

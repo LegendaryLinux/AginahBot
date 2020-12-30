@@ -62,6 +62,8 @@ module.exports = async (client, oldState, newState) => {
           })
         ]).then(async (channels) => {
           channels[1].send(`Hello! Use this channel to discuss the ${channelName} game.\n` +
+            '__Alerts__\n' +
+            '`.ping roomCode` to ping RSVPed players with a game reminder\n\n' +
             '__Ready Checks:__\n' +
             '`.ready` to show you are ready to begin\n' +
             '`.unready` to change your mind\n' +

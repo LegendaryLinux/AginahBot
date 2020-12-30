@@ -6,13 +6,25 @@ const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
 // Return the offset in hours of a given timezone
 const getZoneOffset = (zone) => 0 - moment.tz('1970-01-01 00:00', zone).toDate().getTime() / 1000 / 60 / 60;
 
+const generateEventCode = () => {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let code = '';
+  for(let i=0; i<6; ++i){
+    code += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return code;
+};
+
 const sendScheduleMessage = async (message, targetDate) => {
+  const eventCode = generateEventCode();
+
   const embed = new Discord.MessageEmbed()
     .setTitle('A new event has been scheduled!')
     .setColor('#6081cb')
     .setDescription(`**${message.author.username}** wants to schedule a game at the time listed below.` +
       `\nReact with ⚔ if you intend to join this game.` +
       `\nReact with 🐔 if you don\'t know yet.`)
+    .addField('Event Code', eventCode)
     .setTimestamp(targetDate.getTime());
 
   message.channel.send(embed).then(async (scheduleMessage) => {
@@ -22,10 +34,10 @@ const sendScheduleMessage = async (message, targetDate) => {
       throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) in guild_data table.`);
     }
     let sql = `INSERT INTO scheduled_events
-             (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag)
-             VALUES (?, ?, ?, ?, ?, ?)`;
+             (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag, eventCode)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`;
     await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-      message.member.user.id, message.member.user.tag]);
+      message.member.user.id, message.member.user.tag, eventCode]);
 
     // Put appropriate reactions onto the message
     scheduleMessage.react('⚔');
