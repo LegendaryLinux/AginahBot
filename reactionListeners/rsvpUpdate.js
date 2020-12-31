@@ -5,7 +5,7 @@ module.exports = async (client, messageReaction, user, added) => {
   if (user.bot || !messageReaction.message.guild) { return; }
 
   // Make sure we are acting upon the proper reaction
-  if (messageReaction.emoji.name === '⚔') {
+  if (messageReaction.emoji.name === '⚔' || messageReaction.emoji.name === '🐔') {
     // Identify the event this reaction is associated with
     let sql = `SELECT se.id
                    FROM scheduled_events se
