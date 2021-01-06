@@ -21,7 +21,7 @@ module.exports = async (client, messageReaction, user, added) => {
 
     // Reaction was added, so add user to event_attendees table
     if (added) {
-      let sql = `INSERT INTO event_attendees (eventId, userId) VALUES (?, ?)`;
+      let sql = `REPLACE INTO event_attendees (eventId, userId) VALUES (?, ?)`;
       return dbExecute(sql, [evt.id, user.id]);
     }
 
