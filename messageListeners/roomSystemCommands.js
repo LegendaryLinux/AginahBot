@@ -29,10 +29,10 @@ module.exports = async (client, message) => {
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE se.eventCode=?
                AND gd.guildId=?
-               AND se.timestamp > UNIX_TIMESTAMP()*1000`;
+               AND se.timestamp > ((UNIX_TIMESTAMP()*1000) - (30*60*1000))`;
       const attendees = await dbQueryAll(sql, [command[1].toUpperCase(), message.guild.id]);
       if (attendees.length === 0) {
-        return message.channel.send("Either there is no upcoming game with that code, or nobody has RSVPed.");
+        return message.channel.send("Either there is no recent or upcoming game with that code, or nobody has RSVPed.");
       }
 
       // Fetch member details, in case they aren't cached
