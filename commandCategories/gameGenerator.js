@@ -99,6 +99,7 @@ module.exports = {
                 });
 
                 return axios.post(supportedGames[args[0].toLowerCase()].apiEndpoint, {
+                    // Eventually, get rid of the weights key and use presetData only
                     weights: { [args[1].toLowerCase()]: presets[args[0].toLowerCase()][args[1].toLowerCase()] },
                     presetData: { [args[1].toLowerCase()]: presets[args[0].toLowerCase()][args[1].toLowerCase()] },
                     playerCount,
