@@ -1,8 +1,8 @@
 [
   {
-    "active": false,
-    "guildId": null,
-    "channelId": null,
+    "active": true,
+    "guildId": "731205301247803413",
+    "channelId": "799972416871727115",
     "game": "zelda3",
     "presets": [
       "daily"
