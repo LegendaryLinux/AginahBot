@@ -1,0 +1,11 @@
+[
+  {
+    "active": false,
+    "guildId": null,
+    "channelId": null,
+    "game": "zelda3",
+    "presets": [
+      "daily"
+    ]
+  }
+]
