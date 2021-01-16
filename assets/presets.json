@@ -1743,11 +1743,11 @@
           "off": 0
         },
         "boss_shuffle": {
-          "none": 50,
-          "simple": 50,
-          "full": 50,
-          "random": 50,
-          "singularity": 50
+          "none": 180,
+          "simple": 5,
+          "full": 5,
+          "random": 5,
+          "singularity": 5
         },
         "enemy_shuffle": {
           "on": 5,
