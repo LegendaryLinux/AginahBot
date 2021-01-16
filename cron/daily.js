@@ -45,8 +45,15 @@ client.login(config.token).then(async () => {
         embed.addField(`${i+1} Player`, response.data.url);
       }
 
+      // Unpin all pinned messages
+      const pinnedMessages = await channel.messages.fetchPinned();
+      for (let msg of pinnedMessages.array()) {
+        await msg.unpin();
+      }
+
       // Send a message containing the dailies to the specified channel
-      await channel.send(embed);
+      const dailyMessage = await channel.send(embed);
+      await dailyMessage.pin();
     }
     client.destroy();
   }catch(Error) {
