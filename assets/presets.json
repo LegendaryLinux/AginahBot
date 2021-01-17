@@ -1648,10 +1648,10 @@
           "fast_ganon": 50,
           "dungeons": 50,
           "pedestal": 50,
-          "triforce_hunt": 50,
-          "local_triforce_hunt": 50,
-          "ganon_triforce_hunt": 50,
-          "local_ganon_triforce_hunt": 50
+          "triforce_hunt": 0,
+          "local_triforce_hunt": 0,
+          "ganon_triforce_hunt": 0,
+          "local_ganon_triforce_hunt": 0
         },
         "triforce_pieces_mode": {
           "extra": 50,
@@ -1887,6 +1887,54 @@
               "smallkey_shuffle": "universal"
             },
             "percentage": 5
+          },
+          {
+            "name": "triforce-protected-from-bees",
+            "options": {
+              "goals": {
+                "ganon": 0,
+                "fast_ganon": 0,
+                "dungeons": 0,
+                "pedestal": 0,
+                "triforce_hunt": 25,
+                "local_triforce_hunt": 25,
+                "ganon_triforce_hunt": 25,
+                "local_ganon_triforce_hunt": 25
+              },
+              "triforce_pieces_mode": {
+                "extra": 50,
+                "percentage": 50,
+                "available": 0
+              },
+              "triforce_pieces_extra": {
+                "0": 0,
+                "5": 50,
+                "10": 50,
+                "15": 0,
+                "20": 0
+              },
+              "triforce_pieces_percentage": {
+                "100": 0,
+                "125" : 50,
+                "150": 0,
+                "200": 0
+              },
+              "triforce_pieces_available": {
+                "25": 0,
+                "30": 50,
+                "40": 50,
+                "50": 0
+              },
+              "triforce_pieces_required": {
+                "15": 0,
+                "20": 50,
+                "30": 50,
+                "40": 0,
+                "50": 0
+              },
+              "beemizer": 0
+            },
+            "percentage": 20
           }
         ]
       },
