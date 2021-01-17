@@ -1,7 +1,7 @@
 const { dbQueryOne, dbExecute } = require('../lib');
 
 module.exports = async (client, messageReaction, user, added) => {
-  // Do nothing if the user is a bot, the message is a DM, or the reaction was removed
+  // Do nothing if the user is a bot, or the message is a DM
   if (user.bot || !messageReaction.message.guild) { return; }
 
   // Make sure we are acting upon the proper reaction
@@ -18,6 +18,7 @@ module.exports = async (client, messageReaction, user, added) => {
       messageReaction.message.channel.id,
       messageReaction.message.id,
     ]);
+    if (!evt) { return; }
 
     // Reaction was added, so add user to event_attendees table
     if (added) {
