@@ -1758,8 +1758,8 @@
           "off": 50
         },
         "tile_shuffle": {
-          "on": 0,
-          "off": 50
+          "on": 50,
+          "off": 0
         },
         "bush_shuffle": {
           "on": 0,

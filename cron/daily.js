@@ -35,7 +35,7 @@ client.login(config.token).then(async () => {
 
       // Build weights object to use when generating games
       const weights = {};
-      for (let i=0; i<5; i++) {
+      for (let i=0; i<4; i++) {
         // Choose a random preset from among allowed presets
         weights[`Player${i+1}`] = Object.assign({},
           presets[daily.game][daily.presets[Math.floor(Math.random() * daily.presets.length)]]);
