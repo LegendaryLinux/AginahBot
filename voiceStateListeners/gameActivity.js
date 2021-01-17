@@ -22,21 +22,21 @@ module.exports = async (client, oldState, newState) => {
                JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE gd.guildId=?
                  AND rs.newGameChannelId=?`;
-    let roomSystem = await dbQueryOne(sql, [newState.guild.id, newState.channel.id]);
-    if (roomSystem) {
+    const roomSystemStartGame = await dbQueryOne(sql, [newState.guild.id, newState.channel.id]);
+    if (roomSystemStartGame) {
       const channelName = channelNames[randInRange(0, channelNames.length - 1)];
-      return newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
+      await newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
         Promise.all([
           // Voice channel
           newState.guild.channels.create(channelName, {
             type: 'voice',
-            parent: roomSystem.channelCategoryId,
+            parent: roomSystemStartGame.channelCategoryId,
           }),
 
           // Text channel
           newState.guild.channels.create(channelName, {
             type: 'text',
-            parent: roomSystem.channelCategoryId,
+            parent: roomSystemStartGame.channelCategoryId,
             permissionOverwrites: [
               {
                 // @everyone may not view the text channel
@@ -75,7 +75,7 @@ module.exports = async (client, oldState, newState) => {
 
           let sql = `INSERT INTO room_system_games (roomSystemId, voiceChannelId, textChannelId, roleId)
                      VALUES (?, ?, ?, ?)`;
-          await dbExecute(sql, [roomSystem.id, channels[0].id, channels[1].id, role.id]);
+          await dbExecute(sql, [roomSystemStartGame.id, channels[0].id, channels[1].id, role.id]);
           await newState.member.voice.setChannel(channels[0]);
           await newState.member.roles.add(role);
         }).catch((error) => generalErrorHandler(error));
@@ -89,10 +89,10 @@ module.exports = async (client, oldState, newState) => {
            JOIN guild_data gd ON rs.guildDataId = gd.id
            WHERE rsg.voiceChannelId=?
              AND gd.guildId=?`;
-    roomSystem = await dbQueryOne(sql, [newState.channel.id, newState.guild.id]);
-    if (roomSystem) {
+    const roomSystemJoinGame = await dbQueryOne(sql, [newState.channel.id, newState.guild.id]);
+    if (roomSystemJoinGame) {
       sql = `SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?`;
-      const gameData = await dbQueryOne(sql, [roomSystem.id, newState.channel.id]);
+      const gameData = await dbQueryOne(sql, [roomSystemJoinGame.id, newState.channel.id]);
       // If the voice channel the user entered is not a game channel, do nothing
       if (!gameData) { return; }
 
@@ -114,13 +114,13 @@ module.exports = async (client, oldState, newState) => {
                JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE rsg.voiceChannelId=?
                  AND gd.guildId=?`;
-    const roomSystem = await dbQueryOne(sql, [oldState.channel.id, oldState.guild.id]);
-    if (roomSystem) {
+    const roomSystemLeaveGame = await dbQueryOne(sql, [oldState.channel.id, oldState.guild.id]);
+    if (roomSystemLeaveGame) {
       sql = `SELECT id, roleId, textChannelId, voiceChannelId
              FROM room_system_games
              WHERE roomSystemId=?
                AND voiceChannelId=?`;
-      const channelData = await dbQueryOne(sql, [roomSystem.id, oldState.channel.id]);
+      const channelData = await dbQueryOne(sql, [roomSystemLeaveGame.id, oldState.channel.id]);
       // If the voice channel the user left was not a game channel, do nothing
       if (!channelData) { return; }
 
@@ -130,7 +130,7 @@ module.exports = async (client, oldState, newState) => {
 
       // Remove user from ready_checks table
       sql = `SELECT id FROM room_system_games WHERE voiceChannelId=? AND roomSystemId=?`;
-      const game = await dbQueryOne(sql, [oldState.channel.id, roomSystem.id]);
+      const game = await dbQueryOne(sql, [oldState.channel.id, roomSystemLeaveGame.id]);
 
       sql = `DELETE FROM room_system_ready_checks WHERE gameId=? AND playerId=?`;
       await dbExecute(sql, [game.id, oldState.member.id]);
