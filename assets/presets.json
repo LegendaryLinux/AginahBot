@@ -1712,17 +1712,17 @@
           "inverted": 0
         },
         "retro": {
-          "on": 50,
-          "off": 50
+          "on": 10,
+          "off": 90
         },
         "hints": {
           "on": 50,
           "off": 0
         },
         "weapons": {
-          "randomized": 50,
-          "assured": 50,
-          "vanilla": 50,
+          "randomized": 45,
+          "assured": 45,
+          "vanilla": 10,
           "swordless": 0
         },
         "item_pool": {
@@ -1781,9 +1781,9 @@
           "off": 50
         },
         "beemizer": {
-          "0": 90,
+          "0": 93,
           "1": 5,
-          "2": 5,
+          "2": 2,
           "3": 0,
           "4": 0
         },
@@ -1880,14 +1880,6 @@
           }
         },
         "linked_options": [
-          {
-            "name": "retro-mode",
-            "options": {
-              "retro": "on",
-              "smallkey_shuffle": "universal"
-            },
-            "percentage": 5
-          },
           {
             "name": "triforce-protected-from-bees",
             "options": {
