@@ -1644,10 +1644,10 @@
           "insanity": 0
         },
         "goals": {
-          "ganon": 50,
-          "fast_ganon": 50,
-          "dungeons": 50,
-          "pedestal": 50,
+          "ganon": 35,
+          "fast_ganon": 35,
+          "dungeons": 10,
+          "pedestal": 20,
           "triforce_hunt": 0,
           "local_triforce_hunt": 0,
           "ganon_triforce_hunt": 0,
