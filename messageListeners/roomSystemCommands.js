@@ -49,7 +49,10 @@ module.exports = async (client, message) => {
 
     // Player has indicated they are ready to begin
     case '.ready':
-      return dbExecute(`UPDATE room_system_ready_checks SET readyState=1 WHERE id=?`, [roomSystem.checkId]);
+      await dbExecute(`UPDATE room_system_ready_checks SET readyState=1 WHERE id=?`, [roomSystem.checkId]);
+      const pendingCount = await dbQueryAll(`SELECT 1 FROM room_system_ready_checks WHERE gameId=? AND readyState=0`,
+        [roomSystem.gameId]);
+      return pendingCount.length === 0 ? message.channel.send('🏁 All players are ready!') : null
 
     // Player has indicated they are no longer ready to begin
     case '.unready':
