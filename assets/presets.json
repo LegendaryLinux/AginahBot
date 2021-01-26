@@ -1930,6 +1930,370 @@
           }
         ]
       },
+      "daily-advanced": {
+        "description": "Daily Game Advanced Preset",
+        "name": "PlayerOne",
+        "glitches_required": {
+          "none": 50,
+          "minor_glitches": 0,
+          "overworld_glitches": 0,
+          "no_logic": 0
+        },
+        "dark_room_logic": {
+          "lamp": 50,
+          "torches": 0,
+          "none": 0
+        },
+        "restrict_dungeon_item_on_boss": {
+          "on": 50,
+          "off": 50
+        },
+        "map_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "compass_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "smallkey_shuffle": {
+          "on": 50,
+          "universal": 50,
+          "off": 50
+        },
+        "bigkey_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "local_keys": {
+          "on": 0,
+          "off": 50
+        },
+        "dungeon_items": {
+          "mc": 0,
+          "none": 50,
+          "mcsb": 0,
+          "lmcsb": 0,
+          "ub": 0
+        },
+        "dungeon_counters": {
+          "on": 50,
+          "pickup": 50,
+          "default": 50,
+          "off": 50
+        },
+        "accessibility": {
+          "items": 50,
+          "locations": 50,
+          "none": 50
+        },
+        "progressive": {
+          "on": 0,
+          "off": 0,
+          "random": 50
+        },
+        "entrance_shuffle": {
+          "none": 80,
+          "dungeonssimple": 20,
+          "dungeonsfull": 0,
+          "simple": 0,
+          "restricted": 0,
+          "full": 0,
+          "crossed": 0,
+          "insanity": 0
+        },
+        "goals": {
+          "ganon": 35,
+          "fast_ganon": 35,
+          "dungeons": 10,
+          "pedestal": 20,
+          "triforce_hunt": 0,
+          "local_triforce_hunt": 0,
+          "ganon_triforce_hunt": 0,
+          "local_ganon_triforce_hunt": 0
+        },
+        "triforce_pieces_mode": {
+          "extra": 50,
+          "percentage": 50,
+          "available": 0
+        },
+        "triforce_pieces_extra": {
+          "0": 0,
+          "5": 50,
+          "10": 50,
+          "15": 0,
+          "20": 0
+        },
+        "triforce_pieces_percentage": {
+          "100": 0,
+          "125" : 50,
+          "150": 0,
+          "200": 0
+        },
+        "triforce_pieces_available": {
+          "25": 0,
+          "30": 50,
+          "40": 50,
+          "50": 0
+        },
+        "triforce_pieces_required": {
+          "15": 0,
+          "20": 50,
+          "30": 50,
+          "40": 0,
+          "50": 0
+        },
+        "tower_open": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "random": 50
+        },
+        "ganon_open": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "random": 50
+        },
+        "mode": {
+          "standard": 45,
+          "open": 50,
+          "inverted": 5
+        },
+        "retro": {
+          "on": 20,
+          "off": 80
+        },
+        "hints": {
+          "on": 50,
+          "off": 0
+        },
+        "weapons": {
+          "randomized": 45,
+          "assured": 45,
+          "vanilla": 10,
+          "swordless": 0
+        },
+        "item_pool": {
+          "easy": 0,
+          "normal": 95,
+          "hard": 5,
+          "expert": 0,
+          "crowd_control": 0
+        },
+        "item_functionality": {
+          "easy": 0,
+          "normal": 95,
+          "hard": 5,
+          "expert": 0
+        },
+        "progression_balancing": {
+          "on": 95,
+          "off": 5
+        },
+        "boss_shuffle": {
+          "none": 50,
+          "simple": 50,
+          "full": 50,
+          "random": 50,
+          "singularity": 50
+        },
+        "enemy_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "killable_thieves": {
+          "on": 50,
+          "off": 50
+        },
+        "tile_shuffle": {
+          "on": 50,
+          "off": 0
+        },
+        "bush_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "enemy_damage": {
+          "default": 90,
+          "shuffled": 5,
+          "random": 5
+        },
+        "enemy_health": {
+          "default": 95,
+          "easy": 0,
+          "hard": 5,
+          "expert": 0
+        },
+        "pot_shuffle": {
+          "on": 5,
+          "off": 95
+        },
+        "beemizer": {
+          "0": 75,
+          "1": 10,
+          "2": 10,
+          "3": 5,
+          "4": 0
+        },
+        "shop_shuffle": {
+          "none": 80,
+          "g": 0,
+          "f": 0,
+          "p": 0,
+          "u": 0,
+          "w": 0,
+          "gp": 0,
+          "fp": 5,
+          "ufp": 5,
+          "wfp": 5,
+          "ufpw": 5
+        },
+        "shuffle_prizes": {
+          "none": 50,
+          "g": 50,
+          "b": 50,
+          "bg": 50
+        },
+        "timer": {
+          "none": 50,
+          "timed": 0,
+          "timed_ohko": 0,
+          "ohko": 0,
+          "timed_countdown": 0,
+          "display": 0
+        },
+        "glitch_boots": {
+          "on": 50,
+          "off": 0
+        },
+        "door_shuffle": {
+          "vanilla": 50,
+          "basic": 0,
+          "crossed": 0
+        },
+        "intensity": {
+          "1": 50,
+          "2": 0,
+          "3": 0,
+          "random": 0
+        },
+        "experimental": {
+          "on": 0,
+          "off": 50
+        },
+        "debug": {
+          "on": 0,
+          "off": 50
+        },
+        "rom": {
+          "sprite": {
+            "random": 0,
+            "randomonhit": 0,
+            "Link": 50
+          },
+          "disablemusic": {
+            "on": 0,
+            "off": 50
+          },
+          "quickswap": {
+            "on": 50,
+            "off": 0
+          },
+          "menuspeed": {
+            "normal": 50,
+            "instant": 50,
+            "double": 50,
+            "triple": 50,
+            "quadruple": 50,
+            "half": 5
+          },
+          "heartcolor": {
+            "red": 0,
+            "blue": 0,
+            "green": 0,
+            "yellow": 0,
+            "random": 50
+          },
+          "heartbeep": {
+            "double": 5,
+            "normal": 50,
+            "half": 50,
+            "quarter": 50,
+            "off": 0
+          },
+          "ow_palettes": {
+            "default": 50,
+            "random": 50,
+            "blackout": 0
+          },
+          "uw_palettes": {
+            "default": 50,
+            "random": 50,
+            "blackout": 0
+          }
+        },
+        "linked_options": [
+          {
+            "name": "triforce-protected-from-bees",
+            "options": {
+              "goals": {
+                "ganon": 0,
+                "fast_ganon": 0,
+                "dungeons": 0,
+                "pedestal": 0,
+                "triforce_hunt": 25,
+                "local_triforce_hunt": 25,
+                "ganon_triforce_hunt": 25,
+                "local_ganon_triforce_hunt": 25
+              },
+              "triforce_pieces_mode": {
+                "extra": 50,
+                "percentage": 50,
+                "available": 0
+              },
+              "triforce_pieces_extra": {
+                "0": 0,
+                "5": 50,
+                "10": 50,
+                "15": 0,
+                "20": 0
+              },
+              "triforce_pieces_percentage": {
+                "100": 0,
+                "125" : 50,
+                "150": 0,
+                "200": 0
+              },
+              "triforce_pieces_available": {
+                "25": 0,
+                "30": 50,
+                "40": 50,
+                "50": 0
+              },
+              "triforce_pieces_required": {
+                "15": 0,
+                "20": 50,
+                "30": 50,
+                "40": 0,
+                "50": 0
+              },
+              "beemizer": 0
+            },
+            "percentage": 20
+          }
+        ]
+      },
       "open": {
         "description": "Open Preset",
         "name": "Open",

@@ -1,0 +1,29 @@
+[
+  {
+    "active": true,
+    "guildId": "731205301247803413",
+    "channelId": "799972416871727115",
+    "seedSets": [
+      {
+        "game": "zelda3",
+        "title": "Daily Games",
+        "targetUTCHour": 0,
+        "minPlayers": 1,
+        "maxPlayers": 5,
+        "presets": [
+          "daily"
+        ]
+      },
+      {
+        "game": "zelda3",
+        "title": "Advanced Daily Games",
+        "targetUTCHour": 12,
+        "minPlayers": 1,
+        "maxPlayers": 5,
+        "presets": [
+          "daily-advanced"
+        ]
+      }
+    ]
+  }
+]
