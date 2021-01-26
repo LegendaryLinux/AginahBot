@@ -17,7 +17,7 @@
       {
         "game": "zelda3",
         "title": "Advanced Daily Games",
-        "targetUTCHour": 12,
+        "targetUTCHour": 0,
         "minPlayers": 1,
         "maxPlayers": 5,
         "presets": [

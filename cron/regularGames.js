@@ -42,7 +42,6 @@ client.login(config.token).then(async () => {
 
       // Loop over all seeds set to occur
       for (let seedSet of daily.seedSets) {
-        console.log(seedSet);
         // If this seed is not scheduled to run this hour, do nothing
         if (seedSet.targetUTCHour !== new Date().getUTCHours()) { continue; }
 
@@ -61,7 +60,7 @@ client.login(config.token).then(async () => {
           weights[`Player${i}`].name = `Player${i}`;
 
           let response = await axios.post(supportedGames[seedSet.game].apiEndpoint, { weights, race: 0, });
-          embed.addField(`${i+1} Player`, response.data.url);
+          embed.addField(`${i} Player`, response.data.url);
         }
 
         // Send a message containing the dailies to the specified channel
