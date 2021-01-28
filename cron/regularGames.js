@@ -15,7 +15,7 @@ client.login(config.token).then(async () => {
       // If no games are scheduled to be rolled this hour, do nothing
       let workThisHour = false;
       for (let seedSet of daily.seedSets) {
-        if (seedSet.targetUTCHour === new Date().getUTCHours()) { workThisHour = true; }
+        if (seedSet.targetHour === new Date().getUTCHours()) { workThisHour = true; }
       }
       if (!workThisHour) { continue; }
 
@@ -43,7 +43,7 @@ client.login(config.token).then(async () => {
       // Loop over all seeds set to occur
       for (let seedSet of daily.seedSets) {
         // If this seed is not scheduled to run this hour, do nothing
-        if (seedSet.targetUTCHour !== new Date().getUTCHours()) { continue; }
+        if (seedSet.targetHour !== new Date().getUTCHours()) { continue; }
 
         const embed = new Discord.MessageEmbed()
           .setTitle(seedSet.title)

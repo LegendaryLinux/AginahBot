@@ -1993,9 +1993,9 @@
           "random": 50
         },
         "entrance_shuffle": {
-          "none": 80,
+          "none": 60,
           "dungeonssimple": 20,
-          "dungeonsfull": 0,
+          "dungeonsfull": 20,
           "simple": 0,
           "restricted": 0,
           "full": 0,
@@ -2140,10 +2140,10 @@
           "off": 95
         },
         "beemizer": {
-          "0": 75,
+          "0": 80,
           "1": 10,
           "2": 10,
-          "3": 5,
+          "3": 0,
           "4": 0
         },
         "shop_shuffle": {
