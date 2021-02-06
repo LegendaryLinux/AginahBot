@@ -1573,7 +1573,7 @@
       },
       "daily": {
         "description": "Daily Game Preset",
-        "name": "PlayerOne",
+        "name": "Player",
         "glitches_required": {
           "none": 50,
           "minor_glitches": 0,
@@ -1932,7 +1932,7 @@
       },
       "daily-advanced": {
         "description": "Daily Game Advanced Preset",
-        "name": "PlayerOne",
+        "name": "AdvPlayer",
         "glitches_required": {
           "none": 50,
           "minor_glitches": 0,

@@ -57,7 +57,7 @@ client.login(config.token).then(async () => {
           // Choose a random preset from among allowed presets
           weights[`Player${i}`] = Object.assign({},
             presets[seedSet.game][seedSet.presets[Math.floor(Math.random() * seedSet.presets.length)]]);
-          weights[`Player${i}`].name = `Player${i}`;
+          weights[`Player${i}`].name = `${weights[`Player${i}`].name}${i}`;
 
           let response = await axios.post(supportedGames[seedSet.game].apiEndpoint, { weights, race: 0, });
           embed.addField(`${i} Player`, response.data.url);
