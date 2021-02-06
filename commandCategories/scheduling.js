@@ -81,7 +81,7 @@ module.exports = {
                 const embed = new Discord.MessageEmbed()
                   .setTitle('Upcoming Event')
                   .setColor('#6081cb')
-                  .setDescription(`**${message.author.username}** scheduled a game at the time listed below.`)
+                  .setDescription(`**${game.schedulingUserTag}** scheduled a game at the time listed below.`)
                   .setURL(scheduleMessage.url)
                   .addField('Event Code', game.eventCode)
                   .addField('Current RSVPs', game.rsvpCount)
