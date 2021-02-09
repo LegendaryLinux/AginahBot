@@ -61,7 +61,8 @@ module.exports = {
                                 }).catch((error) => {
                                     message.channel.send("I couldn't generate that game, sorry.");
                                     if(error.isAxiosError && error.response.data){
-                                        console.error(`Unable to generate Z3 game on ${API_ENDPOINT}. The following ` +
+                                        console.error(`Unable to generate Z3 game on ` +
+                                          `${supportedGames[args[0].toLowerCase()].apiEndpoint}. The following ` +
                                             `data was returned from the endpoint:`);
                                         return console.error(error.response.data);
                                     }
