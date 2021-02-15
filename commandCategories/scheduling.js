@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const {generalErrorHandler} = require('../errorHandlers');
 const moment = require('moment-timezone');
 const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
+const forbiddenWords = require('../assets/forbiddenWords.json');
 
 // Return the offset in hours of a given timezone
 const getZoneOffset = (zone) => 0 - moment.tz('1970-01-01 00:00', zone).toDate().getTime() / 1000 / 60 / 60;
@@ -12,6 +13,12 @@ const generateEventCode = () => {
   for(let i=0; i<6; ++i){
     code += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
   }
+
+  // Do not generate codes with offensive words
+  for(let word of forbiddenWords){
+    if (code.search(word.toUpperCase()) > -1) { return generateEventCode(); }
+  }
+
   return code;
 };
 
