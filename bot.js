@@ -2,7 +2,7 @@ const { Client, Collection } = require('discord.js')
 const config = require('./config.json');
 const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
-    verifyGuildSetups, cachePartial } = require('./lib');
+    verifyGuildSetups, cachePartial, parseArgs } = require('./lib');
 const fs = require('fs');
 
 // Catch all unhandled errors
@@ -58,8 +58,7 @@ client.on('message', async(message) => {
     }
 
     // If the message is a command, parse the command and arguments
-    // TODO: Allow arguments to be enclosed in single or double quotes
-    const args = message.content.slice(config.commandPrefix.length).trim().split(/ +/);
+    const args = parseArgs(message.content.slice(config.commandPrefix.length).trim());
     const commandName = args.shift().toLowerCase();
 
     try{

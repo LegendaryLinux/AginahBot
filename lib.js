@@ -141,4 +141,62 @@ module.exports = {
       return conn.end();
     });
   }),
+
+  parseArgs: (command) => {
+    // Quotes with which arguments can be wrapped
+    const quotes = [`'`, `"`];
+
+    // State tracking
+    let insideQuotes = false;
+    let currentQuote = null;
+
+    // Parsed arguments are stored here
+    const arguments = [];
+
+    // Break the command into an array of characters
+    const commandChars = command.trim().split('');
+
+    let thisArg = "";
+    commandChars.forEach((char) => {
+      if (char === ' ' && !insideQuotes){
+        // This is a whitespace character used to separate arguments
+        if (thisArg) { arguments.push(thisArg); }
+        thisArg = "";
+        return;
+      }
+
+      // If this character is a quotation mark
+      if (quotes.indexOf(char) > -1) {
+        // If the cursor is currently inside a quoted string and has found a matching quote to the
+        // quote which started the string
+        if (insideQuotes && currentQuote === char) {
+          arguments.push(thisArg);
+          thisArg = "";
+          insideQuotes = false;
+          currentQuote = null;
+          return;
+        }
+
+        // If a quote character is found within a quoted string but it does not match the current enclosing quote,
+        // it should be considered part of the argument
+        if (insideQuotes) {
+          thisArg += char;
+          return;
+        }
+
+        // Cursor is not inside a quoted string, so we now consider it within one
+        insideQuotes = true;
+        currentQuote = char;
+        return;
+      }
+
+      // Include the character in the current argument
+      thisArg += char;
+    });
+
+    // Append current argument to array if it is populated
+    if (thisArg) {arguments.push(thisArg) }
+
+    return arguments;
+  },
 };
