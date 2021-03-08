@@ -2159,6 +2159,10 @@
           "wfp": 5,
           "ufpw": 5
         },
+        "shop_shuffle_slots": {
+          "0": 75,
+          "30": 25
+        },
         "shuffle_prizes": {
           "none": 50,
           "g": 50,
