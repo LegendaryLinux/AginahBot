@@ -60,7 +60,8 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     channelId VARCHAR(64) NOT NULL,
     messageId VARCHAR(64) NOT NULL,
     schedulingUserId VARCHAR(64) NOT NULL,
-    schedulingUserTag VARCHAR(128) NOT NULL
+    schedulingUserTag VARCHAR(128) NOT NULL,
+    eventCode VARCHAR(6) NOT NULL
 )`;
 
 const eventAttendees = `CREATE TABLE IF NOT EXISTS event_attendees (
