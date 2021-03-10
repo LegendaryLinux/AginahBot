@@ -1,6 +1,6 @@
 # AginahBot
 A Discord bot designed to help organize and moderate Multiplayer-Capable Randomizer games.  
-Find it in use at the [MultiWorld Discord](https://discord.gg/B5pjMYy).
+Find it in use at the [Archipelago Discord](https://discord.gg/B5pjMYy).
 
 [Click here to learn how to add AginahBot to your Discord server!](https://github.com/LegendaryLinux/AginahBot/wiki/Using-AginahBot-on-Your-Discord-Server)
 
@@ -15,6 +15,9 @@ Find it in use at the [MultiWorld Discord](https://discord.gg/B5pjMYy).
 - Generate single-player or multiplayer games using the `generate` command
 
 ## Supported Games
+The following games are supported through the
+[Archipelago Randomizer](https://github.com/Berserker66/MultiWorld-Utilities),
+and have full MultiWorld compatibility with each other.
 - The Legend of Zelda: A Link to the Past
 
 # Self-Hosting
