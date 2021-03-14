@@ -64,8 +64,8 @@ module.exports = {
         "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
         "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n" +
         "Strict ISO-8601 formatted datetime values are also allowed.\n" +
-        "If your timezone abbreviation does not work, you can use one of the zones listed on the wikipedia page " +
-        "under the `TZ database name` column.\nhttps://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
+        "A list of timezones can be found on the Wikipedia timezone page under the `TZ database name` column.\n" +
+        "https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
       aliases: [],
       usage: '`!aginah schedule [role date/time]`',
       guildOnly: true,
@@ -116,13 +116,13 @@ module.exports = {
         const iso8601Pattern = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(Z|([+-]\d{2}:\d{2}))$/);
 
         // Format: MM/DD/YYYY HH:II TZ
-        const mdyPattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-z0-9/_]*)$/);
+        const mdyPattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)$/);
 
         // Format: YYYY-MM-DD HH:MM TZ
-        const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z0-9/_]*)$/);
+        const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)$/);
 
         // Format: HH:MM TZ
-        const specificHourPattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-z0-9/_]*)$/);
+        const specificHourPattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)$/);
 
         // Format XX:30
         const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})$/);
