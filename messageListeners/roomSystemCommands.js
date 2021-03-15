@@ -39,7 +39,7 @@ module.exports = async (client, message) => {
       await message.guild.members.fetch({ user: attendees.map((a) => a.userId) });
 
       let reminderMessage = `**${message.author.tag}** would like to remind the following people a game they ` +
-        `have RSVPed for is about to start:\n`;
+        `have RSVPed for is about to start in ${message.channel}:\n`;
       attendees.forEach((attendee) => {
         reminderMessage += `> ${message.guild.members.resolve(attendee.userId).user}\n`;
       });
