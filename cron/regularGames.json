@@ -23,6 +23,16 @@
         "presets": [
           "daily-advanced"
         ]
+      },
+      {
+        "game": "zelda3",
+        "title": "Aginah Take the Wheel",
+        "targetHour": 0,
+        "minPlayers": 1,
+        "maxPlayers": 1,
+        "presets": [
+          "aginah-take-the-wheel"
+        ]
       }
     ]
   }

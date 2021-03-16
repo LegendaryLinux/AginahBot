@@ -2298,6 +2298,482 @@
           }
         ]
       },
+      "aginah-take-the-wheel": {
+        "description": "You're on your own.",
+        "name": "ATTWPlayer",
+        "glitches_required": {
+          "none": 50,
+          "minor_glitches": 0,
+          "overworld_glitches": 0,
+          "no_logic": 0
+        },
+        "dark_room_logic": {
+          "lamp": 0,
+          "torches": 0,
+          "none": 100
+        },
+        "restrict_dungeon_item_on_boss": {
+          "on": 0,
+          "off": 50
+        },
+        "meta_ignore": {
+          "mode": [
+            "inverted"
+          ],
+          "retro": [
+            "on"
+          ],
+          "weapons": [
+            "swordless"
+          ]
+        },
+        "map_shuffle": {
+          "on": 100,
+          "off": 0
+        },
+        "compass_shuffle": {
+          "on": 100,
+          "off": 0
+        },
+        "smallkey_shuffle": {
+          "on": 0,
+          "universal": 50,
+          "off": 50
+        },
+        "bigkey_shuffle": {
+          "on": 100,
+          "off": 0
+        },
+        "local_keys": {
+          "on": 0,
+          "off": 50
+        },
+        "dungeon_items": {
+          "mc": 0,
+          "none": 50,
+          "mcsb": 0,
+          "lmcsb": 0,
+          "ub": 0
+        },
+        "dungeon_counters": {
+          "on": 100,
+          "pickup": 0,
+          "default": 0,
+          "off": 0
+        },
+        "accessibility": {
+          "items": 0,
+          "locations": 50,
+          "none": 0
+        },
+        "progressive": {
+          "on": 0,
+          "off": 0,
+          "random": 100
+        },
+        "entrance_shuffle": {
+          "none": 0,
+          "dungeonssimple": 50,
+          "dungeonsfull": 50,
+          "simple": 50,
+          "restricted": 50,
+          "full": 50,
+          "crossed": 50,
+          "insanity": 50
+        },
+        "goals": {
+          "ganon": 50,
+          "fast_ganon": 50,
+          "dungeons": 50,
+          "pedestal": 50,
+          "ganon_pedestal": 50,
+          "triforce_hunt": 50,
+          "local_triforce_hunt": 0,
+          "ganon_triforce_hunt": 50,
+          "local_ganon_triforce_hunt": 0,
+          "ice_rod_hunt": 0
+        },
+        "pyramid_open": {
+          "goal": 50,
+          "auto": 50,
+          "yes": 50,
+          "no": 50
+        },
+        "triforce_pieces_mode": {
+          "extra": 50,
+          "percentage": 0,
+          "available": 0
+        },
+        "triforce_pieces_extra": {
+          "0": 50,
+          "5": 50,
+          "10": 50,
+          "15": 50,
+          "20": 50
+        },
+        "triforce_pieces_percentage": {
+          "100": 0,
+          "150": 50,
+          "200": 0
+        },
+        "triforce_pieces_available": {
+          "25": 0,
+          "30": 50,
+          "40": 0,
+          "50": 0
+        },
+        "triforce_pieces_required": {
+          "15": 0,
+          "20": 0,
+          "30": 50,
+          "40": 50,
+          "50": 50
+        },
+        "tower_open": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "random": 50
+        },
+        "ganon_open": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0,
+          "random": 50
+        },
+        "mode": {
+          "standard": 50,
+          "open": 50,
+          "inverted": 50
+        },
+        "retro": {
+          "on": 50,
+          "off": 50
+        },
+        "hints": {
+          "on": 50,
+          "off": 0
+        },
+        "weapons": {
+          "randomized": 50,
+          "assured": 50,
+          "vanilla": 50,
+          "swordless": 50
+        },
+        "item_pool": {
+          "easy": 50,
+          "normal": 50,
+          "hard": 50,
+          "expert": 50
+        },
+        "item_functionality": {
+          "easy": 50,
+          "normal": 50,
+          "hard": 50,
+          "expert": 50
+        },
+        "progression_balancing": {
+          "on": 50,
+          "off": 50
+        },
+        "tile_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "misery_mire_medallion": {
+          "random": 50,
+          "ether": 0,
+          "bombos": 0,
+          "quake": 0
+        },
+        "turtle_rock_medallion": {
+          "random": 50,
+          "ether": 0,
+          "bombos": 0,
+          "quake": 0
+        },
+        "boss_shuffle": {
+          "none": 50,
+          "simple": 50,
+          "full": 50,
+          "random": 50,
+          "singularity": 50
+        },
+        "enemy_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "killable_thieves": {
+          "on": 50,
+          "off": 50
+        },
+        "bush_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "enemy_damage": {
+          "default": 50,
+          "shuffled": 50,
+          "random": 50
+        },
+        "enemy_health": {
+          "default": 50,
+          "easy": 50,
+          "hard": 50,
+          "expert": 50
+        },
+        "pot_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "beemizer": {
+          "0": 50,
+          "1": 50,
+          "2": 50,
+          "3": 0,
+          "4": 0
+        },
+        "shop_shuffle_slots": {
+          "0": 50,
+          "10": 50,
+          "20": 50,
+          "30": 50
+        },
+        "shop_shuffle": {
+          "none": 50,
+          "g": 50,
+          "f": 50,
+          "p": 50,
+          "u": 50,
+          "w": 50,
+          "gp": 50,
+          "fp": 50,
+          "ufp": 50,
+          "wfp": 50,
+          "ufpw": 50
+        },
+        "shuffle_prizes": {
+          "none": 50,
+          "g": 50,
+          "b": 50,
+          "bg": 50
+        },
+        "timer": {
+          "none": 50,
+          "timed": 0,
+          "timed_ohko": 0,
+          "ohko": 0,
+          "timed_countdown": 0,
+          "display": 0
+        },
+        "countdown_start_time": {
+          "0": 0,
+          "10": 50,
+          "20": 0,
+          "30": 0,
+          "60": 0
+        },
+        "red_clock_time": {
+          "1": 0,
+          "-2": 50
+        },
+        "blue_clock_time": {
+          "1": 0,
+          "2": 50
+        },
+        "green_clock_time": {
+          "4": 50,
+          "10": 0,
+          "15": 0
+        },
+        "glitch_boots": {
+          "on": 50,
+          "off": 0
+        },
+        "door_shuffle": {
+          "vanilla": 50,
+          "basic": 0,
+          "crossed": 0
+        },
+        "intensity": {
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "random": 50
+        },
+        "key_drop_shuffle": {
+          "on": 50,
+          "off": 50
+        },
+        "experimental": {
+          "on": 0,
+          "off": 50
+        },
+        "debug": {
+          "on": 0,
+          "off": 50
+        },
+        "linked_options": [
+          {
+            "name": "triforce-protected-from-bees",
+            "options": {
+              "goals": {
+                "ganon": 0,
+                "fast_ganon": 0,
+                "dungeons": 0,
+                "pedestal": 0,
+                "triforce_hunt": 25,
+                "local_triforce_hunt": 25,
+                "ganon_triforce_hunt": 25,
+                "local_ganon_triforce_hunt": 25
+              },
+              "triforce_pieces_mode": {
+                "extra": 50,
+                "percentage": 50,
+                "available": 0
+              },
+              "triforce_pieces_extra": {
+                "0": 0,
+                "5": 50,
+                "10": 50,
+                "15": 0,
+                "20": 0
+              },
+              "triforce_pieces_percentage": {
+                "100": 0,
+                "125" : 50,
+                "150": 0,
+                "200": 0
+              },
+              "triforce_pieces_available": {
+                "25": 0,
+                "30": 50,
+                "40": 50,
+                "50": 0
+              },
+              "triforce_pieces_required": {
+                "15": 0,
+                "20": 50,
+                "30": 50,
+                "40": 0,
+                "50": 0
+              },
+              "beemizer": 0
+            },
+            "percentage": 20
+          }
+        ],
+        "rom": {
+          "sprite": {
+            "random": 50
+          },
+          "disablemusic": {
+            "on": 0,
+            "off": 50
+          },
+          "quickswap": {
+            "on": 50,
+            "off": 0
+          },
+          "triforcehud": {
+            "normal": 0,
+            "hide_goal": 0,
+            "hide_required": 0,
+            "hide_both": 50
+          },
+          "reduceflashing": {
+            "on": 50,
+            "off": 0
+          },
+          "menuspeed": {
+            "normal": 50,
+            "instant": 50,
+            "double": 50,
+            "triple": 50,
+            "quadruple": 50,
+            "half": 50
+          },
+          "heartcolor": {
+            "red": 0,
+            "blue": 0,
+            "green": 0,
+            "yellow": 0,
+            "random": 50
+          },
+          "heartbeep": {
+            "double": 50,
+            "normal": 50,
+            "half": 50,
+            "quarter": 50,
+            "off": 50
+          },
+          "ow_palettes": {
+            "default": 50,
+            "random": 50,
+            "blackout": 0,
+            "grayscale": 50,
+            "negative": 50,
+            "classic": 50,
+            "dizzy": 0,
+            "sick": 0,
+            "puke": 0
+          },
+          "uw_palettes": {
+            "default": 50,
+            "random": 50,
+            "blackout": 0,
+            "grayscale": 50,
+            "negative": 50,
+            "classic": 50,
+            "dizzy": 0,
+            "sick": 0,
+            "puke": 0
+          },
+          "hud_palettes": {
+            "default": 50,
+            "random": 50,
+            "blackout": 0,
+            "grayscale": 50,
+            "negative": 50,
+            "classic": 50,
+            "dizzy": 0,
+            "sick": 0,
+            "puke": 0
+          },
+          "sword_palettes": {
+            "default": 50,
+            "random": 50,
+            "blackout": 0,
+            "grayscale": 50,
+            "negative": 50,
+            "classic": 50,
+            "dizzy": 0,
+            "sick": 0,
+            "puke": 0
+          },
+          "shield_palettes": {
+            "default": 50,
+            "random": 50,
+            "blackout": 0,
+            "grayscale": 50,
+            "negative": 50,
+            "classic": 50,
+            "dizzy": 0,
+            "sick": 0,
+            "puke": 0
+          }
+        }
+      },
       "open": {
         "description": "Open Preset",
         "name": "Open",
