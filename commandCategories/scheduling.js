@@ -142,8 +142,7 @@ module.exports = {
         } else if (timeString.search(mdyPattern) > -1) {
           const patternParts = timeString.match(mdyPattern);
           if (!moment.tz.zone(patternParts[6])) {
-            return message.channel.send("I don't recognize that timezone! Does your timezone " +
-              "change for daylight savings time?");
+            return message.channel.send("I don't recognize that timezone!");
           }
 
           const targetDate = new Date(timeString);
@@ -160,8 +159,7 @@ module.exports = {
         } else if (timeString.search(isoSimplePattern) > -1) {
           const patternParts = timeString.match(isoSimplePattern);
           if (!moment.tz.zone(patternParts[6])) {
-            return message.channel.send("I don't recognize that timezone! Does your timezone " +
-              "change for daylight savings time?");
+            return message.channel.send("I don't recognize that timezone!");
           }
           const zoneOffset = getZoneOffset(patternParts[6]);
           if (isNaN(zoneOffset)) {
@@ -191,8 +189,7 @@ module.exports = {
           }
 
           if (!moment.tz.zone(patternParts[3])) {
-            return message.channel.send("I don't recognize that timezone! Does your timezone " +
-              "change for daylight savings time?");
+            return message.channel.send("I don't recognize that timezone!");
           }
           const zoneOffset = getZoneOffset(patternParts[3]);
           if (isNaN(zoneOffset)) {
