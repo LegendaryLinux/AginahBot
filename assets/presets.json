@@ -2316,33 +2316,22 @@
           "on": 0,
           "off": 50
         },
-        "meta_ignore": {
-          "mode": [
-            "inverted"
-          ],
-          "retro": [
-            "on"
-          ],
-          "weapons": [
-            "swordless"
-          ]
-        },
         "map_shuffle": {
-          "on": 100,
-          "off": 0
+          "on": 50,
+          "off": 50
         },
         "compass_shuffle": {
-          "on": 100,
-          "off": 0
+          "on": 50,
+          "off": 50
         },
         "smallkey_shuffle": {
-          "on": 0,
+          "on": 50,
           "universal": 50,
           "off": 50
         },
         "bigkey_shuffle": {
-          "on": 100,
-          "off": 0
+          "on": 50,
+          "off": 50
         },
         "local_keys": {
           "on": 0,
@@ -2369,7 +2358,7 @@
         "progressive": {
           "on": 0,
           "off": 0,
-          "random": 100
+          "random": 50
         },
         "entrance_shuffle": {
           "none": 0,
@@ -2387,9 +2376,9 @@
           "dungeons": 50,
           "pedestal": 50,
           "ganon_pedestal": 50,
-          "triforce_hunt": 50,
+          "triforce_hunt": 0,
           "local_triforce_hunt": 0,
-          "ganon_triforce_hunt": 50,
+          "ganon_triforce_hunt": 0,
           "local_ganon_triforce_hunt": 0,
           "ice_rod_hunt": 0
         },
@@ -2462,7 +2451,7 @@
         },
         "hints": {
           "on": 50,
-          "off": 0
+          "off": 50
         },
         "weapons": {
           "randomized": 50,
@@ -2538,8 +2527,8 @@
         },
         "beemizer": {
           "0": 50,
-          "1": 50,
-          "2": 50,
+          "1": 25,
+          "2": 25,
           "3": 0,
           "4": 0
         },
@@ -2628,26 +2617,26 @@
             "name": "triforce-protected-from-bees",
             "options": {
               "goals": {
-                "ganon": 0,
-                "fast_ganon": 0,
-                "dungeons": 0,
-                "pedestal": 0,
+                "ganon": 50,
+                "fast_ganon": 50,
+                "dungeons": 50,
+                "pedestal": 50,
                 "triforce_hunt": 25,
-                "local_triforce_hunt": 25,
+                "local_triforce_hunt": 0,
                 "ganon_triforce_hunt": 25,
-                "local_ganon_triforce_hunt": 25
+                "local_ganon_triforce_hunt": 0
               },
               "triforce_pieces_mode": {
                 "extra": 50,
-                "percentage": 50,
+                "percentage": 0,
                 "available": 0
               },
               "triforce_pieces_extra": {
-                "0": 0,
+                "0": 50,
                 "5": 50,
                 "10": 50,
-                "15": 0,
-                "20": 0
+                "15": 50,
+                "20": 50
               },
               "triforce_pieces_percentage": {
                 "100": 0,
@@ -2665,8 +2654,8 @@
                 "15": 0,
                 "20": 50,
                 "30": 50,
-                "40": 0,
-                "50": 0
+                "40": 50,
+                "50": 50
               },
               "beemizer": 0
             },
