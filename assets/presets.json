@@ -2617,13 +2617,13 @@
             "name": "triforce-protected-from-bees",
             "options": {
               "goals": {
-                "ganon": 50,
-                "fast_ganon": 50,
-                "dungeons": 50,
-                "pedestal": 50,
-                "triforce_hunt": 25,
+                "ganon": 0,
+                "fast_ganon": 0,
+                "dungeons": 0,
+                "pedestal": 0,
+                "triforce_hunt": 50,
                 "local_triforce_hunt": 0,
-                "ganon_triforce_hunt": 25,
+                "ganon_triforce_hunt": 50,
                 "local_ganon_triforce_hunt": 0
               },
               "triforce_pieces_mode": {
