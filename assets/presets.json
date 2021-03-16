@@ -2376,9 +2376,9 @@
           "dungeons": 50,
           "pedestal": 50,
           "ganon_pedestal": 50,
-          "triforce_hunt": 0,
+          "triforce_hunt": 25,
           "local_triforce_hunt": 0,
-          "ganon_triforce_hunt": 0,
+          "ganon_triforce_hunt": 25,
           "local_ganon_triforce_hunt": 0,
           "ice_rod_hunt": 0
         },
@@ -2399,17 +2399,6 @@
           "10": 50,
           "15": 50,
           "20": 50
-        },
-        "triforce_pieces_percentage": {
-          "100": 0,
-          "150": 50,
-          "200": 0
-        },
-        "triforce_pieces_available": {
-          "25": 0,
-          "30": 50,
-          "40": 0,
-          "50": 0
         },
         "triforce_pieces_required": {
           "15": 0,
@@ -2612,54 +2601,20 @@
           "on": 0,
           "off": 50
         },
-        "linked_options": [
+        "triggers": [
           {
-            "name": "triforce-protected-from-bees",
+            "option_name": "goals",
+            "option_result": "triforce_hunt",
             "options": {
-              "goals": {
-                "ganon": 0,
-                "fast_ganon": 0,
-                "dungeons": 0,
-                "pedestal": 0,
-                "triforce_hunt": 50,
-                "local_triforce_hunt": 0,
-                "ganon_triforce_hunt": 50,
-                "local_ganon_triforce_hunt": 0
-              },
-              "triforce_pieces_mode": {
-                "extra": 50,
-                "percentage": 0,
-                "available": 0
-              },
-              "triforce_pieces_extra": {
-                "0": 50,
-                "5": 50,
-                "10": 50,
-                "15": 50,
-                "20": 50
-              },
-              "triforce_pieces_percentage": {
-                "100": 0,
-                "125" : 50,
-                "150": 0,
-                "200": 0
-              },
-              "triforce_pieces_available": {
-                "25": 0,
-                "30": 50,
-                "40": 50,
-                "50": 0
-              },
-              "triforce_pieces_required": {
-                "15": 0,
-                "20": 50,
-                "30": 50,
-                "40": 50,
-                "50": 50
-              },
               "beemizer": 0
-            },
-            "percentage": 20
+            }
+          },
+          {
+            "option_name": "goals",
+            "option_result": "ganon_triforce_hunt",
+            "options": {
+              "beemizer": 0
+            }
           }
         ],
         "rom": {
