@@ -5,7 +5,7 @@ const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
 // Return the offset in hours of a given timezone
-const getZoneOffset = (zone) => 0 - moment.tz('1970-01-01 00:00', zone).toDate().getTime() / 1000 / 60 / 60;
+const getZoneOffset = (zone) => 0 - moment.tz.zone(zone).utcOffset(new Date().getTime()) / 60;
 
 const generateEventCode = () => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
