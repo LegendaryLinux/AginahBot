@@ -2351,17 +2351,17 @@
           "off": 0
         },
         "accessibility": {
-          "items": 0,
+          "items": 50,
           "locations": 50,
-          "none": 0
+          "none": 50
         },
         "progressive": {
-          "on": 0,
-          "off": 0,
+          "on": 50,
+          "off": 50,
           "random": 50
         },
         "entrance_shuffle": {
-          "none": 0,
+          "none": 50,
           "dungeonssimple": 50,
           "dungeonsfull": 50,
           "simple": 50,
@@ -2380,7 +2380,7 @@
           "local_triforce_hunt": 0,
           "ganon_triforce_hunt": 25,
           "local_ganon_triforce_hunt": 0,
-          "ice_rod_hunt": 0
+          "ice_rod_hunt": 5
         },
         "pyramid_open": {
           "goal": 50,
@@ -2515,11 +2515,11 @@
           "off": 50
         },
         "beemizer": {
-          "0": 50,
-          "1": 25,
-          "2": 25,
-          "3": 0,
-          "4": 0
+          "0": 200,
+          "1": 50,
+          "2": 50,
+          "3": 50,
+          "4": 50
         },
         "shop_shuffle_slots": {
           "0": 50,
