@@ -145,7 +145,12 @@ module.exports = {
             return message.channel.send("I don't recognize that timezone!");
           }
 
-          const targetDate = new Date(timeString);
+          const zoneOffset = getZoneOffset(patternParts[6]);
+          const sign = zoneOffset < 1 ? '-' : '+';
+          const targetDate = new Date(`${patternParts[3].toString().padStart(2, '0')}-` +
+            `${patternParts[1].toString().padStart(2, '0')}-${patternParts[2].toString().padStart(2, '0')}T` +
+            `${patternParts[4].toString().padStart(2, '0')}:${patternParts[5].toString().padStart(2, '0')}${sign}` +
+            `${Math.abs(zoneOffset).toString().padStart(2, '0')}:00`);
           if (isNaN(targetDate.getTime())) {
             return message.channel.send("The date you provided is invalid.");
           }
