@@ -70,6 +70,13 @@ const eventAttendees = `CREATE TABLE IF NOT EXISTS event_attendees (
     userId VARCHAR(64) NOT NULL
 )`;
 
+const botOptions = `CREATE TABLE IF NOT EXISTS bot_options (
+    id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId BIGINT NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    value VARCHAR(128) NOT NULL
+)`;
+
 const db = mysql.createConnection({
     host: config.dbHost,
     user: config.dbUser,
@@ -94,4 +101,5 @@ db.query(roomSystemGames, handler);
 db.query(roomSystemReadyChecks, handler);
 db.query(scheduledEvents, handler);
 db.query(eventAttendees, handler);
+db.query(botOptions, handler);
 db.end();

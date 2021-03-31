@@ -114,7 +114,7 @@ module.exports = {
     bigNumberStrings: true,
   }),
 
-  dbQueryOne: (sql, args) => new Promise((resolve, reject) => {
+  dbQueryOne: (sql, args = []) => new Promise((resolve, reject) => {
     const conn = module.exports.dbConnect();
     conn.query(sql, args, (err, result) => {
       if (err) { reject(err); }
@@ -124,7 +124,7 @@ module.exports = {
     });
   }),
 
-  dbQueryAll: (sql, args) => new Promise((resolve, reject) => {
+  dbQueryAll: (sql, args = []) => new Promise((resolve, reject) => {
     const conn = module.exports.dbConnect();
     conn.query(sql, args, (err, result) => {
       if (err) { reject(err); }
@@ -133,7 +133,7 @@ module.exports = {
     });
   }),
 
-  dbExecute: (sql, args) => new Promise((resolve, reject) => {
+  dbExecute: (sql, args = []) => new Promise((resolve, reject) => {
     const conn = module.exports.dbConnect();
     conn.execute(sql, args, (err) => {
       if (err) { reject(err); }
