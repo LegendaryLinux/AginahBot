@@ -25,12 +25,21 @@ const generateEventCode = () => {
 const sendScheduleMessage = async (message, targetDate) => {
   const eventCode = generateEventCode();
 
+  // Determine if this guild is in opt-out mode
+  let sql = `SELECT 1
+           FROM bot_options bo
+           JOIN guild_data gd ON bo.guildDataId = gd.id
+           WHERE gd.guildId=?
+                AND bo.name='opt-out'`;
+  const optOutMode = await dbQueryOne(sql, [message.guild.id]);
+
   const embed = new Discord.MessageEmbed()
     .setTitle('A new event has been scheduled!')
     .setColor('#6081cb')
     .setDescription(`**${message.author.username}** wants to schedule a game at the time listed below.` +
       `\nReact with ⚔ if you intend to join this game.` +
-      `\nReact with 🐔 if you don\'t know yet.`)
+      `\nReact with 🐔 if you don\'t know yet.` +
+      `${optOutMode ? "\nReact with ❌ if you will not join." : ""}`)
     .addField('Event Code', eventCode)
     .setTimestamp(targetDate.getTime());
 
@@ -40,7 +49,7 @@ const sendScheduleMessage = async (message, targetDate) => {
     if (!guildData) {
       throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) in guild_data table.`);
     }
-    let sql = `INSERT INTO scheduled_events
+    sql = `INSERT INTO scheduled_events
              (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag, eventCode)
              VALUES (?, ?, ?, ?, ?, ?, ?)`;
     await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
@@ -50,14 +59,7 @@ const sendScheduleMessage = async (message, targetDate) => {
     await scheduleMessage.react('⚔');
     await scheduleMessage.react('🐔');
 
-    // Determine if this guild is in opt-out mode
-    sql = `SELECT 1
-           FROM bot_options bo
-           JOIN guild_data gd ON bo.guildDataId = gd.id
-           WHERE gd.guildId=?
-                AND bo.name='opt-out'`;
-    const enabled = await dbQueryOne(sql, [message.guild.id]);
-    if (enabled) {
+    if (optOutMode) {
       await scheduleMessage.react('❌');
     }
   }).catch((error) => generalErrorHandler(error));
