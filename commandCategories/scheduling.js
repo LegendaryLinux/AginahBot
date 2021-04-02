@@ -107,7 +107,9 @@ module.exports = {
         "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n" +
         "Strict ISO-8601 formatted datetime values are also allowed.\n" +
         "A list of timezones can be found on the Wikipedia timezone page under the `TZ database name` column.\n" +
-        "https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
+        "https://en.wikipedia.org/wiki/List_of_tz_database_time_zones\n" +
+        "If you make a mistake while scheduling a game, consider using `noping` instead of a role when retrying the " +
+        "command to avoid pinging people multiple times.",
       aliases: [],
       usage: '`!aginah schedule [role date/time]`',
       guildOnly: true,
