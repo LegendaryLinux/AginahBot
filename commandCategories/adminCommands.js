@@ -6,8 +6,8 @@ module.exports = {
             description: 'Lock a channel to prevent anyone (including moderators) from sending messages or reacting.',
             longDescription: 'Lock a channel to prevent anyone (including moderators) from sending messages or ' +
               'adding reactions. If the clone argument is provided, a new duplicate channel with the original ' +
-              'permissions will be created. If the private argument is provided, the archived channel will be made' +
-              'invisible to everyone except administrators',
+              'permissions will be created. If the private argument is provided, the archived channel will be made ' +
+              'invisible to everyone except administrators. Archived channels are publicly viewable by default.',
             aliases: [],
             usage: '`!aginah archive [clone] [private]`',
             minimumRole: null,
