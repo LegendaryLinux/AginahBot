@@ -24,7 +24,22 @@ module.exports = async (client, oldState, newState) => {
                  AND rs.newGameChannelId=?`;
     const roomSystemStartGame = await dbQueryOne(sql, [newState.guild.id, newState.channel.id]);
     if (roomSystemStartGame) {
-      const channelName = channelNames[randInRange(0, channelNames.length - 1)];
+      // Track which voice channel names are currently in use by the guild
+      if (!client.tempData.voiceRooms.hasOwnProperty(newState.guild.id)) {
+        client.tempData.voiceRooms[newState.guild.id] = [];
+      }
+
+      // Choose a channel name
+      let channelName = channelNames[randInRange(0, channelNames.length - 1)];
+      if (client.tempData.voiceRooms[newState.guild.id].length < channelNames.length) {
+        // If there are channel names available, find one that isn't in use
+        while (client.tempData.voiceRooms[newState.guild.id].indexOf(channelName) > -1) {
+          channelName = channelNames[randInRange(0, channelNames.length - 1)];
+        }
+      }else{
+        channelName = `${channelName}-${client.tempData.voiceRooms[newState.guild.id].length}`;
+      }
+
       await newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
         Promise.all([
           // Voice channel
@@ -78,6 +93,7 @@ module.exports = async (client, oldState, newState) => {
           await dbExecute(sql, [roomSystemStartGame.id, channels[0].id, channels[1].id, role.id]);
           await newState.member.voice.setChannel(channels[0]);
           await newState.member.roles.add(role);
+          client.tempData.voiceRooms[newState.guild.id].push(channelName);
         }).catch((error) => generalErrorHandler(error));
       });
     }
@@ -126,7 +142,7 @@ module.exports = async (client, oldState, newState) => {
 
       // Remove channel role from this user
       const role = oldState.guild.roles.resolve(channelData.roleId);
-      oldState.member.roles.remove(role);
+      await oldState.member.roles.remove(role);
 
       // Remove user from ready_checks table
       sql = `SELECT id FROM room_system_games WHERE voiceChannelId=? AND roomSystemId=?`;
@@ -137,6 +153,13 @@ module.exports = async (client, oldState, newState) => {
 
       // If the voice channel is now empty, destroy the role and channels
       if (oldState.channel.members.array().length === 0) {
+        // Remove the channel from the array of current voice channels if it exists
+        if (!client.tempData.voiceRooms.hasOwnProperty(oldState.guild.id)) { return; }
+        const channelIndex = client.tempData.voiceRooms[oldState.guild.id].indexOf(oldState.channel.name);
+        if (channelIndex > -1) {
+          client.tempData.voiceRooms[oldState.guild.id].splice(channelIndex, 1);
+        }
+
         role.delete();
         oldState.guild.channels.resolve(channelData.textChannelId).delete();
         oldState.guild.channels.resolve(channelData.voiceChannelId).delete();

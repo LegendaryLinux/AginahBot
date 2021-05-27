@@ -15,6 +15,9 @@ client.commandCategories = [];
 client.messageListeners = [];
 client.reactionListeners = [];
 client.voiceStateListeners = [];
+client.tempData = {
+    voiceRooms: {},
+};
 
 // Load command category files
 fs.readdirSync('./commandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {
