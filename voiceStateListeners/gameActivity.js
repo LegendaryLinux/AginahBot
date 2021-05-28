@@ -154,10 +154,11 @@ module.exports = async (client, oldState, newState) => {
       // If the voice channel is now empty, destroy the role and channels
       if (oldState.channel.members.array().length === 0) {
         // Remove the channel from the array of current voice channels if it exists
-        if (!client.tempData.voiceRooms.hasOwnProperty(oldState.guild.id)) { return; }
-        const channelIndex = client.tempData.voiceRooms[oldState.guild.id].indexOf(oldState.channel.name);
-        if (channelIndex > -1) {
-          client.tempData.voiceRooms[oldState.guild.id].splice(channelIndex, 1);
+        if (client.tempData.voiceRooms.hasOwnProperty(oldState.guild.id)) {
+          const channelIndex = client.tempData.voiceRooms[oldState.guild.id].indexOf(oldState.channel.name);
+          if (channelIndex > -1) {
+            client.tempData.voiceRooms[oldState.guild.id].splice(channelIndex, 1);
+          }
         }
 
         role.delete();
