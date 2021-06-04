@@ -3,7 +3,7 @@
     "zelda3": {
       "friendlyName": "The Legend of Zelda: A Link to the Past Multiworld Randomizer",
       "website": "https://archipelago.gg",
-      "setupGuide": "https://archipelago.gg/tutorial",
+      "setupGuide": "https://archipelago.gg/tutorial/zelda3/multiworld/en",
       "repositories": [
         "Randomizer Repo: https://github.com/Berserker66/MultiWorld-Utilities",
         "Enemizer Repo: https://github.com/Ijwu/Enemizer",
@@ -11,6 +11,29 @@
         "AginahBot Repo: https://github.com/LegendaryLinux/AginahBot"
       ],
       "apiEndpoint": "https://archipelago.gg/api/generate",
+      "seedDownloadUrl": "archipelago.gg/hosted",
+      "preferYaml": true
+    },
+    "factorio": {
+      "friendlyName": "Factorio",
+      "website": "https://factorio.com/",
+      "setupGuide": "https://archipelago.gg/tutorial",
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago",
+        "https://github.com/ArchipelagoMW/FactorioInformationExtractor"
+      ],
+      "apiEndpoint" : "https://archipelago.gg/api/generate",
+      "seedDownloadUrl": "archipelago.gg/hosted",
+      "preferYaml": true
+    },
+    "minecraft": {
+      "friendlyName": "Minecraft",
+      "website": "https://www.minecraft.net/en-us",
+      "setupGuide": "https://archipelago.gg/tutorial/minecraft/minecraft/en",
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago"
+      ],
+      "apiEndpoint" : "https://archipelago.gg/api/generate",
       "seedDownloadUrl": "archipelago.gg/hosted",
       "preferYaml": true
     }

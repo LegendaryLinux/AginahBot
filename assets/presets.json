@@ -3652,6 +3652,208 @@
           }
         }
       }
+    },
+    "factorio":  {
+      "beginner": {
+        "description": "Factorio Beginner Preset",
+        "name": "Engineer",
+        "game": "Factorio",
+        "accessibility": "locations",
+        "progression_balancing": "on",
+        "tech_tree_layout": {
+          "single": 1,
+          "small_diamonds": 0,
+          "medium_diamonds": 0,
+          "pyramid": 0,
+          "funnel": 0
+        },
+        "max_science_pack": {
+          "automation_science_pack": 0,
+          "logistic_science_pack": 1,
+          "military_science_pack": 0,
+          "chemical_science_pack": 0,
+          "production_science_pack": 0,
+          "utility_science_pack": 0,
+          "space_science_pack": 0
+        },
+        "tech_cost": {
+          "very_easy": 0,
+          "easy": 1,
+          "kind": 0,
+          "normal": 0,
+          "hard": 0,
+          "very_hard": 0,
+          "insane": 0
+        },
+        "free_samples": {
+          "none": 0,
+          "single_craft": 0,
+          "half_stack": 0,
+          "stack": 1
+        },
+        "visibility": {
+          "none": 0,
+          "sending": 1
+        },
+        "random_tech_ingredients": {
+          "on": 1,
+          "off": 0
+        },
+        "starting_items": {
+          "burner-mining-drill": 19,
+          "stone-furnace": 19,
+          "submachine-gun": 1,
+          "piercing-rounds-magazine": 200
+        }
+      },
+      "normal": {
+        "description": "Factorio Normal Preset",
+        "name": "Engineer",
+        "game": "Factorio",
+        "accessibility": "locations",
+        "progression_balancing": "on",
+        "tech_tree_layout": {
+          "single": 0,
+          "small_diamonds": 1,
+          "medium_diamonds": 1,
+          "pyramid": 0,
+          "funnel": 0
+        },
+        "max_science_pack": {
+          "automation_science_pack": 0,
+          "logistic_science_pack": 0,
+          "military_science_pack": 1,
+          "chemical_science_pack": 0,
+          "production_science_pack": 0,
+          "utility_science_pack": 0,
+          "space_science_pack": 0
+        },
+        "tech_cost": {
+          "very_easy": 0,
+          "easy": 0,
+          "kind": 1,
+          "normal": 0,
+          "hard": 0,
+          "very_hard": 0,
+          "insane": 0
+        },
+        "free_samples": {
+          "none": 0,
+          "single_craft": 0,
+          "half_stack": 0,
+          "stack": 1
+        },
+        "visibility": {
+          "none": 0,
+          "sending": 1
+        },
+        "random_tech_ingredients": {
+          "on": 1,
+          "off": 0
+        },
+        "starting_items": {
+          "burner-mining-drill": 19,
+          "stone-furnace": 19,
+          "submachine-gun": 1
+        }
+      },
+      "experienced": {
+        "description": "Factorio Experienced Preset",
+        "name": "Engineer",
+        "game": "Factorio",
+        "accessibility": "locations",
+        "progression_balancing": "on",
+        "tech_tree_layout": {
+          "single": 0,
+          "small_diamonds": 1,
+          "medium_diamonds": 1,
+          "pyramid": 1,
+          "funnel": 1
+        },
+        "max_science_pack": {
+          "automation_science_pack": 0,
+          "logistic_science_pack": 0,
+          "military_science_pack": 0,
+          "chemical_science_pack": 1,
+          "production_science_pack": 0,
+          "utility_science_pack": 0,
+          "space_science_pack": 0
+        },
+        "tech_cost": {
+          "very_easy": 0,
+          "easy": 0,
+          "kind": 0,
+          "normal": 1,
+          "hard": 0,
+          "very_hard": 0,
+          "insane": 0
+        },
+        "free_samples": {
+          "none": 0,
+          "single_craft": 0,
+          "half_stack": 0,
+          "stack": 1
+        },
+        "visibility": {
+          "none": 0,
+          "sending": 1
+        },
+        "random_tech_ingredients": {
+          "on": 1,
+          "off": 0
+        },
+        "starting_items": {
+          "burner-mining-drill": 19,
+          "stone-furnace": 19
+        }
+      },
+      "expert": {
+        "description": "Factorio Expert Preset",
+        "name": "Engineer",
+        "game": "Factorio",
+        "accessibility": "locations",
+        "progression_balancing": "on",
+        "tech_tree_layout": {
+          "single": 0,
+          "small_diamonds": 1,
+          "medium_diamonds": 1,
+          "pyramid": 1,
+          "funnel": 1
+        },
+        "max_science_pack": {
+          "automation_science_pack": 0,
+          "logistic_science_pack": 0,
+          "military_science_pack": 0,
+          "chemical_science_pack": 0,
+          "production_science_pack": 1,
+          "utility_science_pack": 0,
+          "space_science_pack": 0
+        },
+        "tech_cost": {
+          "very_easy": 0,
+          "easy": 0,
+          "kind": 0,
+          "normal": 1,
+          "hard": 0,
+          "very_hard": 0,
+          "insane": 0
+        },
+        "free_samples": {
+          "none": 1,
+          "single_craft": 0,
+          "half_stack": 0,
+          "stack": 0
+        },
+        "visibility": {
+          "none": 0,
+          "sending": 1
+        },
+        "random_tech_ingredients": {
+          "on": 1,
+          "off": 0
+        },
+        "starting_items": {}
+      }
     }
   }
 }
