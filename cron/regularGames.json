@@ -5,7 +5,7 @@
     "channelId": "799972416871727115",
     "seedSets": [
       {
-        "game": "zelda3",
+        "game": "zelda3-old",
         "title": "Daily Games",
         "targetHour": 0,
         "minPlayers": 1,
@@ -15,7 +15,7 @@
         ]
       },
       {
-        "game": "zelda3",
+        "game": "zelda3-old",
         "title": "Advanced Daily Games",
         "targetHour": 0,
         "minPlayers": 1,
@@ -25,7 +25,7 @@
         ]
       },
       {
-        "game": "zelda3",
+        "game": "zelda3-old",
         "title": "Aginah Take the Wheel",
         "targetHour": 0,
         "minPlayers": 1,
