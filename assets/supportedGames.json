@@ -1,7 +1,21 @@
 {
   "supportedGames": {
     "zelda3": {
-      "friendlyName": "The Legend of Zelda: A Link to the Past Multiworld Randomizer",
+      "friendlyName": "The Legend of Zelda: A Link to the Past",
+      "website": "https://archipelago.gg:48484",
+      "setupGuide": "https://archipelago.gg:48484/tutorial/zelda3/multiworld/en",
+      "repositories": [
+        "Randomizer Repo: https://github.com/Berserker66/MultiWorld-Utilities",
+        "Enemizer Repo: https://github.com/Ijwu/Enemizer",
+        "Assembler Repo: https://github.com/CaitSith2/z3randomizer",
+        "AginahBot Repo: https://github.com/LegendaryLinux/AginahBot"
+      ],
+      "apiEndpoint": null,
+      "seedDownloadUrl": null,
+      "preferYaml": true
+    },
+    "zelda3-old": {
+      "friendlyName": "The Legend of Zelda: A Link to the Past (Old BMW Version)",
       "website": "https://archipelago.gg",
       "setupGuide": "https://archipelago.gg/tutorial/zelda3/multiworld/en",
       "repositories": [
@@ -22,8 +36,8 @@
         "https://github.com/ArchipelagoMW/Archipelago",
         "https://github.com/ArchipelagoMW/FactorioInformationExtractor"
       ],
-      "apiEndpoint" : "https://archipelago.gg/api/generate",
-      "seedDownloadUrl": "archipelago.gg/hosted",
+      "apiEndpoint" : null,
+      "seedDownloadUrl": null,
       "preferYaml": true
     },
     "minecraft": {
@@ -33,8 +47,8 @@
       "repositories": [
         "https://github.com/ArchipelagoMW/Archipelago"
       ],
-      "apiEndpoint" : "https://archipelago.gg/api/generate",
-      "seedDownloadUrl": "archipelago.gg/hosted",
+      "apiEndpoint" : null,
+      "seedDownloadUrl": null,
       "preferYaml": true
     }
   }

@@ -4,7 +4,9 @@ const { dbQueryOne } = require('../lib');
 module.exports = async (client, message) => {
   const watchedUrls = [];
   Object.keys(supportedGames).forEach((game) => {
-    watchedUrls.push(supportedGames[game].seedDownloadUrl);
+    if (supportedGames[game].seedDownloadUrl) {
+      watchedUrls.push(supportedGames[game].seedDownloadUrl);
+    }
   });
 
   for (let url of watchedUrls) {

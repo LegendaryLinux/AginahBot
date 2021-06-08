@@ -29,6 +29,10 @@ module.exports = {
                     return message.channel.send("Sorry that game isn't supported yet. `!aginah games` for more info.");
                 }
 
+                if (!supportedGames[args[0].toLowerCase()].apiEndpoint) {
+                    return message.channel.send("Sorry, that game doesn't support bot generation yet.");
+                }
+
                 // Handle requests to generate a game from a file
                 if (message.attachments.array().length > 0){
                     // Argument validation. Arguments 1 and 2 can be provided in any order, or not at all.
