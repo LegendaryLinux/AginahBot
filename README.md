@@ -19,6 +19,8 @@ The following games are supported through the
 [Archipelago Randomizer](https://github.com/Berserker66/MultiWorld-Utilities),
 and have full MultiWorld compatibility with each other.
 - The Legend of Zelda: A Link to the Past
+- Factorio
+- Minecraft
 
 # Self-Hosting
 
