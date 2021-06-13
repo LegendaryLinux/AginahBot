@@ -4,32 +4,42 @@ module.exports = async (client, messageReaction, user, added) => {
   // Do nothing if the user is a bot, or the message is a DM
   if (user.bot || !messageReaction.message.guild) { return; }
 
-  // Make sure we are acting upon the proper reaction
-  if (messageReaction.emoji.name === '⚔' || messageReaction.emoji.name === '🐔') {
-    // Identify the event this reaction is associated with
-    let sql = `SELECT se.id
+  if (messageReaction.emoji.name === '❌') {
+    // Determine if this guild is in opt-out mode
+    let ooSql = `SELECT 1
+           FROM bot_options bo
+           JOIN guild_data gd ON bo.guildDataId = gd.id
+           WHERE gd.guildId=?
+                AND bo.name='opt-out'`;
+    if (await dbQueryOne(ooSql, [messageReaction.message.guild.id])) {
+      // Do not add the user to the RSVP list if the guild is in opt-out mode and the user reacted with ❌
+      return;
+    }
+  }
+
+  // Identify the event this reaction is associated with
+  let sql = `SELECT se.id
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                         WHERE gd.guildId = ?
                         AND se.channelId = ?
                         AND se.messageId = ?`;
-    const evt = await dbQueryOne(sql, [
-      messageReaction.message.guild.id,
-      messageReaction.message.channel.id,
-      messageReaction.message.id,
-    ]);
-    if (!evt) { return; }
+  const evt = await dbQueryOne(sql, [
+    messageReaction.message.guild.id,
+    messageReaction.message.channel.id,
+    messageReaction.message.id,
+  ]);
+  if (!evt) { return; }
 
-    // Reaction was added, so add user to event_attendees table
-    if (added) {
-      let sql = `REPLACE INTO event_attendees (eventId, userId) VALUES (?, ?)`;
-      return dbExecute(sql, [evt.id, user.id]);
-    }
+  // Reaction was added to a scheduling message, so add user to event_attendees table
+  if (added) {
+    let sql = `REPLACE INTO event_attendees (eventId, userId) VALUES (?, ?)`;
+    return dbExecute(sql, [evt.id, user.id]);
+  }
 
-    // Reaction was removed, so remove user from event_attendees table
-    if (!added) {
-      let sql = `DELETE FROM event_attendees WHERE eventId=? AND userId=?`;
-      return dbExecute(sql, [evt.id, user.id]);
-    }
+  // Reaction was removed, so remove user from event_attendees table
+  if (!added) {
+    let sql = `DELETE FROM event_attendees WHERE eventId=? AND userId=?`;
+    return dbExecute(sql, [evt.id, user.id]);
   }
 };

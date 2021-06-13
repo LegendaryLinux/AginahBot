@@ -102,6 +102,7 @@ module.exports = {
       description: 'View upcoming events or schedule a new one',
       longDescription: "View upcoming events or Schedule a new one. Allowed times look like:\n\n" +
         "`X:00`: Schedule a game for the next occurrence of the provided minutes value\n" +
+        "`X+2:15` Schedule a game for a set number of hours in the future, at the provided minute value\n" +
         "`HH:MM TZ`: Schedule a game for the next occurrence of the provided time.\n" +
         "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
         "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n" +
@@ -111,7 +112,7 @@ module.exports = {
         "If you make a mistake while scheduling a game, consider using `noping` instead of a role when retrying the " +
         "command to avoid pinging people multiple times.",
       aliases: [],
-      usage: '`!aginah schedule [role date/time]`',
+      usage: '`!aginah schedule [date/time [role1 role2 ...]]`',
       guildOnly: true,
       minimumRole: null,
       adminOnly: false,
@@ -145,31 +146,26 @@ module.exports = {
           return;
         }
 
-        if (args.length < 2) {
-          return message.channel.send("Looks like you're missing some arguments. Use " +
-            "`!aginah help schedule` for more info.");
-        }
-
-        // Remove the role argument, since we don't do anything with it
-        await args.shift();
-
         const timeString = args.join(' ').toUpperCase().trim();
         const currentDate = new Date();
 
         // Format: Strict ISO-8601
-        const iso8601Pattern = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(Z|([+-]\d{2}:\d{2}))$/);
+        const iso8601Pattern = new RegExp(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(Z|([+-]\d{2}:\d{2}))/);
 
         // Format: MM/DD/YYYY HH:II TZ
-        const mdyPattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)$/);
+        const mdyPattern = new RegExp(/^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)/);
 
         // Format: YYYY-MM-DD HH:MM TZ
-        const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)$/);
+        const isoSimplePattern = new RegExp(/^(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)/);
 
         // Format: HH:MM TZ
-        const specificHourPattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)$/);
+        const specificHourPattern = new RegExp(/^(\d{1,2}):(\d{2}) ([A-z0-9]*\/[A-z0-9_]*)/);
 
         // Format XX:30
-        const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})$/);
+        const nextHourPattern = new RegExp(/^X{1,2}:(\d{2})/);
+
+        // Format X+Y:15
+        const futureHourPattern = new RegExp(/^X{1,2}\+(\d{1,2}):(\d{2})/);
 
         if (timeString.search(iso8601Pattern) > -1) {
           const targetDate = new Date(timeString);
@@ -262,12 +258,26 @@ module.exports = {
           if (patternParts[1] > 59) {
             return message.channel.send("There are only sixty minutes in an hour!");
           }
-          const targetDate = new Date(`${currentDate.getUTCMonth()+1}/${currentDate.getUTCDate()}`+
+          const targetDate = new Date(`${currentDate.getUTCMonth() + 1}/${currentDate.getUTCDate()}` +
             `/${currentDate.getUTCFullYear()} ${currentDate.getUTCHours()}:${patternParts[1]} UTC`);
 
           if (targetDate.getTime() < currentDate.getTime()) {
             targetDate.setUTCHours(targetDate.getUTCHours() + 1);
           }
+
+          return sendScheduleMessage(message, targetDate);
+
+        } else if (timeString.search(futureHourPattern) > -1) {
+          const patternParts = timeString.match(futureHourPattern);
+          if (patternParts[2] > 59) {
+            return message.channel.send("There are only sixty minutes in an hour!");
+          }
+
+          let targetDate = new Date(`${currentDate.getUTCMonth() + 1}/${currentDate.getUTCDate()}` +
+            `/${currentDate.getUTCFullYear()} ${currentDate.getUTCHours()}:${patternParts[2]} UTC`);
+
+          // Add requested hours to target date
+          targetDate = new Date(targetDate.getTime() + (parseInt(patternParts[1], 10) * 60 * 60 * 1000));
 
           return sendScheduleMessage(message, targetDate);
 
