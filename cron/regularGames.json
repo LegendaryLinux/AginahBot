@@ -6,20 +6,20 @@
     "seedSets": [
       {
         "game": "zelda3-old",
-        "title": "Daily Games",
+        "title": "Daily Game",
         "targetHour": 0,
         "minPlayers": 1,
-        "maxPlayers": 5,
+        "maxPlayers": 1,
         "presets": [
           "daily"
         ]
       },
       {
         "game": "zelda3-old",
-        "title": "Advanced Daily Games",
+        "title": "Advanced Daily Game",
         "targetHour": 0,
         "minPlayers": 1,
-        "maxPlayers": 5,
+        "maxPlayers": 1,
         "presets": [
           "daily-advanced"
         ]
