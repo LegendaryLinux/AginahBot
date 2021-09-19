@@ -36,7 +36,7 @@ const sendScheduleMessage = async (message, targetDate) => {
   const embed = new Discord.MessageEmbed()
     .setTitle('A new event has been scheduled!')
     .setColor('#6081cb')
-    .setDescription(`**${message.author.username}** wants to schedule a game at the time listed below.` +
+    .setDescription(`**${message.author.username}** wants to schedule a game for <t:${targetDate.getTime()/1000}:F>.` +
       `\nReact with ⚔ if you intend to join this game.` +
       `\nReact with 🐔 if you don\'t know yet.` +
       `${optOutMode ? "\nReact with ❌ if you will not join." : ""}`)
