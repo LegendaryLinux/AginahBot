@@ -33,10 +33,11 @@ const sendScheduleMessage = async (message, targetDate) => {
                 AND bo.name='opt-out'`;
   const optOutMode = await dbQueryOne(sql, [message.guild.id]);
 
+  const embedTimestamp = Math.floor(targetDate.getTime()/1000);
   const embed = new Discord.MessageEmbed()
     .setTitle('A new event has been scheduled!')
     .setColor('#6081cb')
-    .setDescription(`**${message.author.username}** wants to schedule a game for <t:${targetDate.getTime()/1000}:F>.` +
+    .setDescription(`**${message.author.username}** wants to schedule a game for <t:${embedTimestamp}:F>.` +
       `\nReact with ⚔ if you intend to join this game.` +
       `\nReact with 🐔 if you don\'t know yet.` +
       `${optOutMode ? "\nReact with ❌ if you will not join." : ""}`)
