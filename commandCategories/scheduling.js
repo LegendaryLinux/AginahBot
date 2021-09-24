@@ -131,10 +131,11 @@ module.exports = {
             if (!channel) { continue; }
             channel.messages.fetch(game.messageId).then(
               (scheduleMessage) => {
+                const embedTimestamp = Math.floor(game.timestamp/1000);
                 const embed = new Discord.MessageEmbed()
                   .setTitle('Upcoming Event')
                   .setColor('#6081cb')
-                  .setDescription(`**${game.schedulingUserTag}** scheduled a game at the time listed below.`)
+                  .setDescription(`**${game.schedulingUserTag}** scheduled a game for <t:${embedTimestamp}:F>.`)
                   .setURL(scheduleMessage.url)
                   .addField('Event Code', game.eventCode)
                   .addField('Current RSVPs', game.rsvpCount)
