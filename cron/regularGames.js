@@ -36,9 +36,9 @@ client.login(config.token).then(async () => {
 
       // Unpin all bot messages
       const pinnedMessages = await channel.messages.fetchPinned();
-      for (let msg of pinnedMessages.array()) {
+      await pinnedMessages.each(async (msg) => {
         if (msg.author.bot) { await msg.unpin(); }
-      }
+      });
 
       // Loop over all seeds set to occur
       for (let seedSet of daily.seedSets) {

@@ -5,26 +5,28 @@ const { generalErrorHandler } = require('./errorHandlers');
 
 module.exports = {
   // Function which returns a promise which will resolve to true or false
-  verifyModeratorRole: (guildMember) => {
-    if (module.exports.verifyIsAdmin(guildMember)) { return true; }
-    return module.exports.getModeratorRole(guildMember.guild).position <= guildMember.roles.highest.position;
-  },
+  verifyModeratorRole: (guildMember) => new Promise(async (resolve) => {
+    if (module.exports.verifyIsAdmin(guildMember)) { resolve(true); }
+    resolve(await module.exports.getModeratorRole(guildMember.guild).position <= guildMember.roles.highest.position);
+  }),
 
   verifyIsAdmin: (guildMember) => guildMember.hasPermission(Discord.Permissions.FLAGS.ADMINISTRATOR),
 
-  getModeratorRole: (guild) => {
+  getModeratorRole: (guild) => new Promise(async (resolve) => {
     // Find this guild's moderator role
-    for (const role of guild.roles.cache.array()) {
+    let modRole = null;
+    await guild.roles.cache.each((role) => {
+      if (modRole !== null) { return; }
       if (role.name === config.moderatorRole) {
-        return role;
+        modRole = role;
       }
-    }
-    return null;
-  },
+    });
+    resolve(modRole);
+  }),
 
   handleGuildCreate: async (client, guild) => {
     // Find this guild's moderator role id
-    let moderatorRole = module.exports.getModeratorRole(guild);
+    let moderatorRole = await module.exports.getModeratorRole(guild);
     if (!moderatorRole) {
       return guild.roles.create({
         data: {

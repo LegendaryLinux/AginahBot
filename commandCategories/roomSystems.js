@@ -51,7 +51,7 @@ module.exports = {
 
         message.guild.fetch().then(async (guild) => {
           // Find a category whose name matches the argument
-          const category = guild.channels.cache.array().find((el) => el.name === args[0]);
+          const category = guild.channels.cache.find((el) => el.name === args[0]);
 
           // If no category matching the provided argument was found, inform the user
           if (!category) { return message.channel.send('No dynamic room category with that name exists!'); }
@@ -66,8 +66,8 @@ module.exports = {
             return message.channel.send('Your server does not have a dynamic room category with that name.');
           }
 
-          category.children.forEach((channel) => channel.delete());
-          category.delete();
+          await category.children.each(async (channel) => await channel.delete());
+          await category.delete();
           await dbExecute(`DELETE FROM room_system_games WHERE roomSystemId=?`, [row.id]);
           await dbExecute(`DELETE FROM room_systems WHERE id=?`, [row.id]);
         }).catch((e) => generalErrorHandler(e));

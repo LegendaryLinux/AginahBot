@@ -34,7 +34,7 @@ module.exports = {
                 }
 
                 // Handle requests to generate a game from a file
-                if (message.attachments.array().length > 0){
+                if (message.attachments.size > 0){
                     // Argument validation. Arguments 1 and 2 can be provided in any order, or not at all.
                     // Here, they are parsed if present and their meanings interpreted. The word "race" indicates
                     // a race request while a number indicates a player count.
@@ -46,9 +46,9 @@ module.exports = {
                         if (args[index].search(/^\d+$/) > -1) { playerCount = args[index].toString(); }
                     });
 
-                    const postfix = '.'+message.attachments.array()[0].name.split('.').reverse()[0];
+                    const postfix = '.'+message.attachments.first().name.split('.').reverse()[0];
                     const tempFile = tmp.fileSync({ prefix: "upload-", postfix });
-                    return request.get(message.attachments.array()[0].url)
+                    return request.get(message.attachments.first().url)
                         .pipe(fs.createWriteStream(tempFile.name))
                         .on('close', () => {
                             // Send request to api

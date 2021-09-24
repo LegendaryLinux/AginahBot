@@ -333,13 +333,13 @@ module.exports = {
 
         // Remove reactions from the role category message
         message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
-          .then((categoryMessage) => categoryMessage.reactions.cache.array().forEach((r) => {
+          .then((categoryMessage) => categoryMessage.reactions.cache.each((r) => {
             if (r.emoji.toString() === role.reaction) { r.remove(); }
           }))
           .catch((err) => generalErrorHandler(err));
 
         // Remove the role from the guild
-        message.guild.roles.resolve(role.roleId).delete();
+        await message.guild.roles.resolve(role.roleId).delete();
 
         // Delete rows from the roles table and update role category message
         await dbExecute(`DELETE FROM roles WHERE id=? AND categoryId=?`, [role.id, role.categoryId]);

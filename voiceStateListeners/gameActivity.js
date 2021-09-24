@@ -40,7 +40,7 @@ module.exports = async (client, oldState, newState) => {
         channelName = `${channelName}-${client.tempData.voiceRooms[newState.guild.id].length}`;
       }
 
-      await newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then((role) => {
+      await newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then(async (role) => {
         Promise.all([
           // Voice channel
           newState.guild.channels.create(channelName, {
@@ -60,7 +60,7 @@ module.exports = async (client, oldState, newState) => {
               },
               {
                 // Moderators should be able to view this channel
-                id: getModeratorRole(newState.guild).id,
+                id: await getModeratorRole(newState.guild).id,
                 allow: [ 'VIEW_CHANNEL' ],
               },
               {
@@ -152,7 +152,7 @@ module.exports = async (client, oldState, newState) => {
       await dbExecute(sql, [game.id, oldState.member.id]);
 
       // If the voice channel is now empty, destroy the role and channels
-      if (oldState.channel.members.array().length === 0) {
+      if (oldState.channel.members.size === 0) {
         // Remove the channel from the array of current voice channels if it exists
         if (client.tempData.voiceRooms.hasOwnProperty(oldState.guild.id)) {
           const channelIndex = client.tempData.voiceRooms[oldState.guild.id].indexOf(oldState.channel.name);
@@ -161,9 +161,9 @@ module.exports = async (client, oldState, newState) => {
           }
         }
 
-        role.delete();
-        oldState.guild.channels.resolve(channelData.textChannelId).delete();
-        oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
+        await role.delete();
+        await oldState.guild.channels.resolve(channelData.textChannelId).delete();
+        await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
 
         // Delete the database entry for for this channel
         await dbExecute(`DELETE FROM room_system_games WHERE id=?`, [channelData.id]);

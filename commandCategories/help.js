@@ -35,9 +35,11 @@ module.exports = {
 
                             // If the command does have a minimum role, only report if the user has
                             // sufficient permissions
-                            if (verifyModeratorRole(message.member)) {
-                                permittedCommands.push(`\`${command.name}\`: ${command.description}`);
-                            }
+                            verifyModeratorRole(message.member).then((isModerator) => {
+                                if (isModerator) {
+                                    permittedCommands.push(`\`${command.name}\`: ${command.description}`);
+                                }
+                            });
                         });
 
                         if (permittedCommands.length > 0) {

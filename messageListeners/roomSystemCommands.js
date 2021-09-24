@@ -98,7 +98,7 @@ module.exports = async (client, message) => {
         },
         {
           // Moderators should still have full access
-          id: getModeratorRole(message.guild).id,
+          id: await getModeratorRole(message.guild).id,
           allow: [ 'CONNECT' ],
         },
         {

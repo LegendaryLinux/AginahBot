@@ -1,4 +1,4 @@
-const { Client, Collection } = require('discord.js')
+const { Client, Collection, Intents } = require('discord.js')
 const config = require('./config.json');
 const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
@@ -8,7 +8,11 @@ const fs = require('fs');
 // Catch all unhandled errors
 process.on('uncaughtException', (err) => generalErrorHandler(err));
 
-const client = new Client({ partials: [ 'GUILD_MEMBER', 'MESSAGE', 'REACTION' ] });
+const client = new Client({
+    partials: [ 'GUILD_MEMBER', 'MESSAGE', 'REACTION' ],
+    intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGES ],
+});
 client.devMode = process.argv[2] && process.argv[2] === 'dev';
 client.commands = new Collection();
 client.commandCategories = [];
@@ -46,9 +50,9 @@ fs.readdirSync('./voiceStateListeners').filter((file) => file.endsWith('.js')).f
     client.voiceStateListeners.push(listener);
 });
 
-client.on('message', async(message) => {
+client.on('message', async (msg) => {
     // Fetch message if partial
-    message = await cachePartial(message);
+    const message = await cachePartial(msg);
     if (message.member) { message.member = await cachePartial(message.member); }
     if (message.author) { message.author = await cachePartial(message.author); }
 
@@ -92,7 +96,7 @@ client.on('message', async(message) => {
         if (!command.minimumRole) { return command.execute(message, args); }
 
         // Otherwise, the user must have permission to access this command
-        if (verifyModeratorRole(message.member)) {
+        if (await verifyModeratorRole(message.member)) {
             return command.execute(message, args);
         }
 
@@ -134,7 +138,7 @@ client.on('error', async(error) => generalErrorHandler(error));
 
 client.once('ready', async() => {
     await verifyGuildSetups(client);
-    console.log(`Connected to Discord. Active in ${client.guilds.cache.array().length} guilds.`);
+    console.log(`Connected to Discord. Active in ${Array.from(client.guilds.cache).length} guilds.`);
 });
 
 client.login(config.token);
