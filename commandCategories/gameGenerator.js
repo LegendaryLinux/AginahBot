@@ -144,8 +144,8 @@ module.exports = {
 
                 if (args.length === 1) {
                     const response = ['The following presets are available:'];
-                    Object.keys(presets[args[0].toLowerCase()]).forEach((preset) => response.push(` - ${preset}`));
-                    return message.channel.send(response);
+                    Object.keys(presets[args[0].toLowerCase()]).forEach((preset) => response.push(`\n - ${preset}`));
+                    return message.channel.send(response.join(''));
                 }
 
                 if (!presets[args[0].toLowerCase()].hasOwnProperty(args[1].toLowerCase())) {
@@ -189,9 +189,9 @@ module.exports = {
             execute(message) {
                 const data = ['The currently supported games are:'];
                 Object.keys(supportedGames).forEach((game) => {
-                    data.push(` - ${supportedGames[game].friendlyName} (**${game}**)`);
+                    data.push(`\n - ${supportedGames[game].friendlyName} (**${game}**)`);
                 });
-                return message.channel.send(data);
+                return message.channel.send({ content: data.join('') });
             }
         }
     ],

@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const {generalErrorHandler} = require('../errorHandlers');
 const moment = require('moment-timezone');
-const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
+const { dbQueryOne, dbQueryAll, dbExecute, verifyModeratorRole} = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
 // Return the offset in hours of a given timezone
@@ -44,7 +44,7 @@ const sendScheduleMessage = async (message, targetDate) => {
     .addField('Event Code', eventCode)
     .setTimestamp(targetDate.getTime());
 
-  message.channel.send(embed).then(async (scheduleMessage) => {
+  message.channel.send({ embeds: [embed] }).then(async (scheduleMessage) => {
     // Save scheduled game to database
     const guildData = await dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id]);
     if (!guildData) {
@@ -140,7 +140,7 @@ module.exports = {
                   .addField('Event Code', game.eventCode)
                   .addField('Current RSVPs', game.rsvpCount)
                   .setTimestamp(parseInt(game.timestamp, 10));
-                message.channel.send(embed);
+                message.channel.send({ embeds: [embed] });
               }).catch((err) => generalErrorHandler(err));
           }
 
@@ -287,6 +287,53 @@ module.exports = {
           return message.channel.send("Sorry, I don't understand that time. Use " +
             "`!aginah help schedule` for more info.");
         }
+      }
+    },
+    {
+      name: 'cancel',
+      description: 'Cancel an upcoming scheduled event',
+      longDescription: "Cancel an upcoming scheduled event. A game can only be cancelled by a moderator or by the " +
+        "user who scheduled it.",
+      aliases: [],
+      usage: '`!aginah cancel eventCode`',
+      guildOnly: true,
+      minimumRole: null,
+      adminOnly: false,
+      async execute(message, args) {
+        let sql = `SELECT se.id, se.channelId, se.messageId, se.schedulingUserId, se.schedulingUserTag
+                   FROM scheduled_events se
+                   JOIN guild_data gd ON se.guildDataId = gd.id
+                   WHERE gd.guildId=?
+                     AND se.eventCode=?
+                     AND timestamp > ?`;
+        const eventData = await dbQueryOne(sql, [
+          message.guild.id, args[0].toUpperCase(), new Date().getTime().toString(),
+        ]);
+
+        // If no event is found, notify the user
+        if (!eventData) {
+          return await message.channel.send('There is no upcoming event with that code.');
+        }
+
+        // If the user is not a moderator and not the scheduling user, deny the cancellation
+        if (message.author.id !== eventData.schedulingUserId && !await verifyModeratorRole(message.user)) {
+          return await message.channel.send(`This game can only be cancelled by the user who scheduled it ` +
+          `(${eventData.schedulingUserTag}), or by a moderator.`);
+        }
+
+        // The game is to be cancelled. Replace the schedule message with a cancellation notice
+        const scheduleMsg = message.guild.channels.resolve(eventData.channelId).messages.resolve(eventData.messageId);
+        await scheduleMsg.edit({
+          content: `This game has been cancelled by ${message.author}.`,
+          embeds: [],
+        });
+
+        // Remove all reactions from the message
+        await scheduleMsg.reactions.removeAll();
+
+        // Remove the game's entry from the database
+        await dbExecute(`DELETE FROM event_attendees WHERE eventId=?`, [eventData.id]);
+        await dbExecute(`DELETE FROM scheduled_events WHERE id=?`, [eventData.id]);
       }
     },
   ],

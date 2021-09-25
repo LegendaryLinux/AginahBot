@@ -64,7 +64,7 @@ client.login(config.token).then(async () => {
         }
 
         // Send a message containing the dailies to the specified channel
-        const dailyMessage = await channel.send(embed);
+        const dailyMessage = await channel.send({ embeds: [embed] });
         await dailyMessage.pin();
       }
     }

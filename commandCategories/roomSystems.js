@@ -21,10 +21,10 @@ module.exports = {
       async execute(message, args) {
         // Create the system
         const roleName = args[0] ? args[0] : DEFAULT_ROLE_NAME;
-        return message.guild.channels.create(roleName, { type: 'category' }).then((category) => {
+        return message.guild.channels.create(roleName, { type: 'GUILD_CATEGORY' }).then((category) => {
           Promise.all([
             message.guild.channels.create(PLANNING_CHANNEL_NAME, { parent: category }),
-            message.guild.channels.create(VOICE_CHANNEL_NAME, { type: 'voice', parent: category }),
+            message.guild.channels.create(VOICE_CHANNEL_NAME, { type: 'GUILD_VOICE', parent: category }),
           ]).then(async (channels) => {
             const row = await dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id]);
             let sql = `INSERT INTO room_systems (guildDataId, channelCategoryId, planningChannelId,

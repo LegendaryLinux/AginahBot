@@ -69,10 +69,10 @@ module.exports = {
                 }
 
                 const game = supportedGames[args[0].toLowerCase()];
-                return message.channel.send([
-                    `The code repositories associated with the ${game.friendlyName} project are:`,
-                    ...game.repositories
-                ]);
+                return message.channel.send({
+                    content: `The code repositories associated with the ${game.friendlyName} project ` +
+                      `are:\n${game.repositories.join('\n')}`,
+                });
             }
         },
     ],

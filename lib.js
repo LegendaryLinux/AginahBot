@@ -10,7 +10,7 @@ module.exports = {
     resolve(await module.exports.getModeratorRole(guildMember.guild).position <= guildMember.roles.highest.position);
   }),
 
-  verifyIsAdmin: (guildMember) => guildMember.hasPermission(Discord.Permissions.FLAGS.ADMINISTRATOR),
+  verifyIsAdmin: (guildMember) => guildMember.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR),
 
   getModeratorRole: (guild) => new Promise(async (resolve) => {
     // Find this guild's moderator role

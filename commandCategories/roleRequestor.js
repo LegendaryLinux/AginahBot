@@ -54,7 +54,7 @@ module.exports = {
           return message.channel.send("The role system has already been set up on your server.");
         }
         message.guild.channels.create('role-request', {
-          type: 'text',
+          type: 'GUILD_TEXT',
           topic: 'Request roles so that you may be pinged for various notifications.',
           reason: 'Role Request system created.',
           permissionOverwrites: [

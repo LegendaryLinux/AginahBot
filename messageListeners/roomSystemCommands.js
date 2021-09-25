@@ -86,7 +86,7 @@ module.exports = async (client, message) => {
         output.push('🏁 All players are ready!') :
         notReady.forEach((player) => output.push(player));
 
-      return message.channel.send(output);
+      return message.channel.send(output.join('\n'));
 
     // Lock a dynamic voice channel, preventing anyone except moderators from joining
     case '.lock':

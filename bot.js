@@ -50,7 +50,7 @@ fs.readdirSync('./voiceStateListeners').filter((file) => file.endsWith('.js')).f
     client.voiceStateListeners.push(listener);
 });
 
-client.on('message', async (msg) => {
+client.on('messageCreate', async (msg) => {
     // Fetch message if partial
     const message = await cachePartial(msg);
     if (message.member) { message.member = await cachePartial(message.member); }
@@ -72,7 +72,6 @@ client.on('message', async (msg) => {
         // Get the command object
         const command = client.commands.get(commandName) ||
             client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));
-
         // If the command does not exist, alert the user
         if (!command) { return message.channel.send("I don't know that command. Use `!aginah help` for more info."); }
 
@@ -138,7 +137,7 @@ client.on('error', async(error) => generalErrorHandler(error));
 
 client.once('ready', async() => {
     await verifyGuildSetups(client);
-    console.log(`Connected to Discord. Active in ${Array.from(client.guilds.cache).length} guilds.`);
+    console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
 });
 
 client.login(config.token);

@@ -29,7 +29,7 @@ module.exports = {
 
                             // If the command does not have a minimum role, always report on it
                             if (!command.minimumRole){
-                                permittedCommands.push(`\`${command.name}\`: ${command.description}`);
+                                permittedCommands.push(`\n\`${command.name}\`: ${command.description}`);
                                 return;
                             }
 
@@ -37,17 +37,18 @@ module.exports = {
                             // sufficient permissions
                             verifyModeratorRole(message.member).then((isModerator) => {
                                 if (isModerator) {
-                                    permittedCommands.push(`\`${command.name}\`: ${command.description}`);
+                                    permittedCommands.push(`\n\`${command.name}\`: ${command.description}`);
                                 }
                             });
                         });
 
                         if (permittedCommands.length > 0) {
-                            data.push(`\n__${category.category}:__`);
+                            data.push(`\n\n__${category.category}:__`);
                             permittedCommands.forEach((cmd) => data.push(cmd));
                         }
                     });
-                    return message.author.send(data, { split: true }).catch((error) =>
+
+                    return message.author.send(data.join('')).catch((error) =>
                         errorHandlers.dmErrorHandler(error, message));
                 }
 
@@ -67,8 +68,9 @@ module.exports = {
                 if (command.usage && typeof(command.usage) === 'object' && command.usage.length) {
                     command.usage.forEach((usage) => data.push(`**Usage: ** ${usage}`));
                 } else if (command.usage) { data.push(`**Usage: ** ${command.usage}`); }
-                message.channel.send(data, { split: true }).then(() => {
-                }).catch((error) => errorHandlers.generalErrorHandler(error));
+                message.channel.send(data.join('\n'))
+                  .then(() => {})
+                  .catch((error) => errorHandlers.generalErrorHandler(error));
             },
         }
     ],

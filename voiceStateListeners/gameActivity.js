@@ -40,17 +40,18 @@ module.exports = async (client, oldState, newState) => {
         channelName = `${channelName}-${client.tempData.voiceRooms[newState.guild.id].length}`;
       }
 
-      await newState.guild.roles.create({ data: { name: channelName, mentionable: true }}).then(async (role) => {
+      const moderatorRole = await getModeratorRole(newState.guild);
+      await newState.guild.roles.create({ name: channelName, mentionable: true }).then((role) => {
         Promise.all([
           // Voice channel
           newState.guild.channels.create(channelName, {
-            type: 'voice',
+            type: 'GUILD_VOICE',
             parent: roomSystemStartGame.channelCategoryId,
           }),
 
           // Text channel
           newState.guild.channels.create(channelName, {
-            type: 'text',
+            type: 'GUILD_TEXT',
             parent: roomSystemStartGame.channelCategoryId,
             permissionOverwrites: [
               {
@@ -60,7 +61,7 @@ module.exports = async (client, oldState, newState) => {
               },
               {
                 // Moderators should be able to view this channel
-                id: await getModeratorRole(newState.guild).id,
+                id: moderatorRole.id,
                 allow: [ 'VIEW_CHANNEL' ],
               },
               {
