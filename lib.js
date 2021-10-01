@@ -87,10 +87,9 @@ module.exports = {
    * @returns String || Object || null
    */
   parseEmoji: (guild, emoji) => {
-    const emojiIdRegex = new RegExp(/^<:.*:(\d+)>$/);
-    const match = emoji.match(emojiIdRegex);
-    if (match && match.length > 1) {
-      const emojiObj = guild.emojis.resolve(match[1]);
+    const match = emoji.match(/^<:(.*):(\d+)>$/);
+    if (match && match.length > 2) {
+      const emojiObj = guild.emojis.resolve(match[2]);
       return emojiObj ? emojiObj : null;
     }
 
