@@ -29,10 +29,8 @@ module.exports = {
     let moderatorRole = await module.exports.getModeratorRole(guild);
     if (!moderatorRole) {
       return guild.roles.create({
-        data: {
-          name: config.moderatorRole,
-          reason: `AginahBot requires a ${config.moderatorRole} role.`
-        },
+        name: config.moderatorRole,
+        reason: `AginahBot requires a ${config.moderatorRole} role.`
       }).then(async (moderatorRole) => {
         let sql = `INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)`;
         await module.exports.dbExecute(sql, [guild.id, moderatorRole.id]);

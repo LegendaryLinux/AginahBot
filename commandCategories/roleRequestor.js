@@ -12,20 +12,27 @@ const updateCategoryMessage = async (client, guild, messageId) => {
   const roleCategory = await dbQueryOne(sql, [guild.id, messageId]);
   if (!roleCategory) { throw Error("Unable to update category message. Role category could not be found."); }
 
-  const roleInfo = [`> __${roleCategory.categoryName}__`];
+  const roleInfoEmbed = {
+    title: roleCategory.categoryName,
+    fields: [],
+  };
   sql = `SELECT r.roleId, r.reaction, r.description FROM roles r WHERE r.categoryId=?`;
   const roles = await dbQueryAll(sql, [roleCategory.id]);
   roles.forEach((role) => {
-    roleInfo.push(`> ${role.reaction} ${guild.roles.resolve(role.roleId)}` +
-        `${role.description ? `: ${role.description}` : ''}`);
+    roleInfoEmbed.fields.push({
+      name: `${role.reaction} ${guild.roles.resolve(role.roleId).name}`,
+      value: role.description || 'No description provided.',
+    });
   });
 
   // If there are no roles in this category, mention that there are none
-  if (roleInfo.length === 1) { roleInfo.push("> There are no roles in this category yet."); }
+  if (roles.length === 0) {
+    roleInfoEmbed.description = 'There are no roles in this category yet.';
+  }
 
   // Fetch and edit the category message
   guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(messageId)
-      .then((categoryMessage) => categoryMessage.edit(roleInfo)
+      .then((categoryMessage) => categoryMessage.edit({ content: null, embeds: [roleInfoEmbed] })
           .then().catch((err) => generalErrorHandler(err)));
 };
 
@@ -222,10 +229,8 @@ module.exports = {
 
         // Create the role on the server
         message.guild.roles.create({
-          data: {
-            name: args[1],
-            mentionable: true,
-          },
+          name: args[1],
+          mentionable: true,
           reason: 'Added as part of role-request system.',
         }).then(async (role) => {
           // Add the role to the database

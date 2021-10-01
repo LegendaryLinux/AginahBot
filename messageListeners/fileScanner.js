@@ -64,9 +64,7 @@ module.exports = (client, message) => {
                 case 'zip':
                   return fs.createReadStream(tempFile.name).pipe(unZipper.Parse())
                     .on('entry', (file) => {
-                      console.log(file.path+':');
                       if (isRomFile(file.path) && !fileDeleted) {
-                        console.log('Rom file. Deleting.');
                         fileDeleted = true;
                         return deleteRomFile(message);
                       }
