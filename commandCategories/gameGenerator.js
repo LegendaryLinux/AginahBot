@@ -7,6 +7,9 @@ const fs = require('fs');
 const { supportedGames } = require('../assets/supportedGames.json');
 const { presets } = require('../assets/presets.json');
 
+const API_ENDPOINT = 'https://archipelago.gg/api/generate';
+const SEED_DOWNLOAD_URL = 'archipelago.gg/hosted';
+
 module.exports = {
     category: 'Game Generator',
     commands: [
@@ -15,35 +18,17 @@ module.exports = {
             description: 'Generate a game based on a preset or uploaded file.',
             longDescription: null,
             aliases: ['gen'],
-            usage: `!aginah generate game preset|configFile [race] [playerCount]`,
+            usage: '`!aginah generate configFile [race]` or `!aginah generate game preset [race]`',
             guildOnly: false,
             minimumRole: null,
             adminOnly: false,
             execute(message, args) {
-                if (args.length === 0) {
-                    return message.channel.send("You must specify a game to generate.");
-                }
-
-                // A game must be specified
-                if (!supportedGames.hasOwnProperty(args[0].toLowerCase())) {
-                    return message.channel.send("Sorry that game isn't supported yet. `!aginah games` for more info.");
-                }
-
-                if (!supportedGames[args[0].toLowerCase()].apiEndpoint) {
-                    return message.channel.send("Sorry, that game doesn't support bot generation yet.");
-                }
-
                 // Handle requests to generate a game from a file
                 if (message.attachments.size > 0){
-                    // Argument validation. Arguments 1 and 2 can be provided in any order, or not at all.
-                    // Here, they are parsed if present and their meanings interpreted. The word "race" indicates
-                    // a race request while a number indicates a player count.
-                    let playerCount = '1';
+                    // If the word "race" is provided as an argument anywhere, treat this as a race seed
                     let race = '0';
-                    [1, 2].forEach((index) => {
-                        if (!args[index]) { return; }
-                        if (args[index].toLowerCase() === 'race') { race = '1'; }
-                        if (args[index].search(/^\d+$/) > -1) { playerCount = args[index].toString(); }
+                    args.forEach((arg) => {
+                        if (arg.toLowerCase() === 'race') { race = '1'; }
                     });
 
                     const postfix = '.'+message.attachments.first().name.split('.').reverse()[0];
@@ -54,10 +39,9 @@ module.exports = {
                             // Send request to api
                             const formData = new FormData();
                             formData.append('file', fs.createReadStream(tempFile.name), tempFile.name);
-                            formData.append('playerCount', playerCount);
                             formData.append('race', race);
                             const axiosOpts = { headers: formData.getHeaders() };
-                            axios.post(supportedGames[args[0].toLowerCase()].apiEndpoint, formData, axiosOpts)
+                            axios.post(API_ENDPOINT, formData, axiosOpts)
                                 .then((bResponse) => { // Berserker Response
                                     message.channel.send(`Seed generation underway. When it's ready, you will be ` +
                                         `able to download your patch file from:\n${bResponse.data.url}`);
@@ -65,8 +49,7 @@ module.exports = {
                                 }).catch((error) => {
                                     message.channel.send("I couldn't generate that game, sorry.");
                                     if(error.isAxiosError && error.response.data){
-                                        console.error(`Unable to generate Z3 game on ` +
-                                          `${supportedGames[args[0].toLowerCase()].apiEndpoint}. The following ` +
+                                        console.error(`Unable to generate game on ${API_ENDPOINT}. The following ` +
                                             `data was returned from the endpoint:`);
                                         return console.error(error.response.data);
                                     }
@@ -76,9 +59,15 @@ module.exports = {
                         });
                 }
 
-                // Handle requests to generate a game from a preset. Required arguments must be present
                 if (args.length < 2) {
-                    return message.channel.send("You must specify a game and preset to generate.");
+                    return message.channel.send('You must specify a game and preset to generate from. See ' +
+                      '`!aginah games` and `!aginah presets` for more information.');
+                }
+
+                // A game must be specified
+                if (!supportedGames.hasOwnProperty(args[0].toLowerCase())) {
+                    return message.channel.send('I don\'t recognize that game. See `!aginah games` for a list ' +
+                      'of supported games.');
                 }
 
                 // Game must exist in presets object
@@ -95,19 +84,15 @@ module.exports = {
                 // by one. Arguments 2 and 3 can be provided in any order, or not at all.
                 // Here, they are parsed if present and their meanings interpreted. The word "race" indicates
                 // a race request while a number indicates a player count.
-                let playerCount = '1';
                 let race = '0';
-                [2, 3].forEach((index) => {
-                    if (!args[index]) { return; }
-                    if (args[index].toLowerCase() === 'race') { race = '1'; }
-                    if (args[index].search(/^\d+$/) > -1) { playerCount = args[index].toString(); }
+                args.forEach((arg) => {
+                    if (arg.toLowerCase() === 'race') { race = '1'; }
                 });
 
                 return axios.post(supportedGames[args[0].toLowerCase()].apiEndpoint, {
                     // Eventually, get rid of the weights key and use presetData only
                     weights: { [args[1].toLowerCase()]: presets[args[0].toLowerCase()][args[1].toLowerCase()] },
                     presetData: { [args[1].toLowerCase()]: presets[args[0].toLowerCase()][args[1].toLowerCase()] },
-                    playerCount,
                     race,
                 }).then((bResponse) => {
                     message.channel.send(`Seed generation underway. When it's ready, you will be able to ` +
@@ -127,7 +112,7 @@ module.exports = {
             name: 'presets',
             description: 'Get a list of presets or download a preset file.',
             longDescription: null,
-            aliases: [],
+            aliases: ['preset'],
             usage: '`!aginah presets game [preset]`',
             guildOnly: false,
             minimumRole: null,
@@ -135,7 +120,7 @@ module.exports = {
             execute(message, args) {
                 if (args.length === 0) {
                     return message.channel.send("You must specify a game to list presets for. Use " +
-                        "`!aginah help games` to get a list of supported games.");
+                        "`!aginah games` to get a list of supported games.");
                 }
 
                 if (!presets.hasOwnProperty(args[0].toLowerCase())) {
@@ -143,6 +128,9 @@ module.exports = {
                 }
 
                 if (args.length === 1) {
+                    if (Object.keys(presets[args[0].toLowerCase()]).length === 0) {
+                        return message.channel.send('No presets are available for that game.');
+                    }
                     const response = ['The following presets are available:'];
                     Object.keys(presets[args[0].toLowerCase()]).forEach((preset) => response.push(`\n - ${preset}`));
                     return message.channel.send(response.join(''));

@@ -2,30 +2,13 @@
   "supportedGames": {
     "zelda3": {
       "friendlyName": "The Legend of Zelda: A Link to the Past",
-      "website": "https://archipelago.gg:48484",
-      "setupGuide": "https://archipelago.gg:48484/tutorial/zelda3/multiworld/en",
-      "repositories": [
-        "Randomizer Repo: https://github.com/Berserker66/MultiWorld-Utilities",
-        "Enemizer Repo: https://github.com/Ijwu/Enemizer",
-        "Assembler Repo: https://github.com/CaitSith2/z3randomizer",
-        "AginahBot Repo: https://github.com/LegendaryLinux/AginahBot"
-      ],
-      "apiEndpoint": null,
-      "seedDownloadUrl": null,
-      "preferYaml": true
-    },
-    "zelda3-old": {
-      "friendlyName": "The Legend of Zelda: A Link to the Past (Old BMW Version)",
       "website": "https://archipelago.gg",
       "setupGuide": "https://archipelago.gg/tutorial/zelda3/multiworld/en",
       "repositories": [
-        "Randomizer Repo: https://github.com/Berserker66/MultiWorld-Utilities",
+        "Randomizer Repo: https://github.com/ArchipelagoMW/Archipelago",
         "Enemizer Repo: https://github.com/Ijwu/Enemizer",
-        "Assembler Repo: https://github.com/CaitSith2/z3randomizer",
-        "AginahBot Repo: https://github.com/LegendaryLinux/AginahBot"
+        "Assembler Repo: https://github.com/CaitSith2/z3randomizer"
       ],
-      "apiEndpoint": "https://archipelago.gg/api/generate",
-      "seedDownloadUrl": "archipelago.gg/hosted",
       "preferYaml": true
     },
     "factorio": {
@@ -36,8 +19,6 @@
         "https://github.com/ArchipelagoMW/Archipelago",
         "https://github.com/ArchipelagoMW/FactorioInformationExtractor"
       ],
-      "apiEndpoint" : null,
-      "seedDownloadUrl": null,
       "preferYaml": true
     },
     "minecraft": {
@@ -47,8 +28,60 @@
       "repositories": [
         "https://github.com/ArchipelagoMW/Archipelago"
       ],
-      "apiEndpoint" : null,
-      "seedDownloadUrl": null,
+      "preferYaml": true
+    },
+    "slay-the-spire": {
+      "friendlyName": "Slay the Spire",
+      "website": "https://store.steampowered.com/app/646570/Slay_the_Spire/",
+      "setupGuide": null,
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago"
+      ],
+      "preferYaml": true
+    },
+    "risk-of-rain-2": {
+      "friendlyName": "Rick of Rain 2",
+      "website": "https://store.steampowered.com/app/646570/Slay_the_Spire/",
+      "setupGuide": "https://archipelago.gg/tutorial/ror2/setup/en",
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago"
+      ],
+      "preferYaml": true
+    },
+    "subnautica": {
+      "friendlyName": "Subnautica",
+      "website": "https://archipelago.gg/tutorial/ror2/setup/en",
+      "setupGuide": "https://archipelago.gg/tutorial/Subnautica/setup/en",
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago"
+      ],
+      "preferYaml": true
+    },
+    "zelda5": {
+      "friendlyName": "The Legend of Zelda: Ocarina of Time",
+      "website": "https://archipelago.gg",
+      "setupGuide": "https://archipelago.gg/tutorial/zelda5/setup/en",
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago"
+      ],
+      "preferYaml": true
+    },
+    "timespinner": {
+      "friendlyName": "Timespinner",
+      "website": "https://store.steampowered.com/app/368620/Timespinner/",
+      "setupGuide": "https://archipelago.gg/tutorial/timespinner/setup/en",
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago"
+      ],
+      "preferYaml": true
+    },
+    "metroid3": {
+      "friendlyName": "Super Metroid",
+      "website": "https://archipelago.gg",
+      "setupGuide": "https://archipelago.gg/tutorial/super-metroid/multiworld/en",
+      "repositories": [
+        "https://github.com/ArchipelagoMW/Archipelago"
+      ],
       "preferYaml": true
     }
   }
