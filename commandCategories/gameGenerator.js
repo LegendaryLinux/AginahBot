@@ -27,8 +27,14 @@ module.exports = {
                 if (message.attachments.size > 0){
                     // If the word "race" is provided as an argument anywhere, treat this as a race seed
                     let race = '0';
+                    let hintCost = '10';
+                    let forfeitMode = 'goal';
                     args.forEach((arg) => {
-                        if (arg.toLowerCase() === 'race') { race = '1'; }
+                        if (arg.toLowerCase() === 'race') {
+                            race = '1';
+                            hintCost = '20';
+                            forfeitMode = 'auto';
+                        }
                     });
 
                     const postfix = '.'+message.attachments.first().name.split('.').reverse()[0];
@@ -39,6 +45,8 @@ module.exports = {
                             // Send request to api
                             const formData = new FormData();
                             formData.append('file', fs.createReadStream(tempFile.name), tempFile.name);
+                            formData.append('hint_cost', hintCost);
+                            formData.append('forfeit_mode', forfeitMode);
                             formData.append('race', race);
                             const axiosOpts = { headers: formData.getHeaders() };
                             axios.post(API_ENDPOINT, formData, axiosOpts)
@@ -85,14 +93,21 @@ module.exports = {
                 // Here, they are parsed if present and their meanings interpreted. The word "race" indicates
                 // a race request while a number indicates a player count.
                 let race = '0';
+                let hintCost = '10';
+                let forfeitMode = 'goal';
                 args.forEach((arg) => {
-                    if (arg.toLowerCase() === 'race') { race = '1'; }
+                    if (arg.toLowerCase() === 'race') {
+                        race = '1';
+                        hintCost = '20';
+                        forfeitMode = 'auto';
+                    }
                 });
 
                 return axios.post(supportedGames[args[0].toLowerCase()].apiEndpoint, {
                     // Eventually, get rid of the weights key and use presetData only
                     weights: { [args[1].toLowerCase()]: presets[args[0].toLowerCase()][args[1].toLowerCase()] },
-                    presetData: { [args[1].toLowerCase()]: presets[args[0].toLowerCase()][args[1].toLowerCase()] },
+                    forfeit_mode: forfeitMode,
+                    hint_cost: hintCost,
                     race,
                 }).then((bResponse) => {
                     message.channel.send(`Seed generation underway. When it's ready, you will be able to ` +
