@@ -202,6 +202,10 @@ module.exports = {
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
+        if (args.length < 4) {
+          return message.channel.send('Invalid argument count. Use `!aginah help create-role` for more info.');
+        }
+
         // Check for existing role
         let sql = `SELECT 1 FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
@@ -258,6 +262,10 @@ module.exports = {
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
+        if (args.length < 3) {
+          return message.channel.send('Invalid argument count. Use `!aginah help modify-role-reaction` for more info.');
+        }
+
         // Check for existing role
         let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId, r.reaction FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
@@ -299,6 +307,11 @@ module.exports = {
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
+        if (args.length < 2) {
+          return message.channel.send('Invalid argument count. Use `!aginah help modify-role-description` ' +
+            'for more info.');
+        }
+
         // Check for existing role
         let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
@@ -325,6 +338,10 @@ module.exports = {
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
+        if (args.length < 2) {
+          return message.channel.send('Invalid argument count. Use `!aginah help delete-role` for more info.');
+        }
+
         let sql = `SELECT r.id, rc.id AS categoryId, rc.messageId, r.reaction, r.roleId, rs.roleRequestChannelId
                     FROM roles r
                     JOIN role_categories rc ON r.categoryId = rc.id
