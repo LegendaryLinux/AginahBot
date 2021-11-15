@@ -13,40 +13,38 @@ module.exports = {
             minimumRole: null,
             adminOnly: false,
             guildOnly: true,
-            execute(message, args) {
+            async execute(message, args) {
                 const data = []; // Each entry in this array will be sent on a new line
                 const { commandCategories } = message.client;
 
                 // Send data about all commandCategories
                 if (!args.length) {
                     data.push('Command Categories:');
-                    commandCategories.forEach((category) => {
+                    for (let category of commandCategories) {
                         const permittedCommands = [];
 
-                        category.commands.forEach((command) => {
+                        for (let command of category.commands) {
                             // If the command requires admin access, do not report it if the user is not admin
-                            if (command.adminOnly && !verifyIsAdmin(message.member)) { return; }
+                            if (command.adminOnly && !verifyIsAdmin(message.member)) { continue; }
 
                             // If the command does not have a minimum role, always report on it
                             if (!command.minimumRole){
                                 permittedCommands.push(`\n\`${command.name}\`: ${command.description}`);
-                                return;
+                                continue;
                             }
 
                             // If the command does have a minimum role, only report if the user has
                             // sufficient permissions
-                            verifyModeratorRole(message.member).then((isModerator) => {
-                                if (isModerator) {
-                                    permittedCommands.push(`\n\`${command.name}\`: ${command.description}`);
-                                }
-                            });
-                        });
+                            if (await verifyModeratorRole(message.member)) {
+                                permittedCommands.push(`\n\`${command.name}\`: ${command.description}`);
+                            }
+                        }
 
                         if (permittedCommands.length > 0) {
                             data.push(`\n\n__${category.category}:__`);
                             permittedCommands.forEach((cmd) => data.push(cmd));
                         }
-                    });
+                    }
 
                     return message.author.send(data.join('')).catch((error) =>
                         errorHandlers.dmErrorHandler(error, message));
