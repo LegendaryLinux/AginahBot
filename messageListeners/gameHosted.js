@@ -1,13 +1,9 @@
-const { supportedGames } = require('../assets/supportedGames.json');
 const { dbQueryOne } = require('../lib');
 
 module.exports = async (client, message) => {
-  const watchedUrls = [];
-  Object.keys(supportedGames).forEach((game) => {
-    if (supportedGames[game].seedDownloadUrl) {
-      watchedUrls.push(supportedGames[game].seedDownloadUrl);
-    }
-  });
+  const watchedUrls = [
+    'https://archipelago.gg/room',
+  ];
 
   for (let url of watchedUrls) {
     if (message.content.search(url) > -1) {
