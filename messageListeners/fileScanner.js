@@ -7,7 +7,7 @@ const unrar = require('unrar');
 const tar = require('tar');
 const sevenZip = require('node-7z');
 
-const romExtensions = ['sfc', 'smc', 'rom'];
+const romExtensions = ['sfc', 'smc', 'rom', 'nes', 'z64', 'n64'];
 const archiveExtensions = ['zip', 'rar', 'tar', 'gz', '7z'];
 
 const isRomFile = (filename) => {
