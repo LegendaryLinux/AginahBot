@@ -17,6 +17,6 @@ client.login(config.token).then(async () => {
     console.log('Roles:');
     await guild.roles.fetch(null, { force: true }).then((roles) => {
       roles.each((role) => console.log(`  ${role.name}: ${role.id}`));
-    });
+    }).catch((err) => console.log(`Unable to retrieve roles:\n${err}`));
   });
 });
