@@ -8,7 +8,7 @@ module.exports = async (client, messageReaction, user, added) => {
   const guild = messageReaction.message.guild;
 
   // Ensure the emoji is usable by the server, not just the user
-  const emoji = parseEmoji(guild, messageReaction.emoji.toString());
+  const emoji = await parseEmoji(guild, messageReaction.emoji.toString());
   if (!emoji) { return; }
 
   // Fetch the role associated with this message

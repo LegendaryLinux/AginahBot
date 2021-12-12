@@ -219,7 +219,7 @@ module.exports = {
         if (row) { return message.channel.send("That role already exists!"); }
 
         // Verify the requested emoji is available on this server
-        const emoji = parseEmoji(message.guild, args[2]);
+        const emoji = await parseEmoji(message.guild, args[2], true);
         if (!emoji) { return message.channel.send("That emoji is not available on this server!"); }
 
         sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
@@ -279,7 +279,7 @@ module.exports = {
         if (!role) { return message.channel.send("That role does not exist!"); }
 
         // Verify the requested emoji is available on this server
-        const emoji = parseEmoji(message.guild, args[2]);
+        const emoji = await parseEmoji(message.guild, args[2], true);
         if (!emoji) { return message.channel.send("That emoji is not available on this server!"); }
 
         // Remove reactions from the role category message

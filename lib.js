@@ -86,12 +86,14 @@ module.exports = {
    * Get an emoji object usable with Discord. Null if the Emoji is not usable in the provided guild.
    * @param guild
    * @param emoji
+   * @param force
    * @returns String || Object || null
    */
-  parseEmoji: (guild, emoji) => {
+  parseEmoji: async (guild, emoji, force = false) => {
     const match = emoji.match(/^<:(.*):(\d+)>$/);
     if (match && match.length > 2) {
-      const emojiObj = guild.emojis.resolve(match[2]);
+      const emojis = await guild.emojis.fetch(null, { force });
+      const emojiObj = emojis.get(match[2]);
       return emojiObj ? emojiObj : null;
     }
 
