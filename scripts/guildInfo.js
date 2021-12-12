@@ -13,7 +13,10 @@ client.login(config.token).then(async () => {
   await client.guilds.cache.each(async (guild) => {
     await guild.fetch();
     console.log(`${guild.name} (${guild.id})`);
-    console.log(`Members: ${guild.memberCount}\n`);
+    console.log(`Members: ${guild.memberCount}`);
+    console.log('Roles:');
+    await guild.roles.fetch(null, { force: true }).then((roles) => {
+      roles.each((role) => console.log(`  ${role.name}: ${role.id}`));
+    });
   });
-  client.destroy();
 });
