@@ -90,27 +90,31 @@ module.exports = async (client, message) => {
 
     // Lock a dynamic voice channel, preventing anyone except moderators from joining
     case '.lock':
-      return message.guild.channels.resolve(roomSystem.voiceChannelId).overwritePermissions([
-        {
-          // @everyone may not join the voice channel
-          id: message.guild.id,
-          deny: [ 'CONNECT' ],
-        },
-        {
-          // Moderators should still have full access
-          id: await getModeratorRole(message.guild).id,
-          allow: [ 'CONNECT' ],
-        },
-        {
-          // @AginahBot should be able to connect
-          id: client.user.id,
-          allow: [ 'CONNECT' ],
-        }
-      ]);
+      return await message.guild.channels.resolve(roomSystem.voiceChannelId).edit({
+        permissionOverwrites: [
+          {
+            // @everyone may not join the voice channel
+            id: message.guild.id,
+            deny: [ 'CONNECT' ],
+          },
+          {
+            // Moderators should still have full access
+            id: (await getModeratorRole(message.guild)).id,
+            allow: [ 'CONNECT' ],
+          },
+          {
+            // @AginahBot should be able to connect
+            id: client.user.id,
+            allow: [ 'CONNECT' ],
+          }
+        ]
+      });
 
     // Reopen a dynamic voice channel, allowing anyone to join
     case '.unlock':
-      return message.guild.channels.resolve(roomSystem.voiceChannelId).overwritePermissions([]);
+      return await message.guild.channels.resolve(roomSystem.voiceChannelId).edit({
+        permissionOverwrites: [],
+      });
 
     case '.close':
       let voiceChannel = message.guild.channels.resolve(roomSystem.voiceChannelId);
