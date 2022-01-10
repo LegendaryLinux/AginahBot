@@ -15,12 +15,9 @@ Find it in use at the [Archipelago Discord](https://discord.gg/B5pjMYy).
 - Generate single-player or multiplayer games using the `generate` command
 
 ## Supported Games
-The following games are supported through the
-[Archipelago Randomizer](https://github.com/Berserker66/MultiWorld-Utilities),
-and have full MultiWorld compatibility with each other.
-- The Legend of Zelda: A Link to the Past
-- Factorio
-- Minecraft
+All games supported by the Multiworld Multi-Game Randomizer
+[Archipelago](https://github.com/ArchipelagoMW/Archipelago)
+are compatible and have full MultiWorld compatibility with each other
 
 # Self-Hosting
 
