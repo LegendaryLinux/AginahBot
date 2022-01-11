@@ -18,7 +18,8 @@ module.exports = {
             description: 'Generate a game based on a preset or uploaded file.',
             longDescription: null,
             aliases: ['gen'],
-            usage: '`!aginah generate configFile [race]` or `!aginah generate game preset [race]`',
+            usage: '`!aginah generate configFile [race|tournament]` or ' +
+              '`!aginah generate game preset [race|tournament]`',
             guildOnly: false,
             minimumRole: null,
             adminOnly: false,
@@ -28,12 +29,23 @@ module.exports = {
                     // If the word "race" is provided as an argument anywhere, treat this as a race seed
                     let race = '0';
                     let hintCost = '10';
-                    let forfeitMode = 'goal';
+                    let forfeitMode = 'auto';
+                    let remainingMode = 'disabled';
+                    let collectMode = 'goal';
                     args.forEach((arg) => {
                         if (arg.toLowerCase() === 'race') {
                             race = '1';
-                            hintCost = '20';
+                            hintCost = '10';
                             forfeitMode = 'auto';
+                            remainingMode = 'disabled';
+                            collectMode = 'disabled';
+                        }
+                        if (arg.toLowerCase() === 'tournament') {
+                            race = '1';
+                            hintCost = '101';
+                            forfeitMode = 'disabled';
+                            remainingMode = 'disabled';
+                            collectMode = 'disabled';
                         }
                     });
 
