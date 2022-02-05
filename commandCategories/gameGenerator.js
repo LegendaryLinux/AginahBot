@@ -87,11 +87,6 @@ module.exports = {
             minimumRole: null,
             adminOnly: false,
             execute(message, args) {
-                if (args.length === 0) {
-                    return message.channel.send("You must specify a game to list presets for. Use " +
-                        "`!aginah games` to get a list of supported games.");
-                }
-
                 return message.channel.send('The preset system is disabled because it was no longer compatible ' +
                   'with the multi-game capabilities of Archipelago. A re-write is Coming Soon™.');
             }
