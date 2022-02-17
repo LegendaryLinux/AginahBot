@@ -1,9 +1,9 @@
 const Discord = require('discord.js');
 const mysql = require('mysql2');
+const moment = require("moment-timezone");
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { TimeParserValidationError } = require('./customErrors');
-const moment = require("moment-timezone");
 
 module.exports = {
   // Function which returns a promise which will resolve to true or false
@@ -15,7 +15,36 @@ module.exports = {
   verifyIsAdmin: (guildMember) => guildMember.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR),
 
   getModeratorRole: (guild) => new Promise(async (resolve) => {
-    // Find this guild's moderator role
+    let modRole = null;
+
+    // If this guild has a known moderator role id, fetch that role
+    let sql = "SELECT moderatorRoleId FROM guild_data WHERE guildId=?";
+    let result = await module.exports.dbQueryOne(sql, [guild.id]);
+    if (result && result.hasOwnProperty('moderatorRoleId') && result.moderatorRoleId) {
+      modRole = guild.roles.resolve(result.moderatorRoleId);
+      if (modRole) {
+        return resolve(modRole);
+      }
+    }
+
+    // The guild's moderator role is not known, or it has been deleted. Attempt to find a moderator role
+    // and update the database
+    modRole = await module.exports.discoverModeratorRole(guild);
+    if (modRole) {
+      await module.exports.dbExecute(`UPDATE guild_data SET moderatorRoleId=? WHERE guildId=?`,
+        [modRole.id, guild.id]);
+    }
+
+    // Resolve with the newly found moderator role, or with null of no role could be found
+    return resolve(modRole || null);
+  }),
+
+  /**
+   * Search a guild for a role with whose name matches config.moderatorRole
+   * @param guild
+   * @returns Promise which resolves to a Discord Role object, or null if no role could be found
+   */
+  discoverModeratorRole: async (guild) => {
     let modRole = null;
     await guild.roles.cache.each((role) => {
       if (modRole !== null) { return; }
@@ -23,8 +52,8 @@ module.exports = {
         modRole = role;
       }
     });
-    resolve(modRole);
-  }),
+    return modRole;
+  },
 
   handleGuildCreate: async (client, guild) => {
     // Find this guild's moderator role id

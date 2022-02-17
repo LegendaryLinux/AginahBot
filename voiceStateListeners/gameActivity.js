@@ -24,6 +24,15 @@ module.exports = async (client, oldState, newState) => {
                  AND rs.newGameChannelId=?`;
     const roomSystemStartGame = await dbQueryOne(sql, [newState.guild.id, newState.channel.id]);
     if (roomSystemStartGame) {
+      const moderatorRole = await getModeratorRole(newState.guild);
+      // If no moderator role can be found
+      if (!moderatorRole) {
+        await newState.member.send(`Uh, oh! It looks like \`${newState.guild.name}\` doesn't have a \`Moderator\` ` +
+          `role. Please tell an admin about this!`);
+        console.error(`No moderator role could be found for guild ${newState.guild.name} (${newState.guild.id})`);
+        return;
+      }
+
       // Track which voice channel names are currently in use by the guild
       if (!client.tempData.voiceRooms.hasOwnProperty(newState.guild.id)) {
         client.tempData.voiceRooms[newState.guild.id] = [];
@@ -40,7 +49,6 @@ module.exports = async (client, oldState, newState) => {
         channelName = `${channelName}-${client.tempData.voiceRooms[newState.guild.id].length}`;
       }
 
-      const moderatorRole = await getModeratorRole(newState.guild);
       await newState.guild.roles.create({ name: channelName, mentionable: true }).then((role) => {
         Promise.all([
           // Voice channel
