@@ -275,6 +275,40 @@ module.exports = {
       }
     },
     {
+      name: 'modify-role',
+      description: 'Change the name of a role.',
+      longDescription: null,
+      usage: '`!aginah modify-role categoryName oldName newName`',
+      minimumRole: config.moderatorRole,
+      adminOnly: false,
+      guildOnly: true,
+      async execute(message, args){
+        if (args.length !== 3) {
+          return message.channel.send('Invalid arguments. Use `!aginah help modify-role for more info.`');
+        }
+
+        let sql = `SELECT r.id, r.roleId, rc.messageId
+                  FROM guild_data gd
+                  JOIN role_systems rs ON rs.guildDataId = gd.id
+                  JOIN role_categories rc ON rc.roleSystemId = rs.id
+                  JOIN roles r ON r.categoryId = rc.id
+                  WHERE gd.guildId=?
+                    AND rc.categoryName=?
+                    AND r.roleName=?`;
+        const roleData = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
+        if (!roleData) { return message.channel.send('That role does not exist!'); }
+
+        // Update role name in the database
+        await dbExecute(`UPDATE roles SET roleName=? WHERE id=?`, [args[2], roleData.id]);
+
+        // Update role on Discord
+        await message.guild.roles.edit(roleData.roleId.toString(), { name: args[2] });
+
+        // Update the category message to display the new role name
+        await updateCategoryMessage(message.client, message.guild, roleData.messageId);
+      }
+    },
+    {
       name: 'modify-role-reaction',
       description: 'Alter the reaction associated with a role created by this bot.',
       longDescription: null,
