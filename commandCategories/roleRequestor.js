@@ -179,7 +179,7 @@ module.exports = {
         }
 
         // Find a matching role category
-        let sql = `SELECT rc.id, rc.categoryName, rc.messageId
+        let sql = `SELECT rc.id, rc.messageId
                   FROM guild_data gd
                   JOIN role_systems rs ON rs.guildDataId = gd.id
                   JOIN role_categories rc ON rc.roleSystemId = rs.id
