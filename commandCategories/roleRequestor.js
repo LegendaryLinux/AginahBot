@@ -165,6 +165,28 @@ module.exports = {
       }
     },
     {
+      name: 'modify-role-category',
+      description: 'Change the name of a role category.',
+      longDescription: null,
+      aliases: [],
+      usage: '`!aginah modify-role-category oldName newName`',
+      minimumRole: config.moderatorRole,
+      adminOnly: false,
+      guildOnly: true,
+      async execute(message, args){
+        if (args.length !== 2) {
+          return message.channel.send('Invalid arguments. Use `!aginah help modify-role-category` for more info.');
+        }
+
+        // Find a matching role category
+        let sql = `SELECT rc.id, rc.categoryName, rc.messageId FROM role_categories rc WHERE rc.categoryName=?`;
+        const categoryData = await dbQueryOne(sql, [args[0]]);
+        if (!categoryData) { return message.channel.send('That category does not exist!'); }
+        await dbExecute(`UPDATE role_categories SET categoryName=? WHERE id=?`, [args[1], categoryData.id]);
+        await updateCategoryMessage(message.client, message.guild, categoryData.messageId);
+      }
+    },
+    {
       name: 'delete-role-category',
       description: 'Delete a role category.',
       longDescription: 'Delete a role category. All roles within this category will also be deleted.',
