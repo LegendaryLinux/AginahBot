@@ -179,8 +179,13 @@ module.exports = {
         }
 
         // Find a matching role category
-        let sql = `SELECT rc.id, rc.categoryName, rc.messageId FROM role_categories rc WHERE rc.categoryName=?`;
-        const categoryData = await dbQueryOne(sql, [args[0]]);
+        let sql = `SELECT rc.id, rc.categoryName, rc.messageId
+                  FROM guild_data gd
+                  JOIN role_systems rs ON rs.guildDataId = gd.id
+                  JOIN role_categories rc ON rc.roleSystemId = rs.id
+                  WHERE gd.guildId=?
+                    AND rc.categoryName=?`;
+        const categoryData = await dbQueryOne(sql, [message.guild.id, args[0]]);
         if (!categoryData) { return message.channel.send('That category does not exist!'); }
         await dbExecute(`UPDATE role_categories SET categoryName=? WHERE id=?`, [args[1], categoryData.id]);
         await updateCategoryMessage(message.client, message.guild, categoryData.messageId);
