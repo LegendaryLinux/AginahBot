@@ -283,6 +283,7 @@ module.exports = {
       name: 'modify-role',
       description: 'Change the name of a role.',
       longDescription: null,
+      aliases: [],
       usage: '`!aginah modify-role categoryName oldName newName`',
       minimumRole: config.moderatorRole,
       adminOnly: false,
