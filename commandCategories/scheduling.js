@@ -107,6 +107,7 @@ module.exports = {
         "`HH:MM TZ`: Schedule a game for the next occurrence of the provided time.\n" +
         "`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n" +
         "`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n" +
+        "In all cases where an hour value is accepted, 24-hour time is required.\n" +
         "Strict ISO-8601 formatted datetime values are allowed.\n" +
         "UNIX Timestamps are allowed.\n" +
         "A list of timezones can be found on the Wikipedia timezone page under the `TZ database name` column.\n" +
