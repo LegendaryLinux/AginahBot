@@ -115,7 +115,7 @@ module.exports = {
         "If you make a mistake while scheduling a game, consider using `noping` instead of a role when retrying the " +
         "command to avoid pinging people multiple times.",
       aliases: [],
-      usage: '`!aginah schedule [date/time [role1 role2 ...]]`',
+      usage: '`!aginah schedule [date/time]`',
       guildOnly: true,
       minimumRole: null,
       adminOnly: false,
