@@ -139,6 +139,7 @@ module.exports = {
                   .setColor('#6081cb')
                   .setDescription(`**${game.schedulingUserTag}** scheduled a game for <t:${embedTimestamp}:F>.`)
                   .setURL(scheduleMessage.url)
+                  .addField('Original Channel', message.guild.channels.resolve(game.channelId).name)
                   .addField('Event Code', game.eventCode)
                   .addField('Current RSVPs', game.rsvpCount)
                   .setTimestamp(parseInt(game.timestamp, 10));
