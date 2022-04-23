@@ -1,5 +1,4 @@
-const { generalErrorHandler } = require('../errorHandlers');
-const { dbQueryAll, dbQueryOne, dbExecute } = require('../lib');
+const { dbQueryOne, dbExecute } = require('../lib');
 const { MessageActionRow, MessageButton} = require("discord.js");
 
 module.exports = {
@@ -106,7 +105,9 @@ module.exports = {
                 await dbExecute(`DELETE FROM mod_contact_channels WHERE modContactId=?`, [ modContact.id ]);
 
                 // Delete the guild category and channels
-                await message.guild.channels.resolve(modContact.categoryId).delete();
+                const category = message.guild.channels.resolve(modContact.categoryId);
+                await category.children.each(async (child) => await child.delete());
+                await category.delete();
 
                 return dbExecute(`DELETE FROM mod_contact WHERE id=?`, [ modContact.id ]);
             },

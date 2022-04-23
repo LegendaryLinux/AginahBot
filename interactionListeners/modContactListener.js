@@ -1,4 +1,4 @@
-const { dbQueryOne, dbExecute } = require('../lib');
+const { dbQueryOne, dbExecute, getModeratorRole } = require('../lib');
 
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
@@ -29,8 +29,7 @@ module.exports = async (client, interaction) => {
   // Create the channel for discussion
   const channel = await interaction.message.channel.parent.createChannel(interaction.user.username, {
     type: 'GUILD_TEXT',
-    topic: `This channel was created by ${interaction.user.username}#${interaction.user.discriminator}. ` +
-      'Use `.resolve` to close it.',
+    topic: `This channel was created by ${interaction.user.username}#${interaction.user.discriminator}.`,
     permissionOverwrites: [
       {
         // @everyone may not view this channel
@@ -54,6 +53,12 @@ module.exports = async (client, interaction) => {
       }
     ],
   });
+
+  // Send an introductory message to the channel
+  const modRole = await getModeratorRole(interaction.guild);
+  await channel.send(`This channel was created automatically to facilitate communication between the ${modRole} ` +
+    `team and ${interaction.user}.\nWhen the issue has been resolved, a moderator may use \`.resolve\` to ` +
+    `remove this channel.`);
 
   // Fetch the id of the mod_contact entry for this guild
   sql = `SELECT mc.id

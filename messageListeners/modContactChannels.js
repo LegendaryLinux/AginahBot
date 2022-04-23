@@ -19,9 +19,8 @@ module.exports = async (client, message) => {
              JOIN mod_contact mc ON mcc.modContactId = mc.id
              JOIN guild_data gd ON mc.guildDataId = gd.id
              WHERE gd.guildId=?
-                AND mcc.reportChannelId=?
-                AND mcc.userId=?`;
-  const modContact = await dbQueryOne(sql, [message.guild.id, message.channel.id, message.author.id]);
+                AND mcc.reportChannelId=?`;
+  const modContact = await dbQueryOne(sql, [message.guild.id, message.channel.id]);
 
   // Prevent deletion of the mod-contact channel
   if (message.channel.id === modContact.channelId) { return; }
@@ -30,5 +29,6 @@ module.exports = async (client, message) => {
   sql = `UPDATE mod_contact_channels SET resolved=1, resolutionTime=(UNIX_TIMESTAMP()) WHERE id=?`;
   await dbExecute(sql, [modContact.id]);
 
+  // Delete the text channel
   return message.channel.delete();
 };
