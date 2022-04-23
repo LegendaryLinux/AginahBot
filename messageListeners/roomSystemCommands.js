@@ -7,7 +7,7 @@ module.exports = async (client, message) => {
   const dotCommands = ['.ping', '.ready', '.unready', '.readycheck', '.close', '.lock', '.unlock'];
   if (!command[0] || dotCommands.indexOf(command[0]) === -1) { return; }
 
-  let sql = `SELECT rsrc.id AS checkId, rsg.id AS gameId, rsg.voiceChannelId, rs.planningChannelId
+  let sql = `SELECT rsrc.id AS checkId, rsg.id AS gameId, rsg.voiceChannelId
              FROM room_system_ready_checks rsrc
              JOIN room_system_games rsg ON rsrc.gameId = rsg.id
              JOIN room_systems rs ON rsg.roomSystemId = rs.id
@@ -38,13 +38,25 @@ module.exports = async (client, message) => {
       // Fetch member details, in case they aren't cached
       await message.guild.members.fetch({ user: attendees.map((a) => a.userId) });
 
+      // Build the reminder message
       let reminderMessage = `**${message.author.tag}** would like to remind the following people a game they ` +
         `have RSVPed for is about to start in ${message.channel}:\n`;
       attendees.forEach((attendee) => {
         reminderMessage += `> ${message.guild.members.resolve(attendee.userId).user}\n`;
       });
 
-      message.guild.channels.resolve(roomSystem.planningChannelId).send(reminderMessage);
+      // Fetch information about this specific event
+      sql = `SELECT se.channelId
+         FROM scheduled_events se
+         JOIN guild_data gd ON se.guildDataId = gd.id
+         WHERE gd.guildId=?
+            AND se.eventCode=?
+         ORDER BY timestamp DESC
+         LIMIT 1`;
+      const eventInfo = await dbQueryOne(sql, [message.guild.id, command[1].toUpperCase()]);
+
+      // Send the reminder to the channel the event was originally scheduled in
+      message.guild.channels.resolve(eventInfo.channelId).send(reminderMessage);
       return message.channel.send('Reminder sent. Remember, with great power comes great responsibility.');
 
     // Player has indicated they are ready to begin
@@ -117,10 +129,24 @@ module.exports = async (client, message) => {
       });
 
     case '.close':
+      if (!command[1]) { return message.channel.send('You must provide a room code to close the channel.'); }
+
       let voiceChannel = message.guild.channels.resolve(roomSystem.voiceChannelId);
+
       // Do not re-close an already closed channel
       if (voiceChannel.name.search(/ \(Closed\)$/g) > -1) { return; }
-      message.guild.channels.resolve(roomSystem.planningChannelId)
+
+      // Fetch information about this specific event
+      sql = `SELECT se.channelId
+         FROM scheduled_events se
+         JOIN guild_data gd ON se.guildDataId = gd.id
+         WHERE gd.guildId=?
+            AND se.eventCode=?
+         ORDER BY timestamp DESC
+         LIMIT 1`;
+      const eventData = await dbQueryOne(sql, [message.guild.id, command[1].toUpperCase()]);
+
+      message.guild.channels.resolve(eventData.channelId)
         .send(`${message.channel.name.replace(/\b\w/g, c => c.toUpperCase())} is now closed.`);
       return voiceChannel.edit({ name: `${voiceChannel.name.toString()} (Closed)` });
   }

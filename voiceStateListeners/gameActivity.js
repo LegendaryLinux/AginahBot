@@ -93,7 +93,7 @@ module.exports = async (client, oldState, newState) => {
             '`.unready` to change your mind\n' +
             '`.readycheck` to see who is ready\n\n' +
             '__Privacy Controls:__\n' +
-            '`.close` to close this channel\n' +
+            '`.close roomCode` to close this channel\n' +
             '`.lock` to prevent others from joining\n' +
             '`.unlock` to allow people to join again');
 

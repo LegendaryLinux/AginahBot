@@ -33,7 +33,6 @@ const roomSystems = `CREATE TABLE IF NOT EXISTS room_systems (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildDataId BIGINT NOT NULL,
     channelCategoryId VARCHAR(128) NOT NULL,
-    planningChannelId VARCHAR(128) NOT NULL,
     newGameChannelId VARCHAR(128) NOT NULL
 )`;
 
@@ -70,6 +69,24 @@ const eventAttendees = `CREATE TABLE IF NOT EXISTS event_attendees (
     userId VARCHAR(64) NOT NULL
 )`;
 
+const modContact = `CREATE TABLE IF NOT EXISTS mod_contact (
+    id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId VARCHAR(128) NOT NULL,
+    categoryId VARCHAR(128) NOT NULL,
+    channelId VARCHAR(128) NOT NULL,
+    messageId VARCHAR(128) NOT NULL
+)`;
+
+const modContactChannels = `CREATE TABLE IF NOT EXISTS mod_contact_channels (
+    id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    modContactId INT NOT NULL,
+    userId VARCHAR(128) NOT NULL,
+    reportChannelId VARCHAR(128) NOT NULL,
+    reportTime VARCHAR(64) NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+    resolved TINYINT(1) NOT NULL DEFAULT 0,
+    resolutionTime VARCHAR(64)
+)`;
+
 const botOptions = `CREATE TABLE IF NOT EXISTS bot_options (
     id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildDataId BIGINT NOT NULL,
@@ -101,5 +118,7 @@ db.query(roomSystemGames, handler);
 db.query(roomSystemReadyChecks, handler);
 db.query(scheduledEvents, handler);
 db.query(eventAttendees, handler);
+db.query(modContact, handler);
+db.query(modContactChannels, handler);
 db.query(botOptions, handler);
 db.end();
