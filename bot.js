@@ -18,6 +18,7 @@ client.commands = new Collection();
 client.commandCategories = [];
 client.messageListeners = [];
 client.reactionListeners = [];
+client.interactionListeners = [];
 client.voiceStateListeners = [];
 client.tempData = {
     voiceRooms: {},
@@ -48,6 +49,12 @@ fs.readdirSync('./reactionListeners').filter((file) => file.endsWith('.js')).for
 fs.readdirSync('./voiceStateListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
     const listener = require(`./voiceStateListeners/${listenerFile}`);
     client.voiceStateListeners.push(listener);
+});
+
+// Load interaction listeners
+fs.readdirSync('./interactionListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
+    const listener = require(`./interactionListeners/${listenerFile}`);
+    client.interactionListeners.push(listener);
 });
 
 client.on('messageCreate', async (msg) => {
@@ -124,6 +131,11 @@ client.on('messageReactionRemove', async(messageReaction, user) => {
     messageReaction = await cachePartial(messageReaction);
     messageReaction.message = await cachePartial(messageReaction.message);
     client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false))
+});
+
+// Run the interactions through the interactionListeners
+client.on('interactionCreate', async(interaction) => {
+    client.interactionListeners.forEach((listener) => listener(client, interaction));
 });
 
 // Handle the bot being added to a new guild
