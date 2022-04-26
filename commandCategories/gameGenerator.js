@@ -16,7 +16,7 @@ module.exports = {
             aliases: ['gen'],
             usage: '`!aginah generate configFile [race|tournament]`',
             guildOnly: false,
-            minimumRole: null,
+            moderatorRequired: false,
             adminOnly: false,
             execute(message, args) {
                 if (message.attachments.size === 0) {
@@ -84,7 +84,7 @@ module.exports = {
             aliases: ['preset'],
             usage: '`!aginah presets`',
             guildOnly: false,
-            minimumRole: null,
+            moderatorRequired: false,
             adminOnly: false,
             execute(message, args) {
                 return message.channel.send('The preset system is disabled because it was no longer compatible ' +

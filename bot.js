@@ -99,7 +99,7 @@ client.on('messageCreate', async (msg) => {
         }
 
         // If the command is available to everyone, just run it
-        if (!command.minimumRole) { return command.execute(message, args); }
+        if (!command.moderatorRequired) { return command.execute(message, args); }
 
         // Otherwise, the user must have permission to access this command
         if (await verifyModeratorRole(message.member)) {

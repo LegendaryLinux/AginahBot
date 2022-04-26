@@ -10,7 +10,7 @@ module.exports = {
             longDescription: null,
             aliases: ['commands'],
             usage: '`!aginah help [command name]`',
-            minimumRole: null,
+            moderatorRequired: false,
             adminOnly: false,
             guildOnly: true,
             async execute(message, args) {
@@ -27,14 +27,13 @@ module.exports = {
                             // If the command requires admin access, do not report it if the user is not admin
                             if (command.adminOnly && !verifyIsAdmin(message.member)) { continue; }
 
-                            // If the command does not have a minimum role, always report on it
-                            if (!command.minimumRole){
+                            // If the command does not have role restrictions, always report on it
+                            if (!command.moderatorRequired){
                                 permittedCommands.push(`\n\`${command.name}\`: ${command.description}`);
                                 continue;
                             }
 
-                            // If the command does have a minimum role, only report if the user has
-                            // sufficient permissions
+                            // If the command requires a moderator, only report if the user has sufficient permissions
                             if (await verifyModeratorRole(message.member)) {
                                 permittedCommands.push(`\n\`${command.name}\`: ${command.description}`);
                             }

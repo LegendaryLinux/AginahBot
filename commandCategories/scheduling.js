@@ -77,7 +77,7 @@ module.exports = {
       aliases: [],
       usage: '`!aginah toggle-opt-out`',
       guildOnly: true,
-      minimumRole: null,
+      moderatorRequired: false,
       adminOnly: true,
       async execute(message, args) {
         const guildDataId = (await dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id])).id;
@@ -117,7 +117,7 @@ module.exports = {
       aliases: [],
       usage: '`!aginah schedule [date/time]`',
       guildOnly: true,
-      minimumRole: null,
+      moderatorRequired: false,
       adminOnly: false,
       async execute(message, args) {
         if (args.length === 0) {
@@ -177,7 +177,7 @@ module.exports = {
       aliases: [],
       usage: '`!aginah cancel eventCode`',
       guildOnly: true,
-      minimumRole: null,
+      moderatorRequired: false,
       adminOnly: false,
       async execute(message, args) {
         let sql = `SELECT se.id, se.channelId, se.messageId, se.schedulingUserId, se.schedulingUserTag

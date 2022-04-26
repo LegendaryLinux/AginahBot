@@ -47,7 +47,7 @@ module.exports = {
         'remove roles.',
       aliases: ['irs'],
       usage: '`!aginah init-role-system`',
-      minimumRole: null,
+      moderatorRequired: false,
       adminOnly: true,
       guildOnly: true,
       async execute(message) {
@@ -91,7 +91,7 @@ module.exports = {
       longDescription: null,
       aliases: ['drs'],
       usage: '`!aginah destroy-role-system`',
-      minimumRole: null,
+      moderatorRequired: false,
       adminOnly: true,
       guildOnly: true,
       async execute(message) {
@@ -129,7 +129,7 @@ module.exports = {
         `in the #role-request channel. Category names must be a single alphanumeric word.`,
       aliases: [],
       usage: '`!aginah create-role-category CategoryName`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
@@ -170,7 +170,7 @@ module.exports = {
       longDescription: null,
       aliases: [],
       usage: '`!aginah modify-role-category oldName newName`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args){
@@ -197,7 +197,7 @@ module.exports = {
       longDescription: 'Delete a role category. All roles within this category will also be deleted.',
       aliases: [],
       usage: '`!aginah delete-role-category CategoryName`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
@@ -225,7 +225,7 @@ module.exports = {
       longDescription: null,
       aliases: [],
       usage: '`!aginah cmd create-role CategoryName RoleName Reaction [Description]`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
@@ -285,7 +285,7 @@ module.exports = {
       longDescription: null,
       aliases: [],
       usage: '`!aginah modify-role categoryName oldName newName`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args){
@@ -320,7 +320,7 @@ module.exports = {
       longDescription: null,
       aliases: [],
       usage: '`!aginah modify-role-reaction CategoryName RoleName Reaction`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
@@ -365,7 +365,7 @@ module.exports = {
       longDescription: null,
       aliases: [],
       usage: '`!aginah modify-role-description CategoryName RoleName [Description]`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {
@@ -396,7 +396,7 @@ module.exports = {
       longDescription: null,
       aliases: [],
       usage: '`!aginah delete-role CategoryName RoleName`',
-      minimumRole: config.moderatorRole,
+      moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
       async execute(message, args) {

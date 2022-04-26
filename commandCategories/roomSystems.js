@@ -15,7 +15,7 @@ module.exports = {
       aliases: ['crs'],
       usage: '`!aginah create-room-system [categoryName]`',
       guildOnly: true,
-      minimumRole: null,
+      moderatorRequired: false,
       adminOnly: true,
       async execute(message, args) {
         // Create the system
@@ -36,7 +36,7 @@ module.exports = {
       aliases: [],
       usage: '`!aginah destroy-room-system categoryName`',
       guildOnly: true,
-      minimumRole: null,
+      moderatorRequired: false,
       adminOnly: true,
       async execute(message, args) {
         if (!args[0]) {

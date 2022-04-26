@@ -30,7 +30,7 @@ module.exports = {
             aliases: ['ts'],
             usage: '`!aginah timestamp date/time`',
             guildOnly: false,
-            minimumRole: null,
+            moderatorRequired: false,
             adminOnly: false,
             execute(message, args) {
                 if (args.length === 0) {

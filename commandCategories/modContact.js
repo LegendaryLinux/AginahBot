@@ -11,7 +11,7 @@ module.exports = {
               'containing a single channel with a message where users can click on a button to contact the mods.',
             aliases: [],
             usage: '`!aginah init-mod-contact`',
-            minimumRole: null,
+            moderatorRequired: false,
             adminOnly: true,
             guildOnly: true,
             async execute(message) {
@@ -85,7 +85,7 @@ module.exports = {
               'Mod Contact history.',
             aliases: [],
             usage: '`!aginah destroy-mod-contact`',
-            minimumRole: null,
+            moderatorRequired: false,
             adminOnly: true,
             guildOnly: true,
             async execute(message) {

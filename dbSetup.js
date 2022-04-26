@@ -100,7 +100,8 @@ const messageTags = `CREATE TABLE IF NOT EXISTS message_tags (
     tagName VARCHAR(32) NOT NULL,
     tagContent TEXT(1024) NOT NULL,
     createdByUserId VARCHAR(64) NOT NULL,
-    createdTime BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP())
+    createdTime BIGINT NOT NULL DEFAULT (UNIX_TIMESTAMP()),
+    UNIQUE KEY guildDataId (guildDataId, tagName)
 )`;
 
 const db = mysql.createConnection({
