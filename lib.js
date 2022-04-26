@@ -9,7 +9,8 @@ module.exports = {
   // Function which returns a promise which will resolve to true or false
   verifyModeratorRole: (guildMember) => new Promise(async (resolve) => {
     if (module.exports.verifyIsAdmin(guildMember)) { resolve(true); }
-    resolve(await module.exports.getModeratorRole(guildMember.guild).position <= guildMember.roles.highest.position);
+    const moderatorRole = await module.exports.getModeratorRole(guildMember.guild);
+    resolve(moderatorRole.position <= guildMember.roles.highest.position);
   }),
 
   verifyIsAdmin: (guildMember) => guildMember.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR),
