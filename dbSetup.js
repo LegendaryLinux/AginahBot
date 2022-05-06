@@ -87,13 +87,6 @@ const modContactChannels = `CREATE TABLE IF NOT EXISTS mod_contact_channels (
     resolutionTime BIGINT
 )`;
 
-const botOptions = `CREATE TABLE IF NOT EXISTS bot_options (
-    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    guildDataId BIGINT NOT NULL,
-    name VARCHAR(64) NOT NULL,
-    value VARCHAR(128) NOT NULL
-)`;
-
 const messageTags = `CREATE TABLE IF NOT EXISTS message_tags (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildDataId BIGINT NOT NULL,

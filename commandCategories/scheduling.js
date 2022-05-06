@@ -25,22 +25,13 @@ const generateEventCode = () => {
 const sendScheduleMessage = async (message, targetDate) => {
   const eventCode = generateEventCode();
 
-  // Determine if this guild is in opt-out mode
-  let sql = `SELECT 1
-           FROM bot_options bo
-           JOIN guild_data gd ON bo.guildDataId = gd.id
-           WHERE gd.guildId=?
-                AND bo.name='opt-out'`;
-  const optOutMode = await dbQueryOne(sql, [message.guild.id]);
-
   const embedTimestamp = Math.floor(targetDate.getTime()/1000);
   const embed = new Discord.MessageEmbed()
     .setTitle('A new event has been scheduled!')
     .setColor('#6081cb')
     .setDescription(`**${message.author.username}** wants to schedule a game for <t:${embedTimestamp}:F>.` +
-      `\nReact with ⚔ if you intend to join this game.` +
-      `\nReact with 🐔 if you don\'t know yet.` +
-      `${optOutMode ? "\nReact with ❌ if you will not join." : ""}`)
+      `\nReact with 👍 if you intend to join this game.` +
+      `\nReact with 🤔 if you don\'t know yet.`)
     .addField('Event Code', eventCode)
     .setTimestamp(targetDate.getTime());
 
@@ -57,47 +48,14 @@ const sendScheduleMessage = async (message, targetDate) => {
       message.member.user.id, message.member.user.tag, eventCode]);
 
     // Put appropriate reactions onto the message
-    await scheduleMessage.react('⚔');
-    await scheduleMessage.react('🐔');
-
-    if (optOutMode) {
-      await scheduleMessage.react('❌');
-    }
+    await scheduleMessage.react('👍');
+    await scheduleMessage.react('🤔');
   }).catch((error) => generalErrorHandler(error));
 };
 
 module.exports = {
   category: 'Event Scheduling',
   commands: [
-    {
-      name: 'toggle-opt-out',
-      description: 'Toggle between opt-in and opt-out mode.',
-      longDescription: "Toggle between opt-in and opt-out mode. Opt-out mode will include an extra reaction on " +
-        "scheduled games to allow people to explicitly decline entry.",
-      aliases: [],
-      usage: '`!aginah toggle-opt-out`',
-      guildOnly: true,
-      moderatorRequired: false,
-      adminOnly: true,
-      async execute(message, args) {
-        const guildDataId = (await dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id])).id;
-
-        let sql = `SELECT 1 FROM bot_options bo WHERE guildDataId=? AND name='opt-out'`;
-        const enabled = await dbQueryOne(sql, [guildDataId]);
-        if (!enabled) {
-          // Enable the option
-          await dbExecute(`INSERT INTO bot_options (guildDataId, name, value) VALUES (?, 'opt-out', 1)`,
-            [guildDataId]);
-          return message.channel.send('Opt-out mode is now enabled. Scheduled games will now include an' +
-            ' explicit deny reaction.');
-        }
-
-        // Disable the option
-        await dbExecute(`DELETE FROM bot_options WHERE guildDataId=? AND name='opt-out'`, [guildDataId]);
-        return message.channel.send('Opt-out mode is now disabled. Scheduled games will no longer include an' +
-          ' explicit deny reaction.');
-      }
-    },
     {
       name: 'schedule',
       description: 'View upcoming events or schedule a new one',

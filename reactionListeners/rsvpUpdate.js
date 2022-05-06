@@ -4,19 +4,6 @@ module.exports = async (client, messageReaction, user, added) => {
   // Do nothing if the user is a bot, or the message is a DM
   if (user.bot || !messageReaction.message.guild) { return; }
 
-  if (messageReaction.emoji.name === '❌') {
-    // Determine if this guild is in opt-out mode
-    let ooSql = `SELECT 1
-           FROM bot_options bo
-           JOIN guild_data gd ON bo.guildDataId = gd.id
-           WHERE gd.guildId=?
-                AND bo.name='opt-out'`;
-    if (await dbQueryOne(ooSql, [messageReaction.message.guild.id])) {
-      // Do not add the user to the RSVP list if the guild is in opt-out mode and the user reacted with ❌
-      return;
-    }
-  }
-
   // Identify the event this reaction is associated with
   let sql = `SELECT se.id
                    FROM scheduled_events se
