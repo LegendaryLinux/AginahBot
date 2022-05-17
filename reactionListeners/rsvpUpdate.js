@@ -6,11 +6,11 @@ module.exports = async (client, messageReaction, user, added) => {
 
   // Identify the event this reaction is associated with
   let sql = `SELECT se.id
-                   FROM scheduled_events se
-                   JOIN guild_data gd ON se.guildDataId = gd.id
-                        WHERE gd.guildId = ?
-                        AND se.channelId = ?
-                        AND se.messageId = ?`;
+             FROM scheduled_events se
+             JOIN guild_data gd ON se.guildDataId = gd.id
+                  WHERE gd.guildId = ?
+                  AND se.channelId = ?
+                  AND se.messageId = ?`;
   const evt = await dbQueryOne(sql, [
     messageReaction.message.guild.id,
     messageReaction.message.channel.id,
