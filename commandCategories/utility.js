@@ -58,7 +58,7 @@ module.exports = {
             longDescription: 'Save a log of up to 1000 recent channel messages to a text file. ' +
               'Defaults to one hundred messages.',
             aliases: [],
-            usage: '`!aginah save-log [limit]',
+            usage: '`!aginah save-log [limit]`',
             guildOnly: true,
             moderatorRequired: true,
             adminOnly: false,
