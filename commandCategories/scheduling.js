@@ -84,7 +84,8 @@ module.exports = {
                      FROM scheduled_events se
                      JOIN guild_data gd ON se.guildDataId = gd.id
                      WHERE gd.guildId=?
-                       AND se.timestamp > ?`;
+                       AND se.timestamp > ?
+                     ORDER BY se.timestamp`;
           const games = await dbQueryAll(sql, [message.guild.id, new Date().getTime()]);
           for (let game of games) {
             const channel = message.guild.channels.resolve(game.channelId);
