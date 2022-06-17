@@ -22,6 +22,7 @@ client.interactionListeners = [];
 client.voiceStateListeners = [];
 client.tempData = {
     voiceRooms: {},
+    apInterfaces: new Map(),
 };
 
 // Load command category files
