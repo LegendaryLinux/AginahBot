@@ -61,10 +61,10 @@ class ArchipelagoInterface {
     // Clear the message queue
     this.messageQueue = [];
 
-    // Send messages to TextChannel in batches of five, spaced one second apart to avoid rate limit
+    // Send messages to TextChannel in batches of five, spaced two seconds apart to avoid rate limit
     while (messages.length > 0) {
       await this.textChannel.send(messages.splice(0, 5).join('\n'));
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     // Set timeout to run again after five seconds
@@ -96,19 +96,23 @@ class ArchipelagoInterface {
 
       switch(part.type){
         case 'player_id':
-          message += this.APClient.players.alias(parseInt(part.text, 10));
+          message += '**'+this.APClient.players.alias(parseInt(part.text, 10))+'**';
           break;
 
         case 'item_id':
-          message += this.APClient.items.name(parseInt(part.text, 10));
+          message += '**'+this.APClient.items.name(parseInt(part.text, 10))+'**';
           break;
 
         case 'location_id':
-          message += this.APClient.locations.name(parseInt(part.text, 10));
+          message += '**'+this.APClient.locations.name(parseInt(part.text, 10))+'**';
+          break;
+
+        case 'color':
+          message += part.text;
           break;
 
         default:
-          console.warn(`Ignoring unknown message type ${part.type}.`)
+          console.warn(`Ignoring unknown message type ${part.type} with text "${part.text}".`)
           return;
       }
     });

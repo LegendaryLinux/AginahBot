@@ -15,7 +15,7 @@ module.exports = {
             async execute(message, args) {
                 if (args.length < 3) {
                     return message.channel.send('Invalid arguments passed. Syntax:' +
-                      '```!aginah apm server:port gameName slotName```');
+                      '```!aginah apc server:port gameName slotName```');
                 }
 
                 if (message.client.tempData.apInterfaces.has(message.channel.id)) {
