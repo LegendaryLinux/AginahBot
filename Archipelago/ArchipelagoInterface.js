@@ -1,16 +1,17 @@
-const { ArchipelagoClient, ItemsHandlingFlags } = require('archipelago.js');
+const { ArchipelagoClient, ItemsHandlingFlags, SessionStatus } = require('archipelago.js');
+const { User } = require('discord.js');
 const { v4: uuid } = require('uuid');
 
-export default class ArchipelagoInterface {
+class ArchipelagoInterface {
   version = { major: 0, minor: 3, build: 2 };
   items_handling = ItemsHandlingFlags.REMOTE_ALL;
 
   /**
    * @param textChannel discord.js TextChannel
-   * @param host string
-   * @param gameName string
-   * @param slotName string
-   * @param password optional string
+   * @param {string} host
+   * @param {string} gameName
+   * @param {string} slotName
+   * @param {string|null} password optional
    */
   constructor(textChannel, host, gameName, slotName, password=null) {
     this.textChannel = textChannel;
@@ -72,7 +73,7 @@ export default class ArchipelagoInterface {
 
   /**
    * Listen for a print packet and add that message to the message queue
-   * @param packet
+   * @param {Object} packet
    * @returns {Promise<void>}
    */
   printHandler = async (packet) => {
@@ -81,7 +82,7 @@ export default class ArchipelagoInterface {
 
   /**
    * Listen for a printJSON packet, convert it to a human-readable format, and add the message to the queue
-   * @param packet
+   * @param {Object} packet
    * @returns {Promise<void>}
    */
   printJSONHandler = async (packet) => {
@@ -116,8 +117,8 @@ export default class ArchipelagoInterface {
 
   /**
    * Associate a Discord user with a specified alias
-   * @param alias
-   * @param discordUser
+   * @param {string} alias
+   * @param {User} discordUser
    * @returns {*}
    */
   setPlayer = (alias, discordUser) => this.players.set(alias, discordUser);
@@ -141,3 +142,5 @@ export default class ArchipelagoInterface {
     this.APClient.disconnect();
   }
 }
+
+module.exports = ArchipelagoInterface;

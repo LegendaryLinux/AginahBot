@@ -1,4 +1,3 @@
-const ArchipelagoInterface = require('../Archipelago/ArchipelagoInterface');
 const { getModeratorRole, dbQueryOne, dbQueryAll, dbExecute, parseArgs } = require('../lib');
 
 module.exports = async (client, message) => {
@@ -150,25 +149,5 @@ module.exports = async (client, message) => {
       message.guild.channels.resolve(eventData.channelId)
         .send(`${message.channel.name.replace(/\b\w/g, c => c.toUpperCase())} is now closed.`);
       return voiceChannel.edit({ name: `${voiceChannel.name.toString()} (Closed)` });
-
-    // TODO: Move this out of room system commands and into a command category
-    case '.connect':
-      if (command.length < 3) {
-        return message.channel.send('Invalid arguments passed. Syntax:' +
-          '```.connect server:port gameName slotName [password]```');
-      }
-
-      const APInterface = new ArchipelagoInterface(message.channel, command[1], command[2], command[3]);
-      message.client.tempData.apInterfaces.set(message.channel.id, APInterface);
-
-      // Automatically disconnect and destroy this interface after six hours
-      setTimeout(() => {
-        if (message.channel.template.apInterfaces.has(message.channel.id)) {
-          message.client.tempData.apInterfaces.get(message.channel.id).disconnect();
-          message.client.tempData.apInterfaces.delete(message.channel.id);
-        }
-      }, 21600000);
-
-    // TODO: Add a case allowing a user to associate with an alias, if an APInterface exists for the channel
   }
 };
