@@ -1,5 +1,7 @@
 const errorHandlers = require('../errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin } = require('../lib');
+const tmp = require('tmp');
+const fs = require('fs');
 
 module.exports = {
     category: 'Help',
@@ -45,8 +47,25 @@ module.exports = {
                         }
                     }
 
-                    return message.author.send(data.join('')).catch((error) =>
-                        errorHandlers.dmErrorHandler(error, message));
+                    const fullCommandData = data.join('');
+                    if (fullCommandData.length < 2000) {
+                        return message.author.send(data.join('')).catch((error) =>
+                          errorHandlers.dmErrorHandler(error, message));
+                    }
+
+                    // If the full message is longer than 2000 characters, send it as a file attachment instead
+                    return tmp.file((err, tmpFilePath, fd, cleanupCallback) => {
+                        fs.writeFile(tmpFilePath, fullCommandData, () => {
+                            return message.author.send({
+                                files: [
+                                    {
+                                        name: 'AginahBot-Commands.md',
+                                        attachment: tmpFilePath,
+                                    }
+                                ]
+                            });
+                        });
+                    });
                 }
 
                 // Send data about a specific command
@@ -65,9 +84,27 @@ module.exports = {
                 if (command.usage && typeof(command.usage) === 'object' && command.usage.length) {
                     command.usage.forEach((usage) => data.push(`**Usage: ** ${usage}`));
                 } else if (command.usage) { data.push(`**Usage: ** ${command.usage}`); }
-                message.channel.send(data.join('\n'))
-                  .then(() => {})
-                  .catch((error) => errorHandlers.generalErrorHandler(error));
+
+                const output = data.join('\n');
+                if (output.length < 2000) {
+                    return message.channel.send(output)
+                      .then(() => {})
+                      .catch((error) => errorHandlers.generalErrorHandler(error));
+                }
+
+                // If the full message is longer than 2000 characters, send it as a file attachment instead
+                return tmp.file((err, tmpFilePath, fd, cleanupCallback) => {
+                    fs.writeFile(tmpFilePath, output, () => {
+                        return message.channel.send({
+                            files: [
+                                {
+                                    name: `${command}.md`,
+                                    attachment: tmpFilePath,
+                                }
+                            ]
+                        });
+                    });
+                });
             },
         }
     ],
