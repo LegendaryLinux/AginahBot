@@ -32,6 +32,9 @@ class ArchipelagoInterface {
       // Set up packet listeners
       this.APClient.addListener('print', this.printHandler);
       this.APClient.addListener('printJSON', this.printJSONHandler);
+
+      // Inform the user AginahBot has connected to the game
+      textChannel.send('Connection established.');
     }).catch(async (err) => {
       await this.textChannel.send('A problem occurred while connecting to the AP server:\n' +
         `\`\`\`${JSON.stringify(err)}\`\`\``);
@@ -46,8 +49,6 @@ class ArchipelagoInterface {
     let messages = [];
 
     for (let message of this.messageQueue) {
-      // TODO: Determine if message is a hint and replace player names with user objects if they have
-      // TODO: chosen to receive pings
       if (message.includes('[Hint]')) {
         for (let alias of this.players.keys()) {
           if (message.includes(alias)) {

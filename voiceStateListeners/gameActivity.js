@@ -174,12 +174,6 @@ module.exports = async (client, oldState, newState) => {
         await oldState.guild.channels.resolve(channelData.textChannelId).delete();
         await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
 
-        // If there is an APInterface attached to this voice channel, disconnect and destroy it
-        if (client.tempData.apInterfaces.has(channelData.textChannelId)) {
-          client.tempData.apInterfaces.get(channelData.textChannelId).disconnect();
-          client.tempData.apInterfaces.delete(channelData.textChannelId);
-        }
-
         // Delete the database entry for for this channel
         await dbExecute(`DELETE FROM room_system_games WHERE id=?`, [channelData.id]);
       }

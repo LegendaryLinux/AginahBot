@@ -19,6 +19,7 @@ client.commandCategories = [];
 client.messageListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
+client.channelDeletedListeners = [];
 client.voiceStateListeners = [];
 client.tempData = {
     voiceRooms: new Map(),
@@ -56,6 +57,11 @@ fs.readdirSync('./voiceStateListeners').filter((file) => file.endsWith('.js')).f
 fs.readdirSync('./interactionListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
     const listener = require(`./interactionListeners/${listenerFile}`);
     client.interactionListeners.push(listener);
+});
+
+fs.readdirSync('./channelDeletedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
+    const listener = require(`./channelDeletedListeners/${listenerFile}`);
+    client.channelDeletedListeners.push(listener);
 });
 
 client.on('messageCreate', async (msg) => {
@@ -137,6 +143,11 @@ client.on('messageReactionRemove', async(messageReaction, user) => {
 // Run the interactions through the interactionListeners
 client.on('interactionCreate', async(interaction) => {
     client.interactionListeners.forEach((listener) => listener(client, interaction));
+});
+
+// Run channelDelete events through their listeners
+client.on('channelDelete', async(channel) => {
+    client.channelDeletedListeners.forEach((listener) => listener(client, channel));
 });
 
 // Handle the bot being added to a new guild
