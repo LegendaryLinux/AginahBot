@@ -1,9 +1,12 @@
 const { generalErrorHandler } = require('../errorHandlers');
 const { getModeratorRole, dbQueryOne, dbExecute } = require('../lib');
 
-const channelNames = ['Zucchini', 'Artichoke', 'Pineapple', 'Kumquat', 'Avocado', 'Blueberry', 'Mango', 'Strawberry',
+const channelNames = [
+  // Fruits and Vegetables
+  'Zucchini', 'Artichoke', 'Pineapple', 'Kumquat', 'Avocado', 'Blueberry', 'Mango', 'Strawberry',
   'Durian', 'Watermelon', 'Papaya', 'Cherry', 'Nectarine', 'Raspberry', 'Cantaloupe', 'Potato', 'Tomato', 'Broccoli',
-  'Cauliflower', 'Cucumber', 'Asparagus', 'Rhubarb', 'Eggplant', 'Plantain', 'Banana', 'Apple'];
+  'Cauliflower', 'Cucumber', 'Asparagus', 'Rhubarb', 'Eggplant', 'Plantain', 'Banana', 'Apple', 'Cranberry', 'Orange',
+];
 
 const randInRange = (min, max) => {
   min = Math.ceil(min);
@@ -34,19 +37,19 @@ module.exports = async (client, oldState, newState) => {
       }
 
       // Track which voice channel names are currently in use by the guild
-      if (!client.tempData.voiceRooms.hasOwnProperty(newState.guild.id)) {
-        client.tempData.voiceRooms[newState.guild.id] = [];
+      if (!client.tempData.voiceRooms.has(newState.guild.id)) {
+        client.tempData.voiceRooms.set(newState.guild.id, new Map());
       }
 
       // Choose a channel name
       let channelName = channelNames[randInRange(0, channelNames.length - 1)];
-      if (client.tempData.voiceRooms[newState.guild.id].length < channelNames.length) {
-        // If there are channel names available, find one that isn't in use
-        while (client.tempData.voiceRooms[newState.guild.id].indexOf(channelName) > -1) {
+      // If there are channel names available, find one that isn't in use
+      if (client.tempData.voiceRooms.get(newState.guild.id).size < channelNames.length) {
+        while (client.tempData.voiceRooms.get(newState.guild.id).has(channelName)) {
           channelName = channelNames[randInRange(0, channelNames.length - 1)];
         }
-      }else{
-        channelName = `${channelName}-${client.tempData.voiceRooms[newState.guild.id].length}`;
+      } else {
+        channelName = `${channelName}-${client.tempData.voiceRooms.get(newState.guild.id).size}`;
       }
 
       await newState.guild.roles.create({ name: channelName, mentionable: true }).then((role) => {
@@ -102,7 +105,7 @@ module.exports = async (client, oldState, newState) => {
           await dbExecute(sql, [roomSystemStartGame.id, channels[0].id, channels[1].id, role.id]);
           await newState.member.voice.setChannel(channels[0]);
           await newState.member.roles.add(role);
-          client.tempData.voiceRooms[newState.guild.id].push(channelName);
+          client.tempData.voiceRooms.get(newState.guild.id).set(channelName, 1);
         }).catch((error) => generalErrorHandler(error));
       });
     }
@@ -163,11 +166,8 @@ module.exports = async (client, oldState, newState) => {
       // If the voice channel is now empty, destroy the role and channels
       if (oldState.channel.members.size === 0) {
         // Remove the channel from the array of current voice channels if it exists
-        if (client.tempData.voiceRooms.hasOwnProperty(oldState.guild.id)) {
-          const channelIndex = client.tempData.voiceRooms[oldState.guild.id].indexOf(oldState.channel.name);
-          if (channelIndex > -1) {
-            client.tempData.voiceRooms[oldState.guild.id].splice(channelIndex, 1);
-          }
+        if (client.tempData.voiceRooms.has(oldState.guild.id)) {
+          client.tempData.voiceRooms.get(oldState.guild.id).delete(oldState.channel.name);
         }
 
         await role.delete();

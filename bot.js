@@ -21,7 +21,7 @@ client.reactionListeners = [];
 client.interactionListeners = [];
 client.voiceStateListeners = [];
 client.tempData = {
-    voiceRooms: {},
+    voiceRooms: new Map(),
     apInterfaces: new Map(),
 };
 
