@@ -23,16 +23,29 @@ module.exports = {
                       'and must be disconnected before a new game can be monitored.');
                 }
 
+                // Establish a connection to the Archipelago game
                 const APInterface = new ArchipelagoInterface(message.channel, args[0], args[1], args[2]);
-                message.client.tempData.apInterfaces.set(message.channel.id, APInterface);
 
-                // Automatically disconnect and destroy this interface after six hours
-                setTimeout(() => {
-                    if (message.channel.template.apInterfaces.has(message.channel.id)) {
-                        message.client.tempData.apInterfaces.get(message.channel.id).disconnect();
-                        message.client.tempData.apInterfaces.delete(message.channel.id);
+                // Check if the connection was successful every half second for ten seconds
+                for (let i=0; i<20; ++i){
+                    // Wait half of a second
+                    await new Promise((resolve) => (setTimeout(resolve, 500)));
+
+                    // If the client fails to connect, its status will eventually read disconnected
+                    if (APInterface.APClient.status === 'Disconnected') { return; }
+
+                    if (APInterface.APClient.status === 'Connected') {
+                        message.client.tempData.apInterfaces.set(message.channel.id, APInterface);
+
+                        // Automatically disconnect and destroy this interface after six hours
+                        return setTimeout(() => {
+                            if (message.channel.template.apInterfaces.has(message.channel.id)) {
+                                message.client.tempData.apInterfaces.get(message.channel.id).disconnect();
+                                message.client.tempData.apInterfaces.delete(message.channel.id);
+                            }
+                        }, 21600000);
                     }
-                }, 21600000);
+                }
             },
         },
         {
