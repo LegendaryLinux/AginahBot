@@ -63,12 +63,6 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     eventCode VARCHAR(6) NOT NULL
 )`;
 
-const eventAttendees = `CREATE TABLE IF NOT EXISTS event_attendees (
-    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    eventId BIGINT NOT NULL,
-    userId VARCHAR(64) NOT NULL
-)`;
-
 const modContact = `CREATE TABLE IF NOT EXISTS mod_contact (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildDataId BIGINT NOT NULL,

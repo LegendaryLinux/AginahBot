@@ -23,40 +23,45 @@ module.exports = async (client, message) => {
     case '.ping':
       if (!command[1]) { return message.channel.send('You must provide a room code to ping players.'); }
 
-      sql = `SELECT ea.userId
+      sql = `SELECT se.messageId, se.channelId
              FROM scheduled_events se
-             JOIN event_attendees ea ON se.id = ea.eventId
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE se.eventCode=?
                AND gd.guildId=?
                AND se.timestamp > ((UNIX_TIMESTAMP()*1000) - (30*60*1000))`;
-      const attendees = await dbQueryAll(sql, [command[1].toUpperCase(), message.guild.id]);
-      if (attendees.length === 0) {
-        return message.channel.send("Either there is no recent or upcoming game with that code, or nobody has RSVPed.");
+      const schedule = await dbQueryOne(sql, [command[1].toUpperCase(), message.guild.id]);
+      if (!schedule) {
+        return message.channel.send("There is no upcoming game with that code.");
       }
 
-      // Fetch member details, in case they aren't cached
-      await message.guild.members.fetch({ user: attendees.map((a) => a.userId) });
+      // Fetch original scheduling message
+      const channel = message.guild.channels.resolve(schedule.channelId);
+      const scheduleMessage = await channel.messages.fetch(schedule.messageId);
+
+      // Fetch all users who reacted to the scheduling message
+      const attendees = new Map();
+      for (let reaction of scheduleMessage.reactions.cache) {
+        const users = await reaction[1].users.fetch();
+        users.each((user) => {
+          if (user.bot) { return; }
+          if (attendees.has(user.id)) { return; }
+          attendees.set(user.id, user);
+        });
+      }
+
+      if (attendees.length === 0) {
+        return message.channel.send('No RSVPs exist for this game, so no reminder message was sent.');
+      }
 
       // Build the reminder message
       let reminderMessage = `**${message.author.tag}** would like to remind the following people a game they ` +
         `have RSVPed for is about to start in ${message.channel}:\n`;
-      attendees.forEach((attendee) => {
-        reminderMessage += `> ${message.guild.members.resolve(attendee.userId).user}\n`;
-      });
-
-      // Fetch information about this specific event
-      sql = `SELECT se.channelId
-         FROM scheduled_events se
-         JOIN guild_data gd ON se.guildDataId = gd.id
-         WHERE gd.guildId=?
-            AND se.eventCode=?
-         ORDER BY timestamp DESC
-         LIMIT 1`;
-      const eventInfo = await dbQueryOne(sql, [message.guild.id, command[1].toUpperCase()]);
+      for (let attendee of attendees.values()) {
+        reminderMessage += `> ${attendee}\n`;
+      }
 
       // Send the reminder to the channel the event was originally scheduled in
-      message.guild.channels.resolve(eventInfo.channelId).send(reminderMessage);
+      message.guild.channels.resolve(schedule.channelId).send(reminderMessage);
       return message.channel.send('Reminder sent. Remember, with great power comes great responsibility.');
 
     // Player has indicated they are ready to begin

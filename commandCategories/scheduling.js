@@ -79,8 +79,7 @@ module.exports = {
       adminOnly: false,
       async execute(message, args) {
         if (args.length === 0) {
-          let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode,
-                            (SELECT COUNT(*) FROM event_attendees WHERE eventId=se.id) AS rsvpCount
+          let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
                      FROM scheduled_events se
                      JOIN guild_data gd ON se.guildDataId = gd.id
                      WHERE gd.guildId=?
@@ -92,6 +91,18 @@ module.exports = {
             if (!channel) { continue; }
             const scheduleMessage = await channel.messages.fetch(game.messageId);
             const embedTimestamp = Math.floor(game.timestamp/1000);
+
+            // Determine RSVP count
+            const rsvps = new Map();
+            for (let reaction of scheduleMessage.reactions.cache) {
+              const reactors = await reaction[1].users.fetch();
+              reactors.each((reactor) => {
+                if (reactor.bot) { return; }
+                if (rsvps.has(reactor.id)) { return; }
+                rsvps.set(reactor.id, reactor);
+              });
+            }
+
             const embed = new Discord.MessageEmbed()
               .setTitle('Upcoming Event')
               .setColor('#6081cb')
@@ -100,7 +111,7 @@ module.exports = {
               .setURL(scheduleMessage.url)
               .addField('Planning Channel', `#${channel.name}`)
               .addField('Event Code', game.eventCode)
-              .addField('Current RSVPs', game.rsvpCount)
+              .addField('Current RSVPs', rsvps.size.toString())
               .setTimestamp(parseInt(game.timestamp, 10));
             await message.channel.send({ embeds: [embed] });
           }
@@ -170,7 +181,6 @@ module.exports = {
         await scheduleMsg.reactions.removeAll();
 
         // Remove the game's entry from the database
-        await dbExecute(`DELETE FROM event_attendees WHERE eventId=?`, [eventData.id]);
         await dbExecute(`DELETE FROM scheduled_events WHERE id=?`, [eventData.id]);
       }
     },
