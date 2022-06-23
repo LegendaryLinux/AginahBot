@@ -95,7 +95,8 @@ module.exports = {
             const embed = new Discord.MessageEmbed()
               .setTitle('Upcoming Event')
               .setColor('#6081cb')
-              .setDescription(`**${game.schedulingUserTag}** scheduled a game for <t:${embedTimestamp}:F>.`)
+              .setDescription(`**${game.schedulingUserTag}** scheduled a game for <t:${embedTimestamp}:F>.` +
+                '\nClick the title of this message to jump to the original.')
               .setURL(scheduleMessage.url)
               .addField('Planning Channel', `#${channel.name}`)
               .addField('Event Code', game.eventCode)
