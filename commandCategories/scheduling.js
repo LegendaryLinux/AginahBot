@@ -90,20 +90,18 @@ module.exports = {
           for (let game of games) {
             const channel = message.guild.channels.resolve(game.channelId);
             if (!channel) { continue; }
-            channel.messages.fetch(game.messageId).then(
-              (scheduleMessage) => {
-                const embedTimestamp = Math.floor(game.timestamp/1000);
-                const embed = new Discord.MessageEmbed()
-                  .setTitle('Upcoming Event')
-                  .setColor('#6081cb')
-                  .setDescription(`**${game.schedulingUserTag}** scheduled a game for <t:${embedTimestamp}:F>.`)
-                  .setURL(scheduleMessage.url)
-                  .addField('Planning Channel', `#${channel.name}`)
-                  .addField('Event Code', game.eventCode)
-                  .addField('Current RSVPs', game.rsvpCount)
-                  .setTimestamp(parseInt(game.timestamp, 10));
-                message.channel.send({ embeds: [embed] });
-              }).catch((err) => generalErrorHandler(err));
+            const scheduleMessage = await channel.messages.fetch(game.messageId);
+            const embedTimestamp = Math.floor(game.timestamp/1000);
+            const embed = new Discord.MessageEmbed()
+              .setTitle('Upcoming Event')
+              .setColor('#6081cb')
+              .setDescription(`**${game.schedulingUserTag}** scheduled a game for <t:${embedTimestamp}:F>.`)
+              .setURL(scheduleMessage.url)
+              .addField('Planning Channel', `#${channel.name}`)
+              .addField('Event Code', game.eventCode)
+              .addField('Current RSVPs', game.rsvpCount)
+              .setTimestamp(parseInt(game.timestamp, 10));
+            await message.channel.send({ embeds: [embed] });
           }
 
           if (games.length === 0) { return message.channel.send("There are currently no games scheduled."); }
