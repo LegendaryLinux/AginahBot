@@ -22,6 +22,7 @@ class ArchipelagoInterface {
 
     // Controls which messages should be printed to the channel
     this.showHints = true;
+    this.showItems = true;
     this.showProgression = true;
     this.showChat = true;
 
@@ -66,6 +67,11 @@ class ArchipelagoInterface {
               message.content = message.content.replace(alias, this.players.get(alias));
             }
           }
+          break;
+
+        case 'item':
+          // Ignore item messages if they should not be displayed
+          if (!this.showItems) { continue; }
           break;
 
         case 'progression':
@@ -133,7 +139,10 @@ class ArchipelagoInterface {
         case 'item_id':
           message.content += '**'+this.APClient.items.name(parseInt(part.text, 10))+'**';
 
-          // Identify if a message contains a progression item
+          // Identify this message as containing an item
+          if (message.type !== 'progression') { message.type = 'item'; }
+
+          // Identify if this message contains a progression item
           if (part?.flags === 0b001) { message.type = 'progression'; }
           break;
 

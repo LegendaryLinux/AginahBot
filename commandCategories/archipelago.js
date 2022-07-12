@@ -193,7 +193,7 @@ module.exports = {
         },
         {
             name: 'ap-show-progression',
-            description: 'Show progression messages while connected to an AP game',
+            description: 'Show progression item messages while connected to an AP game. Hides other item messages',
             longDescription: null,
             aliases: ['apsp'],
             usage: '`!aginah ap-show-progression`',
@@ -207,12 +207,33 @@ module.exports = {
                 }
 
                 // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showItems = false;
                 message.client.tempData.apInterfaces.get(message.channel.id).showProgression = true;
             },
         },
         {
-            name: 'ap-hide-progression',
-            description: 'Hide progression messages while connected to an AP game',
+            name: 'ap-show-items',
+            description: 'Show all item messages while connected to an AP game',
+            longDescription: null,
+            aliases: ['apsi'],
+            usage: '`!aginah ap-show-item`',
+            moderatorRequired: false,
+            adminOnly: false,
+            guildOnly: true,
+            async execute(message) {
+                // Notify the user if there is no game being monitored in the current text channel
+                if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
+                    return message.channel.send('There is no Archipelago game being monitored in this channel.');
+                }
+
+                // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showItems = true;
+                message.client.tempData.apInterfaces.get(message.channel.id).showProgression = true;
+            },
+        },
+        {
+            name: 'ap-hide-items',
+            description: 'Hide all item messages while connected to an AP game',
             longDescription: null,
             aliases: ['aphp'],
             usage: '`!aginah ap-hide-progression`',
@@ -226,7 +247,8 @@ module.exports = {
                 }
 
                 // Set the APInterface to show chat messages
-                message.client.tempData.apInterfaces.get(message.channel.id).showProgression = false;
+                message.client.tempData.apInterfaces.get(message.channel.id).showItems = false;
+                message.client.tempData.apInterfaces.get(message.channel.id).showPregression = false;
             },
         },
     ],
