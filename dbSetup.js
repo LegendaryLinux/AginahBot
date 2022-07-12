@@ -92,12 +92,12 @@ const messageTags = `CREATE TABLE IF NOT EXISTS message_tags (
 )`;
 
 const db = mysql.createConnection({
-    host: config.dbHost,
-    user: config.dbUser,
-    password: config.dbPass,
-    database: config.dbName,
-    supportBigNumbers: true,
-    bigNumberStrings: true,
+  host: config.dbHost,
+  user: config.dbUser,
+  password: config.dbPass,
+  database: config.dbName,
+  supportBigNumbers: true,
+  bigNumberStrings: true,
 });
 
 const handler = (err) => console.log(err);

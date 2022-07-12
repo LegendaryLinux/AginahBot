@@ -14,7 +14,7 @@ module.exports = async (client, message) => {
              JOIN guild_data gd ON rs.guildDataId = gd.id
              WHERE rsrc.playerId=?
                AND rsg.textChannelId=?
-               AND gd.guildId=?`
+               AND gd.guildId=?`;
   const roomSystem = await dbQueryOne(sql, [message.author.id, message.channel.id, message.guild.id]);
   if (!roomSystem) { return; }
 
@@ -31,7 +31,7 @@ module.exports = async (client, message) => {
                AND se.timestamp > ((UNIX_TIMESTAMP()*1000) - (30*60*1000))`;
       const schedule = await dbQueryOne(sql, [command[1].toUpperCase(), message.guild.id]);
       if (!schedule) {
-        return message.channel.send("There is no upcoming game with that code.");
+        return message.channel.send('There is no upcoming game with that code.');
       }
 
       // Fetch original scheduling message
@@ -66,14 +66,14 @@ module.exports = async (client, message) => {
 
     // Player has indicated they are ready to begin
     case '.ready':
-      await dbExecute(`UPDATE room_system_ready_checks SET readyState=1 WHERE id=?`, [roomSystem.checkId]);
-      const pendingCount = await dbQueryAll(`SELECT 1 FROM room_system_ready_checks WHERE gameId=? AND readyState=0`,
+      await dbExecute('UPDATE room_system_ready_checks SET readyState=1 WHERE id=?', [roomSystem.checkId]);
+      const pendingCount = await dbQueryAll('SELECT 1 FROM room_system_ready_checks WHERE gameId=? AND readyState=0',
         [roomSystem.gameId]);
-      return pendingCount.length === 0 ? message.channel.send('🏁 All players are ready!') : null
+      return pendingCount.length === 0 ? message.channel.send('🏁 All players are ready!') : null;
 
     // Player has indicated they are no longer ready to begin
     case '.unready':
-      return dbExecute(`UPDATE room_system_ready_checks SET readyState=0 WHERE id=?`, [roomSystem.checkId]);
+      return dbExecute('UPDATE room_system_ready_checks SET readyState=0 WHERE id=?', [roomSystem.checkId]);
 
     // Print a list of players who are and are not ready
     case '.readycheck':
@@ -81,7 +81,7 @@ module.exports = async (client, message) => {
       const notReady = [];
 
       // Find each player's ready state
-      sql = `SELECT playerTag, readyState FROM room_system_ready_checks WHERE gameId=?`;
+      sql = 'SELECT playerTag, readyState FROM room_system_ready_checks WHERE gameId=?';
       const players = await dbQueryAll(sql, [roomSystem.gameId]);
       players.forEach((player) => {
         if (parseInt(player.readyState, 10) === 1) {
@@ -98,7 +98,7 @@ module.exports = async (client, message) => {
 
       output.push('');// Add a blank line between ready and not-ready players
 
-      output.push('**Not ready:**')
+      output.push('**Not ready:**');
       notReady.length === 0 ?
         output.push('🏁 All players are ready!') :
         notReady.forEach((player) => output.push(player));

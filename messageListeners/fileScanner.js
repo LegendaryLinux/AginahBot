@@ -18,7 +18,7 @@ const isRomFile = (filename) => {
   }
   // Doesn't look like a ROM file
   return false;
-}
+};
 
 const isArchiveFile = (filename) => {
   const parts = filename.split('.');
@@ -28,7 +28,7 @@ const isArchiveFile = (filename) => {
   }
   // Doesn't look like an archive file
   return false;
-}
+};
 
 const deleteRomFile = (message) => {
   message.channel.send(`${message.author}: Do not post links to ROMs or other copyrighted content.`);
@@ -48,7 +48,7 @@ module.exports = (client, message) => {
         return https.get(attachment.url, (response) => {
           if (response.statusCode !== 200) {
             message.channel.send(`${message.author}: Unable to retrieve attachment for analysis. ` +
-              `Your message has been deleted.`);
+              'Your message has been deleted.');
             message.delete();
             return;
           }
@@ -68,14 +68,14 @@ module.exports = (client, message) => {
                         fileDeleted = true;
                         return deleteRomFile(message);
                       }
-                    })
+                    });
 
                 case 'rar':
                   return new unrar(tempFile.name,['n']).list((err, files) => {
                     if (err) {
                       console.error(err);
                       message.channel.send(`${message.author}: Unable to extract file for ` +
-                        "analysis. It has been deleted.");
+                        'analysis. It has been deleted.');
                       return message.delete();
                     }
                     files.forEach((file) => {
@@ -96,11 +96,11 @@ module.exports = (client, message) => {
                         deleteRomFile(message);
                       }
                     },
-                  })
+                  });
 
                 case 'gz':
                   message.channel.send(`${message.author}: Gzipped files are unsupported. ` +
-                    `Your message has been deleted.`);
+                    'Your message has been deleted.');
                   return message.delete();
 
                 case '7z':
@@ -118,21 +118,21 @@ module.exports = (client, message) => {
 
             // Retain files for one hour, then delete them.
             setTimeout(() => {
-              fs.unlink(tempFile.name, (error) => {if (error) generalErrorHandler(error)});
+              fs.unlink(tempFile.name, (error) => {if (error) generalErrorHandler(error);});
             }, 300 * 1000);
           });
 
         }).on('error', (e) => {
           message.channel.send(`${message.author}: Unable to retrieve attachment for analysis. ` +
-            `Your message has been deleted.`);
+            'Your message has been deleted.');
           message.delete();
           console.error(e);
         });
       }
     });
   } catch (error) {
-    message.channel.send("Something went wrong while trying to analyze your file. It has been deleted " +
-      "for safety purposes.");
+    message.channel.send('Something went wrong while trying to analyze your file. It has been deleted ' +
+      'for safety purposes.');
     message.delete();
     generalErrorHandler(error);
   }

@@ -58,7 +58,7 @@ module.exports = async (client, interaction) => {
   const modRole = await getModeratorRole(interaction.guild);
   await channel.send(`This channel was created automatically to facilitate communication between the ${modRole} ` +
     `team and ${interaction.user}.\nWhen the issue has been resolved, a moderator may use \`.resolve\` to ` +
-    `remove this channel.`);
+    'remove this channel.');
 
   // Fetch the id of the mod_contact entry for this guild
   sql = `SELECT mc.id
@@ -68,7 +68,7 @@ module.exports = async (client, interaction) => {
   let modContact = await dbQueryOne(sql, [ interaction.guild.id ]);
 
   // Update the mod_contact_channels table with the new channel info
-  sql = `INSERT INTO mod_contact_channels (modContactId, userId, reportChannelId) VALUES (?, ?, ?)`;
+  sql = 'INSERT INTO mod_contact_channels (modContactId, userId, reportChannelId) VALUES (?, ?, ?)';
   await dbExecute(sql, [ modContact.id, interaction.user.id, channel.id ]);
 
   // Inform Discord the interaction was handled, but do not change the original message

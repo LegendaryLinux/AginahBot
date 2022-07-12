@@ -26,7 +26,7 @@ module.exports = async (client, message) => {
   if (message.channel.id === modContact.channelId) { return; }
 
   // Update the mod_contact_channels table to show this report as resolved
-  sql = `UPDATE mod_contact_channels SET resolved=1, resolutionTime=(UNIX_TIMESTAMP()) WHERE id=?`;
+  sql = 'UPDATE mod_contact_channels SET resolved=1, resolutionTime=(UNIX_TIMESTAMP()) WHERE id=?';
   await dbExecute(sql, [modContact.id]);
 
   // Delete the text channel

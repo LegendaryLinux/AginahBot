@@ -58,7 +58,7 @@ class ArchipelagoInterface {
     for (let message of this.messageQueue) {
       switch(message.type) {
         case 'hint':
-          // Ignore hint messages if they should not be displayed
+        // Ignore hint messages if they should not be displayed
           if (!this.showHints) { continue; }
 
           // Replace player names with Discord User objects
@@ -70,17 +70,17 @@ class ArchipelagoInterface {
           break;
 
         case 'item':
-          // Ignore item messages if they should not be displayed
+        // Ignore item messages if they should not be displayed
           if (!this.showItems) { continue; }
           break;
 
         case 'progression':
-          // Ignore progression messages if they should not be displayed
+        // Ignore progression messages if they should not be displayed
           if (!this.showProgression) { continue; }
           break;
 
         case 'chat':
-          // Ignore chat messages if they should not be displayed
+        // Ignore chat messages if they should not be displayed
           if (!this.showChat) { continue; }
           break;
 
@@ -155,7 +155,7 @@ class ArchipelagoInterface {
           break;
 
         default:
-          console.warn(`Ignoring unknown message type ${part.type} with text "${part.text}".`)
+          console.warn(`Ignoring unknown message type ${part.type} with text "${part.text}".`);
           return;
       }
     });
@@ -191,7 +191,7 @@ class ArchipelagoInterface {
   disconnect = () => {
     clearTimeout(this.queueTimeout);
     this.APClient.disconnect();
-  }
+  };
 }
 
 module.exports = ArchipelagoInterface;

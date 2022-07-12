@@ -1,11 +1,10 @@
-const { generalErrorHandler } = require('../errorHandlers');
 const { dbQueryOne, dbExecute } = require('../lib');
 
-const DEFAULT_ROLE_NAME = "Dynamic Room Category"
+const DEFAULT_ROLE_NAME = 'Dynamic Room Category';
 const VOICE_CHANNEL_NAME = 'Start Game';
 
 module.exports = {
-  category: "Dynamic Room Systems",
+  category: 'Dynamic Room Systems',
   commands: [
     {
       name: 'create-room-system',
@@ -24,8 +23,8 @@ module.exports = {
         const voiceChannel = await message.guild.channels.create(VOICE_CHANNEL_NAME, {
           type: 'GUILD_VOICE', parent: category
         });
-        const guildData = await dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [message.guild.id]);
-        let sql = `INSERT INTO room_systems (guildDataId, channelCategoryId, newGameChannelId) VALUES (?, ?, ?)`;
+        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [message.guild.id]);
+        let sql = 'INSERT INTO room_systems (guildDataId, channelCategoryId, newGameChannelId) VALUES (?, ?, ?)';
         await dbExecute(sql, [guildData.id, category.id, voiceChannel.id]);
       }
     },
@@ -52,10 +51,10 @@ module.exports = {
         if (!category) { return message.channel.send('No dynamic room category with that name exists!'); }
 
         let sql = `SELECT rs.id
-                     FROM room_systems rs
-                     JOIN guild_data gd ON rs.guildDataId = gd.id
-                     WHERE channelCategoryId=?
-                       AND gd.guildId=?`;
+                   FROM room_systems rs
+                   JOIN guild_data gd ON rs.guildDataId = gd.id
+                   WHERE channelCategoryId=?
+                     AND gd.guildId=?`;
         const row = await dbQueryOne(sql, [category.id, message.guild.id]);
         if (!row) {
           return message.channel.send('Your server does not have a dynamic room category with that name.');
@@ -63,8 +62,8 @@ module.exports = {
 
         await category.children.each(async (channel) => await channel.delete());
         await category.delete();
-        await dbExecute(`DELETE FROM room_system_games WHERE roomSystemId=?`, [row.id]);
-        await dbExecute(`DELETE FROM room_systems WHERE id=?`, [row.id]);
+        await dbExecute('DELETE FROM room_system_games WHERE roomSystemId=?', [row.id]);
+        await dbExecute('DELETE FROM room_systems WHERE id=?', [row.id]);
       }
     },
   ],

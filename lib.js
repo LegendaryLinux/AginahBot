@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const mysql = require('mysql2');
-const moment = require("moment-timezone");
+const moment = require('moment-timezone');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { TimeParserValidationError } = require('./customErrors');
@@ -19,7 +19,7 @@ module.exports = {
     let modRole = null;
 
     // If this guild has a known moderator role id, fetch that role
-    let sql = "SELECT moderatorRoleId FROM guild_data WHERE guildId=?";
+    let sql = 'SELECT moderatorRoleId FROM guild_data WHERE guildId=?';
     let result = await module.exports.dbQueryOne(sql, [guild.id]);
     if (result && result.hasOwnProperty('moderatorRoleId') && result.moderatorRoleId) {
       modRole = guild.roles.resolve(result.moderatorRoleId);
@@ -32,7 +32,7 @@ module.exports = {
     // and update the database
     modRole = await module.exports.discoverModeratorRole(guild);
     if (modRole) {
-      await module.exports.dbExecute(`UPDATE guild_data SET moderatorRoleId=? WHERE guildId=?`,
+      await module.exports.dbExecute('UPDATE guild_data SET moderatorRoleId=? WHERE guildId=?',
         [modRole.id, guild.id]);
     }
 
@@ -64,50 +64,50 @@ module.exports = {
         name: config.moderatorRole,
         reason: `AginahBot requires a ${config.moderatorRole} role.`
       }).then(async (moderatorRole) => {
-        let sql = `INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)`;
+        let sql = 'INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)';
         await module.exports.dbExecute(sql, [guild.id, moderatorRole.id]);
       }).catch((err) => generalErrorHandler(err));
     }
 
-    let sql = `INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)`;
+    let sql = 'INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)';
     await module.exports.dbExecute(sql, [guild.id, moderatorRole.id]);
   },
 
   handleGuildDelete: async (client, guild) => {
-    const guildData = await module.exports.dbQueryOne(`SELECT id FROM guild_data WHERE guildId=?`, [guild.id])
+    const guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
     if (!guildData) {
-      throw new Error(`No guild data could be found when trying to delete data for guild:` +
+      throw new Error('No guild data could be found when trying to delete data for guild:' +
         `${guild.name} (${guild.id}).`);
     }
 
     // Delete dynamic game system data
-    const roomSystems = await module.exports.dbQueryAll(`SELECT id FROM room_systems WHERE guildDataId=?`,
+    const roomSystems = await module.exports.dbQueryAll('SELECT id FROM room_systems WHERE guildDataId=?',
       [guildData.id]);
     roomSystems.forEach((roomSystem) => {
-      module.exports.dbExecute(`DELETE FROM room_system_games WHERE roomSystemId=?`, [roomSystem.id]);
-      module.exports.dbExecute(`DELETE FROM room_systems WHERE id=?`, [roomSystem.id]);
+      module.exports.dbExecute('DELETE FROM room_system_games WHERE roomSystemId=?', [roomSystem.id]);
+      module.exports.dbExecute('DELETE FROM room_systems WHERE id=?', [roomSystem.id]);
     });
 
     // Delete role requestor system data
-    const roleSystem = await module.exports.dbQueryOne(`SELECT id FROM role_systems WHERE guildDataId=?`,
+    const roleSystem = await module.exports.dbQueryOne('SELECT id FROM role_systems WHERE guildDataId=?',
       [guildData.id]);
     if (roleSystem) {
-      const categories = await module.exports.dbQueryAll(`SELECT id FROM role_categories WHERE roleSystemId=?`,
+      const categories = await module.exports.dbQueryAll('SELECT id FROM role_categories WHERE roleSystemId=?',
         [roleSystem.id]);
       categories.forEach((category) => {
-        module.exports.dbExecute(`DELETE FROM roles WHERE categoryId=?`, [category.id]);
+        module.exports.dbExecute('DELETE FROM roles WHERE categoryId=?', [category.id]);
       });
-      await module.exports.dbExecute(`DELETE FROM role_categories WHERE roleSystemId=?`, [roleSystem.id]);
-      await module.exports.dbExecute(`DELETE FROM role_systems WHERE id=?`, [roleSystem.id]);
+      await module.exports.dbExecute('DELETE FROM role_categories WHERE roleSystemId=?', [roleSystem.id]);
+      await module.exports.dbExecute('DELETE FROM role_systems WHERE id=?', [roleSystem.id]);
     }
 
     // Delete guild data
-    await module.exports.dbExecute(`DELETE FROM guild_data WHERE id=?`, [guildData.id]);
+    await module.exports.dbExecute('DELETE FROM guild_data WHERE id=?', [guildData.id]);
   },
 
   verifyGuildSetups: async (client) => {
     client.guilds.cache.each(async (guild) => {
-      const row = await module.exports.dbQueryOne(`SELECT 1 FROM guild_data WHERE guildId=?`, [guild.id]);
+      const row = await module.exports.dbQueryOne('SELECT 1 FROM guild_data WHERE guildId=?', [guild.id]);
       if (!row) { await module.exports.handleGuildCreate(client, guild); }
     });
   },
@@ -177,24 +177,24 @@ module.exports = {
 
   parseArgs: (command) => {
     // Quotes with which arguments can be wrapped
-    const quotes = [`'`, `"`];
+    const quotes = ['\'', '"'];
 
     // State tracking
     let insideQuotes = false;
     let currentQuote = null;
 
     // Parsed arguments are stored here
-    const arguments = [];
+    const args = [];
 
     // Break the command into an array of characters
     const commandChars = command.trim().split('');
 
-    let thisArg = "";
+    let thisArg = '';
     commandChars.forEach((char) => {
       if (char === ' ' && !insideQuotes){
         // This is a whitespace character used to separate arguments
         if (thisArg) { arguments.push(thisArg); }
-        thisArg = "";
+        thisArg = '';
         return;
       }
 
@@ -204,7 +204,7 @@ module.exports = {
         // quote which started the string
         if (insideQuotes && currentQuote === char) {
           arguments.push(thisArg);
-          thisArg = "";
+          thisArg = '';
           insideQuotes = false;
           currentQuote = null;
           return;
@@ -228,9 +228,9 @@ module.exports = {
     });
 
     // Append current argument to array if it is populated
-    if (thisArg) {arguments.push(thisArg) }
+    if (thisArg) {args.push(thisArg); }
 
-    return arguments;
+    return args;
   },
 
   /**
@@ -267,7 +267,7 @@ module.exports = {
     if (timeString.search(iso8601Pattern) > -1) {
       const targetDate = new Date(timeString);
       if (isNaN(targetDate.getTime())) {
-        throw new TimeParserValidationError("The date you provided is invalid.");
+        throw new TimeParserValidationError('The date you provided is invalid.');
       }
 
       return targetDate;
@@ -275,7 +275,7 @@ module.exports = {
     } else if (timeString.search(mdyPattern) > -1) {
       const patternParts = timeString.match(mdyPattern);
       if (!moment.tz.zone(patternParts[6])) {
-        throw new TimeParserValidationError("I don't recognize that timezone!");
+        throw new TimeParserValidationError('I don\'t recognize that timezone!');
       }
 
       const zoneOffset = module.exports.getZoneOffset(patternParts[6]);
@@ -285,7 +285,7 @@ module.exports = {
         `${patternParts[4].toString().padStart(2, '0')}:${patternParts[5].toString().padStart(2, '0')}${sign}` +
         `${Math.abs(zoneOffset).toString().padStart(2, '0')}:00`);
       if (isNaN(targetDate.getTime())) {
-        throw new TimeParserValidationError("The date you provided is invalid.");
+        throw new TimeParserValidationError('The date you provided is invalid.');
       }
 
       return targetDate;
@@ -293,11 +293,11 @@ module.exports = {
     } else if (timeString.search(isoSimplePattern) > -1) {
       const patternParts = timeString.match(isoSimplePattern);
       if (!moment.tz.zone(patternParts[6])) {
-        throw new TimeParserValidationError("I don't recognize that timezone!");
+        throw new TimeParserValidationError('I don\'t recognize that timezone!');
       }
       const zoneOffset = module.exports.getZoneOffset(patternParts[6]);
       if (isNaN(zoneOffset)) {
-        throw new TimeParserValidationError("The timezone could not be used to create a valid Date object.");
+        throw new TimeParserValidationError('The timezone could not be used to create a valid Date object.');
       }
 
       const sign = zoneOffset < 1 ? '-' : '+';
@@ -308,19 +308,19 @@ module.exports = {
     } else if (timeString.search(specificHourPattern) > -1) {
       const patternParts = timeString.match(specificHourPattern);
       if (parseInt(patternParts[1], 10) > 24) {
-        throw new TimeParserValidationError("There are only 24 hours in a day!");
+        throw new TimeParserValidationError('There are only 24 hours in a day!');
       }
 
       if (parseInt(patternParts[2], 10) > 59) {
-        throw new TimeParserValidationError("There are only 60 minutes in an hour!");
+        throw new TimeParserValidationError('There are only 60 minutes in an hour!');
       }
 
       if (!moment.tz.zone(patternParts[3])) {
-        throw new TimeParserValidationError("I don't recognize that timezone!");
+        throw new TimeParserValidationError('I don\'t recognize that timezone!');
       }
       const zoneOffset = module.exports.getZoneOffset(patternParts[3]);
       if (isNaN(zoneOffset)) {
-        throw new TimeParserValidationError("The timezone could not be used to create a valid Date object.");
+        throw new TimeParserValidationError('The timezone could not be used to create a valid Date object.');
       }
 
       const targetDate = new Date();
@@ -337,7 +337,7 @@ module.exports = {
     } else if (timeString.search(nextHourPattern) > -1) {
       const patternParts = timeString.match(nextHourPattern);
       if (patternParts[1] > 59) {
-        throw new TimeParserValidationError("There are only sixty minutes in an hour!");
+        throw new TimeParserValidationError('There are only sixty minutes in an hour!');
       }
       const targetDate = new Date(`${currentDate.getUTCMonth() + 1}/${currentDate.getUTCDate()}` +
         `/${currentDate.getUTCFullYear()} ${currentDate.getUTCHours()}:${patternParts[1]} UTC`);
@@ -351,7 +351,7 @@ module.exports = {
     } else if (timeString.search(futureHourPattern) > -1) {
       const patternParts = timeString.match(futureHourPattern);
       if (patternParts[2] > 59) {
-        throw new TimeParserValidationError("There are only sixty minutes in an hour!");
+        throw new TimeParserValidationError('There are only sixty minutes in an hour!');
       }
 
       let targetDate = new Date(`${currentDate.getUTCMonth() + 1}/${currentDate.getUTCDate()}` +
