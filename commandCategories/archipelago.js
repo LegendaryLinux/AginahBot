@@ -97,7 +97,7 @@ module.exports = {
             description: 'Disassociate your discord user with a specified alias',
             longDescription: null,
             aliases: ['apua'],
-            usage: '`!aginah ap-unset-alias`',
+            usage: '`!aginah ap-unset-alias alias`',
             moderatorRequired: false,
             adminOnly: false,
             guildOnly: true,
@@ -113,6 +113,120 @@ module.exports = {
 
                 // Disassociate the user from the specified alias
                 message.client.tempData.apInterfaces.get(message.channel.id).unsetPlayer(args[0]);
+            },
+        },
+        {
+            name: 'ap-show-chat',
+            description: 'Show normal messages while connected to an AP game',
+            longDescription: null,
+            aliases: ['apsc'],
+            usage: '`!aginah ap-show-chat`',
+            moderatorRequired: false,
+            adminOnly: false,
+            guildOnly: true,
+            async execute(message) {
+                // Notify the user if there is no game being monitored in the current text channel
+                if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
+                    return message.channel.send('There is no Archipelago game being monitored in this channel.');
+                }
+
+                // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showChat = true;
+            },
+        },
+        {
+            name: 'ap-hide-chat',
+            description: 'Hide normal messages while connected to an AP game',
+            longDescription: null,
+            aliases: ['aphc'],
+            usage: '`!aginah ap-hide-chat`',
+            moderatorRequired: false,
+            adminOnly: false,
+            guildOnly: true,
+            async execute(message) {
+                // Notify the user if there is no game being monitored in the current text channel
+                if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
+                    return message.channel.send('There is no Archipelago game being monitored in this channel.');
+                }
+
+                // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showChat = false;
+            },
+        },
+        {
+            name: 'ap-show-hints',
+            description: 'Show hint messages while connected to an AP game',
+            longDescription: null,
+            aliases: ['apsh'],
+            usage: '`!aginah ap-show-hints`',
+            moderatorRequired: false,
+            adminOnly: false,
+            guildOnly: true,
+            async execute(message) {
+                // Notify the user if there is no game being monitored in the current text channel
+                if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
+                    return message.channel.send('There is no Archipelago game being monitored in this channel.');
+                }
+
+                // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showHints = true;
+            },
+        },
+        {
+            name: 'ap-hide-hints',
+            description: 'Hide hint messages while connected to an AP game',
+            longDescription: null,
+            aliases: ['aphh'],
+            usage: '`!aginah ap-hide-hints`',
+            moderatorRequired: false,
+            adminOnly: false,
+            guildOnly: true,
+            async execute(message) {
+                // Notify the user if there is no game being monitored in the current text channel
+                if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
+                    return message.channel.send('There is no Archipelago game being monitored in this channel.');
+                }
+
+                // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showHints = false;
+            },
+        },
+        {
+            name: 'ap-show-progression',
+            description: 'Show progression messages while connected to an AP game',
+            longDescription: null,
+            aliases: ['apsp'],
+            usage: '`!aginah ap-show-progression`',
+            moderatorRequired: false,
+            adminOnly: false,
+            guildOnly: true,
+            async execute(message) {
+                // Notify the user if there is no game being monitored in the current text channel
+                if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
+                    return message.channel.send('There is no Archipelago game being monitored in this channel.');
+                }
+
+                // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showProgression = true;
+            },
+        },
+        {
+            name: 'ap-hide-progression',
+            description: 'Hide progression messages while connected to an AP game',
+            longDescription: null,
+            aliases: ['aphp'],
+            usage: '`!aginah ap-hide-progression`',
+            moderatorRequired: false,
+            adminOnly: false,
+            guildOnly: true,
+            async execute(message) {
+                // Notify the user if there is no game being monitored in the current text channel
+                if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
+                    return message.channel.send('There is no Archipelago game being monitored in this channel.');
+                }
+
+                // Set the APInterface to show chat messages
+                message.client.tempData.apInterfaces.get(message.channel.id).showProgression = false;
             },
         },
     ],

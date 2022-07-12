@@ -4,7 +4,8 @@ const { v4: uuid } = require('uuid');
 
 class ArchipelagoInterface {
   version = { major: 0, minor: 3, build: 2 };
-  items_handling = ItemsHandlingFlags.REMOTE_ALL;
+  itemsHandling = ItemsHandlingFlags.REMOTE_ALL;
+
 
   /**
    * @param textChannel discord.js TextChannel
@@ -19,12 +20,17 @@ class ArchipelagoInterface {
     this.players = new Map();
     this.APClient = new ArchipelagoClient(host);
 
+    // Controls which messages should be printed to the channel
+    this.showHints = true;
+    this.showProgression = true;
+    this.showChat = true;
+
     this.APClient.connect({
       uuid: uuid(),
       game: gameName,
       name: slotName,
       version: this.version,
-      items_handling: this.items_handling,
+      items_handling: this.itemsHandling,
     }).then(() => {
       // Start handling queued messages
       this.queueTimeout = setTimeout(this.queueHandler, 5000);
@@ -49,14 +55,35 @@ class ArchipelagoInterface {
     let messages = [];
 
     for (let message of this.messageQueue) {
-      if (message.includes('[Hint]')) {
-        for (let alias of this.players.keys()) {
-          if (message.includes(alias)) {
-            message = message.replace(alias, this.players.get(alias));
+      switch(message.type) {
+        case 'hint':
+          // Ignore hint messages if they should not be displayed
+          if (!this.showHints) { continue; }
+
+          // Replace player names with Discord User objects
+          for (let alias of this.players.keys()) {
+            if (message.content.includes(alias)) {
+              message.content = message.content.replace(alias, this.players.get(alias));
+            }
           }
-        }
+          break;
+
+        case 'progression':
+          // Ignore progression messages if they should not be displayed
+          if (!this.showProgression) { continue; }
+          break;
+
+        case 'chat':
+          // Ignore chat messages if they should not be displayed
+          if (!this.showChat) { continue; }
+          break;
+
+        default:
+          console.warn(`Ignoring unknown message type: ${message.type}`);
+          break;
       }
-      messages.push(message);
+
+      messages.push(message.content);
     }
 
     // Clear the message queue
@@ -78,7 +105,10 @@ class ArchipelagoInterface {
    * @returns {Promise<void>}
    */
   printHandler = async (packet) => {
-    this.messageQueue.push(packet.text);
+    this.messageQueue.push({
+      type: packet.text.includes('[Hint]') ? 'hint' : 'chat',
+      content: packet.text,
+    });
   };
 
   /**
@@ -87,29 +117,32 @@ class ArchipelagoInterface {
    * @returns {Promise<void>}
    */
   printJSONHandler = async (packet) => {
-    let message = "";
+    let message = { type: 'chat', content: '', };
     packet.data.forEach((part) => {
       // Plain text parts do not have a "type" property
       if (!part.hasOwnProperty('type') && part.hasOwnProperty('text')) {
-        message += part.text;
+        message.content += part.text;
         return;
       }
 
       switch(part.type){
         case 'player_id':
-          message += '**'+this.APClient.players.alias(parseInt(part.text, 10))+'**';
+          message.content += '**'+this.APClient.players.alias(parseInt(part.text, 10))+'**';
           break;
 
         case 'item_id':
-          message += '**'+this.APClient.items.name(parseInt(part.text, 10))+'**';
+          message.content += '**'+this.APClient.items.name(parseInt(part.text, 10))+'**';
+
+          // Identify if a message contains a progression item
+          if (part?.flags === 0b001) { message.type = 'progression'; }
           break;
 
         case 'location_id':
-          message += '**'+this.APClient.locations.name(parseInt(part.text, 10))+'**';
+          message.content += '**'+this.APClient.locations.name(parseInt(part.text, 10))+'**';
           break;
 
         case 'color':
-          message += part.text;
+          message.content += part.text;
           break;
 
         default:
@@ -117,6 +150,10 @@ class ArchipelagoInterface {
           return;
       }
     });
+
+    // Identify hint messages
+    if (message.content.includes('[Hint]')) { message.type = 'hint'; }
+
     this.messageQueue.push(message);
   };
 
