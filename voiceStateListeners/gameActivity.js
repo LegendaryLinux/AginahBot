@@ -31,7 +31,7 @@ module.exports = async (client, oldState, newState) => {
       // If no moderator role can be found
       if (!moderatorRole) {
         await newState.member.send(`Uh, oh! It looks like \`${newState.guild.name}\` doesn't have a \`Moderator\` ` +
-          `role. Please tell an admin about this!`);
+          'role. Please tell an admin about this!');
         console.error(`No moderator role could be found for guild ${newState.guild.name} (${newState.guild.id})`);
         return;
       }
@@ -119,7 +119,7 @@ module.exports = async (client, oldState, newState) => {
              AND gd.guildId=?`;
     const roomSystemJoinGame = await dbQueryOne(sql, [newState.channel.id, newState.guild.id]);
     if (roomSystemJoinGame) {
-      sql = `SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?`;
+      sql = 'SELECT id, roleId FROM room_system_games WHERE roomSystemId=? AND voiceChannelId=?';
       const gameData = await dbQueryOne(sql, [roomSystemJoinGame.id, newState.channel.id]);
       // If the voice channel the user entered is not a game channel, do nothing
       if (!gameData) { return; }
@@ -129,7 +129,7 @@ module.exports = async (client, oldState, newState) => {
       newState.member.roles.add(role);
 
       // Add the user to the ready checks table
-      sql = `REPLACE INTO room_system_ready_checks (gameId, playerId, playerTag) VALUES (?,?,?)`;
+      sql = 'REPLACE INTO room_system_ready_checks (gameId, playerId, playerTag) VALUES (?,?,?)';
       await dbExecute(sql, [gameData.id, newState.member.id, newState.member.user.tag]);
     }
   }
@@ -157,10 +157,10 @@ module.exports = async (client, oldState, newState) => {
       await oldState.member.roles.remove(role);
 
       // Remove user from ready_checks table
-      sql = `SELECT id FROM room_system_games WHERE voiceChannelId=? AND roomSystemId=?`;
+      sql = 'SELECT id FROM room_system_games WHERE voiceChannelId=? AND roomSystemId=?';
       const game = await dbQueryOne(sql, [oldState.channel.id, roomSystemLeaveGame.id]);
 
-      sql = `DELETE FROM room_system_ready_checks WHERE gameId=? AND playerId=?`;
+      sql = 'DELETE FROM room_system_ready_checks WHERE gameId=? AND playerId=?';
       await dbExecute(sql, [game.id, oldState.member.id]);
 
       // If the voice channel is now empty, destroy the role and channels
@@ -175,7 +175,7 @@ module.exports = async (client, oldState, newState) => {
         await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
 
         // Delete the database entry for for this channel
-        await dbExecute(`DELETE FROM room_system_games WHERE id=?`, [channelData.id]);
+        await dbExecute('DELETE FROM room_system_games WHERE id=?', [channelData.id]);
       }
     }
   }
