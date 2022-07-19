@@ -193,7 +193,7 @@ module.exports = {
     commandChars.forEach((char) => {
       if (char === ' ' && !insideQuotes){
         // This is a whitespace character used to separate arguments
-        if (thisArg) { arguments.push(thisArg); }
+        if (thisArg) { args.push(thisArg); }
         thisArg = '';
         return;
       }
@@ -203,7 +203,7 @@ module.exports = {
         // If the cursor is currently inside a quoted string and has found a matching quote to the
         // quote which started the string
         if (insideQuotes && currentQuote === char) {
-          arguments.push(thisArg);
+          args.push(thisArg);
           thisArg = '';
           insideQuotes = false;
           currentQuote = null;
