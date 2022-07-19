@@ -248,7 +248,7 @@ module.exports = {
 
         // Set the APInterface to show chat messages
         message.client.tempData.apInterfaces.get(message.channel.id).showItems = false;
-        message.client.tempData.apInterfaces.get(message.channel.id).showPregression = false;
+        message.client.tempData.apInterfaces.get(message.channel.id).showProgression = false;
       },
     },
   ],
