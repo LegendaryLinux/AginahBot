@@ -14,7 +14,7 @@
     "form-data": "^3.0.1",
     "js-yaml": "^3.14.1",
     "memfs": "^3.4.7",
-    "moment-timezone": "^0.5.34",
+    "moment-timezone": "^0.5.35",
     "mysql2": "^2.3.3",
     "node-7z": "^2.1.2",
     "node-emoji": "^1.11.0",
