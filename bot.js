@@ -2,7 +2,7 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
-  verifyGuildSetups, cachePartial, parseArgs } = require('./lib');
+  verifyGuildSetups, cachePartial, parseArgs, updateScheduleBoards } = require('./lib');
 const fs = require('fs');
 
 // Catch all unhandled errors
@@ -163,6 +163,9 @@ client.on('error', async(error) => generalErrorHandler(error));
 client.once('ready', async() => {
   await verifyGuildSetups(client);
   console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
+
+  // Update all schedule boards every hour
+  setInterval(() => updateScheduleBoards(client), 3600000);
 });
 
 client.login(config.token);
