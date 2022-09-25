@@ -1,5 +1,6 @@
 const {generalErrorHandler} = require('../errorHandlers');
 const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
+const { ChannelType } = require('discord.js');
 
 const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
@@ -59,8 +60,9 @@ module.exports = {
         if (row.roleSystemId) {
           return message.channel.send('The role system has already been set up on your server.');
         }
-        message.guild.channels.create('role-request', {
-          type: 'GUILD_TEXT',
+        message.guild.channels.create({
+          name: 'role-request',
+          type: ChannelType.GuildText,
           topic: 'Request roles so that you may be pinged for various notifications.',
           reason: 'Role Request system created.',
           permissionOverwrites: [

@@ -1,5 +1,6 @@
 const { generalErrorHandler } = require('../errorHandlers');
 const { getModeratorRole, dbQueryOne, dbExecute } = require('../lib');
+const { ChannelType } = require('discord.js');
 
 const channelNames = [
   // Fruits and Vegetables
@@ -55,14 +56,16 @@ module.exports = async (client, oldState, newState) => {
       await newState.guild.roles.create({ name: channelName, mentionable: true }).then((role) => {
         Promise.all([
           // Voice channel
-          newState.guild.channels.create(channelName, {
-            type: 'GUILD_VOICE',
+          newState.guild.channels.create({
+            name: channelName,
+            type: ChannelType.GuildVoice,
             parent: roomSystemStartGame.channelCategoryId,
           }),
 
           // Text channel
-          newState.guild.channels.create(channelName, {
-            type: 'GUILD_TEXT',
+          newState.guild.channels.create({
+            name: channelName,
+            type: ChannelType.GuildText,
             parent: roomSystemStartGame.channelCategoryId,
             permissionOverwrites: [
               {

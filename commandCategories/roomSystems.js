@@ -1,4 +1,5 @@
 const { dbQueryOne, dbExecute } = require('../lib');
+const { ChannelType } = require('discord.js');
 
 const DEFAULT_ROLE_NAME = 'Dynamic Room Category';
 const VOICE_CHANNEL_NAME = 'Start Game';
@@ -19,9 +20,11 @@ module.exports = {
       async execute(message, args) {
         // Create the system
         const roleName = args[0] ? args[0] : DEFAULT_ROLE_NAME;
-        const category = await message.guild.channels.create(roleName, { type: 'GUILD_CATEGORY' });
-        const voiceChannel = await message.guild.channels.create(VOICE_CHANNEL_NAME, {
-          type: 'GUILD_VOICE', parent: category
+        const category = await message.guild.channels.create({ name: roleName, type: ChannelType.GuildCategory });
+        const voiceChannel = await message.guild.channels.create({
+          name: VOICE_CHANNEL_NAME,
+          type: ChannelType.GuildVoice,
+          parent: category
         });
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [message.guild.id]);
         let sql = 'INSERT INTO room_systems (guildDataId, channelCategoryId, newGameChannelId) VALUES (?, ?, ?)';

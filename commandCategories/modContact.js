@@ -1,5 +1,5 @@
 const { dbQueryOne, dbExecute } = require('../lib');
-const { MessageActionRow, MessageButton} = require('discord.js');
+const { MessageActionRow, MessageButton, ChannelType } = require('discord.js');
 
 module.exports = {
   category: 'Mod Contact',
@@ -25,8 +25,9 @@ module.exports = {
         }
 
         // Create a category to contain the report channels
-        const category = await message.guild.channels.create('Mod Contact', {
-          type: 'GUILD_CATEGORY',
+        const category = await message.guild.channels.create({
+          name: 'Mod Contact',
+          type: ChannelType.GuildCategory,
           permissionOverwrites: [
             {
               // @everyone may not send messages or add reactions
@@ -41,8 +42,9 @@ module.exports = {
           ],
         });
 
-        const channel = await message.guild.channels.create('mod-contact', {
-          type: 'GUILD_TEXT',
+        const channel = await message.guild.channels.create({
+          name: 'mod-contact',
+          type: ChannelType.GuildText,
           topic: 'Privately contact the moderator team.',
           parent: category.id,
           permissionOverwrites: [

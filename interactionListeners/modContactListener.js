@@ -1,4 +1,5 @@
 const { dbQueryOne, dbExecute, getModeratorRole } = require('../lib');
+const { ChannelType } = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
@@ -27,8 +28,9 @@ module.exports = async (client, interaction) => {
   if (!guildData) { throw new Error(`Unable to find moderator role for guild: ${interaction.guild.id}`); }
 
   // Create the channel for discussion
-  const channel = await interaction.message.channel.parent.createChannel(interaction.user.username, {
-    type: 'GUILD_TEXT',
+  const channel = await interaction.message.channel.parent.create({
+    name: interaction.user.username,
+    type: ChannelType.GuildText,
     topic: `This channel was created by ${interaction.user.username}#${interaction.user.discriminator}.`,
     permissionOverwrites: [
       {

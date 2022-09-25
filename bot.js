@@ -1,6 +1,6 @@
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
-const {generalErrorHandler} = require('./errorHandlers');
+const { generalErrorHandler } = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
   verifyGuildSetups, cachePartial, parseArgs, updateScheduleBoards } = require('./lib');
 const fs = require('fs');
