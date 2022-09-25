@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "production": "node bot.js",
-    "dev": "node bot.js dev"
+    "dev": "node --trace-warnings bot.js dev"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",

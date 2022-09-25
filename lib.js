@@ -4,6 +4,7 @@ const moment = require('moment-timezone');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { TimeParserValidationError } = require('./customErrors');
+const {dbExecute} = require('./lib');
 
 module.exports = {
   // Function which returns a promise which will resolve to true or false
@@ -13,7 +14,7 @@ module.exports = {
     resolve(moderatorRole.position <= guildMember.roles.highest.position);
   }),
 
-  verifyIsAdmin: (guildMember) => guildMember.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR),
+  verifyIsAdmin: (guildMember) => guildMember.permissions.has(Discord.PermissionFlagsBits.Administrator),
 
   getModeratorRole: (guild) => new Promise(async (resolve) => {
     let modRole = null;
@@ -365,6 +366,167 @@ module.exports = {
 
     } else {
       throw new TimeParserValidationError('Sorry, I don\'t understand that time.');
+    }
+  },
+
+  /**
+   *
+   * @param client {Discord.Client}
+   * @param guild {Discord.Guild}
+   * @returns {Promise<void>}
+   */
+  updateScheduleBoard: async (client, guild) => {
+    // Find all schedule boards
+    let sql = `SELECT sb.id, gd.id AS guildId, sb.channelId, sb.messageId
+               FROM schedule_boards sb
+               JOIN guild_data gd ON sb.guildDataId = gd.id
+               WHERE gd.guildId=?`;
+    const boards = await module.exports.dbQueryAll(sql, [guild.id]);
+
+    for (let board of boards) {
+      // Find board channel, clean database if channel has been deleted
+      const boardChannel = await guild.channels.resolve(board.channelId).fetch();
+      if (!boardChannel) {
+        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        continue;
+      }
+
+      // Find board message, clean database if message has been deleted
+      const boardMessage = await boardChannel.messages.resolve(board.messageId).fetch();
+      if (!boardMessage) {
+        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        continue;
+      }
+
+      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
+             FROM scheduled_events se
+             JOIN guild_data gd ON se.guildDataId = gd.id
+             WHERE gd.guildId=?
+                 AND se.timestamp > ?
+             ORDER BY se.timestamp`;
+      const events = await module.exports.dbQueryAll(sql, [guild.id, new Date().getTime()]);
+
+      // If there are no scheduled events for this guild, continue to the next schedule board
+      if (events.length === 0) {
+        return boardMessage.edit({ content: 'There are no upcoming events.', embeds: [] });
+      }
+
+      // Embeds which will be PUT to the schedule board message
+      const embeds = [];
+
+      for (let event of events) {
+        const eventChannel = guild.channels.resolve(event.channelId);
+        const eventMessage = await eventChannel.messages.fetch(event.messageId);
+
+        // Determine RSVP count
+        const rsvps = new Map();
+        for (let reaction of eventMessage.reactions.cache) {
+          const reactors = await reaction[1].users.fetch();
+          reactors.each((reactor) => {
+            if (reactor.bot) { return; }
+            if (rsvps.has(reactor.id)) { return; }
+            rsvps.set(reactor.id, reactor);
+          });
+        }
+
+        const embed = new Discord.EmbedBuilder()
+          .setTitle(`Upcoming Event on <t:${event.timestamp / 1000}:F>`)
+          .setColor('#6081cb')
+          .setDescription('**Click the title of this message to jump to the original.**')
+          .setURL(eventMessage.url)
+          .addFields(
+            { name: 'Scheduled by', value: `@${event.schedulingUserTag}` },
+            { name: 'Planning Channel', value: `#${eventChannel.name}` },
+            { name: 'Event Code', value: event.eventCode },
+            { name: 'Current RSVPs', value: rsvps.size.toString() },
+          );
+        embeds.push(embed);
+      }
+
+      // Update the schedule board
+      await boardMessage.edit({ content: '', embeds });
+    }
+  },
+
+  /**
+   * Update all schedule boards across all guilds
+   * @param client {Discord.Client}
+   */
+  updateScheduleBoards: async (client) => {
+    // Fetch guilds cache
+    await client.guilds.fetch();
+
+    // Find all schedule boards
+    let sql = `SELECT sb.id, gd.id AS guildId, sb.channelId, sb.messageId
+               FROM schedule_boards sb
+               JOIN guild_data gd ON sb.guildDataId = gd.id`;
+    const boards = await module.exports.dbQueryAll(sql);
+
+    for (let board of boards) {
+      // Fetch updated data for this guild
+      const guild = await client.guilds.resolve(board.guildId).fetch();
+
+      // Find board channel, clean database if channel has been deleted
+      const boardChannel = await guild.channels.resolve(board.channelId).fetch();
+      if (!boardChannel) {
+        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        continue;
+      }
+
+      // Find board message, clean database if message has been deleted
+      const boardMessage = await boardChannel.messages.resolve(board.messageId).fetch();
+      if (!boardMessage) {
+        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        continue;
+      }
+
+      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
+             FROM scheduled_events se
+             JOIN guild_data gd ON se.guildDataId = gd.id
+             WHERE gd.guildId=?
+                 AND se.timestamp > ?
+             ORDER BY se.timestamp`;
+      const events = await module.exports.dbQueryAll(sql, [guild.id, new Date().getTime()]);
+
+      // If there are no scheduled events for this guild, continue to the next schedule board
+      if (events.length === 0) {
+        return boardMessage.edit({ content: 'There are no upcoming events.', embeds: [] });
+      }
+
+      // Embeds which will be PUT to the schedule board message
+      const embeds = [];
+
+      for (let event of events) {
+        const eventChannel = guild.channels.resolve(event.channelId);
+        const eventMessage = eventChannel.messages.resolve(event.messageId);
+
+        // Determine RSVP count
+        const rsvps = new Map();
+        for (let reaction of eventMessage.reactions.cache) {
+          const reactors = await reaction[1].users.fetch();
+          reactors.each((reactor) => {
+            if (reactor.bot) { return; }
+            if (rsvps.has(reactor.id)) { return; }
+            rsvps.set(reactor.id, reactor);
+          });
+        }
+
+        const embed = new Discord.EmbedBuilder()
+          .setTitle(`Upcoming Event on <t:${event.timestamp / 1000}:F>`)
+          .setColor('#6081cb')
+          .setDescription('**Click the title of this message to jump to the original.**')
+          .setURL(eventMessage.url)
+          .addFields(
+            { name: 'Scheduled by', value: `@${event.schedulingUserTag}` },
+            { name: 'Planning Channel', value: `#${eventChannel.name}` },
+            { name: 'Event Code', value: event.eventCode },
+            { name: 'Current RSVPs', value: rsvps.size.toString() },
+          );
+        embeds.push(embed);
+      }
+
+      // Update the schedule board
+      await boardMessage.edit({ content: '', embeds });
     }
   },
 };

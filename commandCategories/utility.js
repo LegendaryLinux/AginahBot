@@ -1,15 +1,17 @@
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const { parseTimeString } = require('../lib');
 const { generalErrorHandler } = require('../errorHandlers');
 const tmp = require('tmp');
 const fs = require('fs');
 
 const sendTimestampMessage = async (message, targetDate) => {
-  const embed = new MessageEmbed()
+  const embed = new EmbedBuilder()
     .setTitle(`<t:${Math.floor(targetDate.getTime() / 1000)}:F>`)
     .setColor('#6081cb')
-    .addField('Javascript / Node.js Timestamp', targetDate.getTime().toString())
-    .addField('UNIX Timestamp', Math.floor(targetDate.getTime() / 1000).toString());
+    .addFields(
+      { name: 'Javascript / Node.js Timestamp', value: targetDate.getTime().toString() },
+      { name: 'UNIX Timestamp', value: Math.floor(targetDate.getTime() / 1000).toString() },
+    );
   return message.channel.send({ embeds: [embed] });
 };
 

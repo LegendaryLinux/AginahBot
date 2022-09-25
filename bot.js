@@ -1,4 +1,4 @@
-const { Client, Collection, Intents } = require('discord.js');
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const {generalErrorHandler} = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
@@ -10,8 +10,9 @@ process.on('uncaughtException', (err) => generalErrorHandler(err));
 
 const client = new Client({
   partials: [ 'GUILD_MEMBER', 'MESSAGE', 'REACTION' ],
-  intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MEMBERS ],
+  intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.MessageContent],
 });
 client.devMode = process.argv[2] && process.argv[2] === 'dev';
 client.commands = new Collection();
