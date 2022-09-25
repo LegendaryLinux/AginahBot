@@ -54,8 +54,8 @@ module.exports = async (client, message) => {
       }
 
       // Build the reminder message
-      let reminderMessage = `**${message.author.tag}** would like to remind the following people a game they ` +
-        `have RSVPed for is about to start in ${message.channel}:\n`;
+      let reminderMessage = `As per ${scheduleMessage.url},\n**${message.author.tag}** would like to remind the `+
+        `following people a game they have RSVPed for is about to start in ${message.channel}:\n`;
       for (let attendee of attendees.values()) {
         reminderMessage += `> ${attendee}\n`;
       }
