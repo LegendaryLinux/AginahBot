@@ -62,9 +62,9 @@ module.exports = {
             formData.append('race', race);
             const axiosOpts = { headers: formData.getHeaders() };
             axios.post(API_ENDPOINT, formData, axiosOpts)
-              .then((bResponse) => { // Berserker Response
+              .then((apResponse) => {
                 message.channel.send('Seed generation underway. When it\'s ready, you will be ' +
-                                    `able to download your patch file from:\n${bResponse.data.url}`);
+                                    `able to download your patch file from:\n${apResponse.data.url}`);
                 tempFile.removeCallback();
               }).catch((error) => {
                 message.channel.send('I couldn\'t generate that game, sorry.');

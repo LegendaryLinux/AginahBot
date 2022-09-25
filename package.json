@@ -10,22 +10,21 @@
     "7zip-bin": "^5.2.0",
     "archipelago.js": "^0.4.1",
     "axios": "^0.27.2",
-    "discord.js": "^13.8.1",
-    "form-data": "^3.0.1",
-    "js-yaml": "^3.14.1",
-    "memfs": "^3.4.7",
-    "moment-timezone": "^0.5.34",
+    "discord.js": "^14.5.0",
+    "form-data": "^4.0.0",
+    "moment-timezone": "^0.5.37",
     "mysql2": "^2.3.3",
-    "node-7z": "^2.1.2",
+    "node-7z": "^3.0.0",
     "node-emoji": "^1.11.0",
     "request": "^2.88.2",
     "tar": "^6.1.11",
     "tmp": "^0.2.1",
     "unrar": "^0.2.0",
     "unzipper": "^0.10.11",
-    "uuid": "^8.3.2"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "eslint": "^8.19.0"
+    "depcheck": "^1.4.3",
+    "eslint": "^8.24.0"
   }
 }
