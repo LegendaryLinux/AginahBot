@@ -1,5 +1,5 @@
 const { dbQueryOne, dbExecute, getModeratorRole } = require('../lib');
-const { ChannelType } = require('discord.js');
+const { ChannelType, PermissionsBitField } = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
@@ -36,22 +36,22 @@ module.exports = async (client, interaction) => {
       {
         // @everyone may not view this channel
         id: interaction.guild.id,
-        deny: [ 'VIEW_CHANNEL' ],
+        deny: [ PermissionsBitField.Flags.ViewChannel ],
       },
       {
         // Moderators may view this channel
         id: guildData.moderatorRoleId,
-        allow: [ 'VIEW_CHANNEL' ],
+        allow: [ PermissionsBitField.Flags.ViewChannel ],
       },
       {
         // The reporting user may view this channel
         id: interaction.user.id,
-        allow: [ 'VIEW_CHANNEL' ],
+        allow: [ PermissionsBitField.Flags.ViewChannel ],
       },
       {
         // @AginahBot may view this channel
         id: client.user.id,
-        allow: [ 'VIEW_CHANNEL' ],
+        allow: [ PermissionsBitField.Flags.ViewChannel ],
       }
     ],
   });

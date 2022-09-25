@@ -1,5 +1,5 @@
 const { dbQueryOne, dbExecute } = require('../lib');
-const { MessageActionRow, MessageButton, ChannelType } = require('discord.js');
+const { MessageActionRow, MessageButton, ChannelType, PermissionsBitField } = require('discord.js');
 
 module.exports = {
   category: 'Mod Contact',
@@ -32,12 +32,12 @@ module.exports = {
             {
               // @everyone may not send messages or add reactions
               id: message.guild.id,
-              deny: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ],
+              deny: [ PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.AddReactions ],
             },
             {
               // @AginahBot may post in this category
               id: message.client.user.id,
-              allow: [ 'SEND_MESSAGES' ],
+              allow: [ PermissionsBitField.Flags.SendMessages ],
             },
           ],
         });
@@ -51,12 +51,12 @@ module.exports = {
             {
               // @everyone may not send messages or add reactions
               id: message.guild.id,
-              deny: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ],
+              deny: [ PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.AddReactions ],
             },
             {
               // @AginahBot may post in this channel
               id: message.client.user.id,
-              allow: [ 'SEND_MESSAGES' ],
+              allow: [ PermissionsBitField.SendMessages ],
             },
           ],
         });

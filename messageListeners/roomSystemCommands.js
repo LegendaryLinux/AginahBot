@@ -1,4 +1,5 @@
 const { getModeratorRole, dbQueryOne, dbQueryAll, dbExecute, parseArgs } = require('../lib');
+const { PermissionsBitField } = require('discord.js');
 
 module.exports = async (client, message) => {
   if (!message.guild) { return; }
@@ -112,17 +113,17 @@ module.exports = async (client, message) => {
           {
             // @everyone may not join the voice channel
             id: message.guild.id,
-            deny: [ 'CONNECT' ],
+            deny: [ PermissionsBitField.Flags.Connect ],
           },
           {
             // Moderators should still have full access
             id: (await getModeratorRole(message.guild)).id,
-            allow: [ 'CONNECT' ],
+            allow: [ PermissionsBitField.Flags.Connect ],
           },
           {
             // @AginahBot should be able to connect
             id: client.user.id,
-            allow: [ 'CONNECT' ],
+            allow: [ PermissionsBitField.Flags.Connect ],
           }
         ]
       });

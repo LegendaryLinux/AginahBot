@@ -1,6 +1,6 @@
 const {generalErrorHandler} = require('../errorHandlers');
 const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { ChannelType } = require('discord.js');
+const { ChannelType, PermissionsBitField } = require('discord.js');
 
 const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
@@ -68,11 +68,11 @@ module.exports = {
           permissionOverwrites: [
             {
               id: message.client.user.id,
-              allow: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ],
+              allow: [ PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.AddReactions ],
             },
             {
               id: message.guild.roles.everyone.id,
-              deny: [ 'SEND_MESSAGES', 'ADD_REACTIONS' ]
+              deny: [ PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.AddReactions ],
             }
           ],
         }).then(async (channel) => {

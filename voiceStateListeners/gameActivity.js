@@ -1,6 +1,6 @@
 const { generalErrorHandler } = require('../errorHandlers');
 const { getModeratorRole, dbQueryOne, dbExecute } = require('../lib');
-const { ChannelType } = require('discord.js');
+const { ChannelType, PermissionsBitField } = require('discord.js');
 
 const channelNames = [
   // Fruits and Vegetables
@@ -71,22 +71,22 @@ module.exports = async (client, oldState, newState) => {
               {
                 // @everyone may not view the text channel
                 id: newState.guild.id,
-                deny: [ 'VIEW_CHANNEL' ],
+                deny: [ PermissionsBitField.Flags.ViewChannel ],
               },
               {
                 // Moderators should be able to view this channel
                 id: moderatorRole.id,
-                allow: [ 'VIEW_CHANNEL' ],
+                allow: [ PermissionsBitField.Flags.ViewChannel ],
               },
               {
                 // @AginahBot may view the text channel
                 id: client.user.id,
-                allow: [ 'VIEW_CHANNEL' ],
+                allow: [ PermissionsBitField.Flags.ViewChannel ],
               },
               {
                 // Role assignees may view the channel
                 id: role.id,
-                allow: [ 'VIEW_CHANNEL' ],
+                allow: [ PermissionsBitField.Flags.ViewChannel ],
               }
             ],
           })
