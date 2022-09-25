@@ -4,7 +4,6 @@ const moment = require('moment-timezone');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { TimeParserValidationError } = require('./customErrors');
-const {dbExecute} = require('./lib');
 
 module.exports = {
   // Function which returns a promise which will resolve to true or false
