@@ -26,5 +26,5 @@ client.login(config.token).then(async () => {
   }
 
   console.info('Done.');
-  return client.close();
+  client.destroy();
 });
