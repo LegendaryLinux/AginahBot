@@ -384,14 +384,14 @@ module.exports = {
 
     for (let board of boards) {
       // Find board channel, clean database if channel has been deleted
-      const boardChannel = await guild.channels.resolve(board.channelId).fetch();
+      const boardChannel = await guild.channels.fetch(board.channelId);
       if (!boardChannel) {
         await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
         continue;
       }
 
       // Find board message, clean database if message has been deleted
-      const boardMessage = await boardChannel.messages.resolve(board.messageId).fetch();
+      const boardMessage = await boardChannel.messages.fetch(board.messageId);
       if (!boardMessage) {
         await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
         continue;
@@ -414,7 +414,7 @@ module.exports = {
       const embeds = [];
 
       for (let event of events) {
-        const eventChannel = guild.channels.resolve(event.channelId);
+        const eventChannel = guild.channels.fetch(event.channelId);
         const eventMessage = await eventChannel.messages.fetch(event.messageId);
 
         // Determine RSVP count
@@ -466,7 +466,6 @@ module.exports = {
       const boardChannel = await guild.channels.fetch(board.channelId);
       if (!boardChannel) {
         await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
-        console.debug(`Skipping board channel ${board.channelId}.`);
         continue;
       }
 
@@ -494,8 +493,8 @@ module.exports = {
       const embeds = [];
 
       for (let event of events) {
-        const eventChannel = guild.channels.resolve(event.channelId);
-        const eventMessage = eventChannel.messages.resolve(event.messageId);
+        const eventChannel = await guild.channels.fetch(event.channelId);
+        const eventMessage = await eventChannel.messages.fetch(event.messageId);
 
         // Determine RSVP count
         const rsvps = new Map();
