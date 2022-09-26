@@ -22,15 +22,15 @@ module.exports = async (client, interaction) => {
     return interaction.update({});
   }
 
-  // Fetch the moderator role id
-  sql = 'SELECT moderatorRoleId FROM guild_data WHERE guildId=?';
-  let guildData = await dbQueryOne(sql, [interaction.guild.id]);
-  if (!guildData) { throw new Error(`Unable to find moderator role for guild: ${interaction.guild.id}`); }
+  // Fetch the moderator role
+  let moderatorRole = await getModeratorRole(interaction.guild);
+  if (!moderatorRole) { throw new Error(`Unable to find moderator role for guild: ${interaction.guild.id}`); }
 
   // Create the channel for discussion
-  const channel = await interaction.message.channel.parent.create({
+  const channel = await interaction.message.guild.channels.create({
     name: interaction.user.username,
     type: ChannelType.GuildText,
+    parent: interaction.message.channel.parent.id,
     topic: `This channel was created by ${interaction.user.username}#${interaction.user.discriminator}.`,
     permissionOverwrites: [
       {
@@ -40,7 +40,7 @@ module.exports = async (client, interaction) => {
       },
       {
         // Moderators may view this channel
-        id: guildData.moderatorRoleId,
+        id: moderatorRole.id,
         allow: [ PermissionsBitField.Flags.ViewChannel ],
       },
       {

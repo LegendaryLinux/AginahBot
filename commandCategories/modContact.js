@@ -1,5 +1,5 @@
 const { dbQueryOne, dbExecute } = require('../lib');
-const { MessageActionRow, MessageButton, ChannelType, PermissionsBitField } = require('discord.js');
+const { ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField, ActionRowBuilder } = require('discord.js');
 
 module.exports = {
   category: 'Mod Contact',
@@ -56,15 +56,15 @@ module.exports = {
             {
               // @AginahBot may post in this channel
               id: message.client.user.id,
-              allow: [ PermissionsBitField.SendMessages ],
+              allow: [ PermissionsBitField.Flags.SendMessages ],
             },
           ],
         });
 
-        const buttonRow = new MessageActionRow().addComponents(
-          new MessageButton()
+        const buttonRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
             .setLabel('Contact Moderators')
-            .setStyle('PRIMARY')
+            .setStyle(ButtonStyle.Primary)
             .setCustomId('mod-contact')
         );
 
@@ -107,8 +107,8 @@ module.exports = {
         await dbExecute('DELETE FROM mod_contact_channels WHERE modContactId=?', [ modContact.id ]);
 
         // Delete the guild category and channels
-        const category = message.guild.channels.resolve(modContact.categoryId);
-        await category.children.each(async (child) => await child.delete());
+        const category = await message.guild.channels.fetch(modContact.categoryId);
+        await category.children.cache.each(async (child) => await child.delete());
         await category.delete();
 
         return dbExecute('DELETE FROM mod_contact WHERE id=?', [ modContact.id ]);
