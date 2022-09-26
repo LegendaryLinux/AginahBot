@@ -24,4 +24,7 @@ client.login(config.token).then(async () => {
       await handleGuildDelete(client, { id: guild.guildId, name: 'Unknown' });
     }
   }
+
+  console.info('Done.');
+  return client.close();
 });
