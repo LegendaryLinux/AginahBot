@@ -1,4 +1,4 @@
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
@@ -11,7 +11,7 @@ process.on('uncaughtException', (err) => generalErrorHandler(err));
 process.on('unhandledRejection', (err) => generalErrorHandler(err));
 
 const client = new Client({
-  partials: [ 'GUILD_MEMBER', 'MESSAGE', 'REACTION' ],
+  partials: [ Partials.GuildMember, Partials.Message, Partials.Reaction ],
   intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent],
@@ -172,8 +172,8 @@ client.once('ready', async () => {
   catch (err) { console.error(err); }
 
   // Fetch all role system messages into the cache so the bot can handle their reactions
-  try { await cacheRoleSystem(client); }
-  catch (err) { console.error(err); }
+  // try { await cacheRoleSystem(client); }
+  // catch (err) { console.error(err); }
 
   // Update all schedule boards
   try { await updateScheduleBoards(client); }
