@@ -131,11 +131,15 @@ client.on('voiceStateUpdate', async(oldState, newState) => {
 
 // Run the reaction updates through the listeners
 client.on('messageReactionAdd', async(messageReaction, user) => {
+  console.log(messageReaction);
+
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true));
 });
 client.on('messageReactionRemove', async(messageReaction, user) => {
+  console.log(messageReaction);
+
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false));
