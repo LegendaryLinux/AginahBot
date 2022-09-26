@@ -101,7 +101,7 @@ module.exports = {
             }
 
             const embed = new Discord.EmbedBuilder()
-              .setTitle(`Upcoming Event on <t:${Math.floor(game.timestamp / 1000)}:F`)
+              .setTitle(`Upcoming Event on <t:${Math.floor(game.timestamp / 1000)}:F>`)
               .setColor('#6081cb')
               .setDescription('**Click the title of this message to jump to the original.**')
               .setURL(scheduleMessage.url)
