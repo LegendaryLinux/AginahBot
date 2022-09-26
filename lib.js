@@ -549,8 +549,8 @@ module.exports = {
 
     const guildData = await module.exports.dbQueryAll('SELECT guildId FROM guild_data');
     for (let guild of guildData) {
-      if (!currentGuilds.includes(guildData.guildId)) {
-        console.log(`This bot is not present in guild id ${guildData.guildId}`);
+      if (!currentGuilds.includes(guild.guildId)) {
+        console.log(`This bot is not present in guild id ${guild.guildId}`);
       }
     }
   },
