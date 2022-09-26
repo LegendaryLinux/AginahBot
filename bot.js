@@ -162,17 +162,30 @@ client.on('guildDelete', async(guild) => handleGuildDelete(client, guild));
 // Use the general error handler to handle unexpected errors
 client.on('error', async(error) => generalErrorHandler(error));
 
-client.once('ready', async() => {
-  await cleanGuildData(client);
+client.once('ready', async () => {
+  // Remove guild data for any guilds to bot is no longer a part of
+  // try{ await cleanGuildData(client); }
+  // catch (err) { console.error(err); }
 
-  await verifyGuildSetups(client);
-  console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
+  // Update data for each guild if necessary
+  try{ await verifyGuildSetups(client); }
+  catch (err) { console.error(err); }
 
   // Fetch all role system messages into the cache so the bot can handle their reactions
-  await cacheRoleSystem(client);
+  try { await cacheRoleSystem(client); }
+  catch (err) { console.error(err); }
 
-  // Update all schedule boards every hour
-  await updateScheduleBoards(client);
+  // Update all schedule boards
+  try { await updateScheduleBoards(client); }
+  catch (err) { console.error(err); }
+
+  // Login and initial setup successful
+  console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
+
+  // TODO: Delete me
+  setInterval(() => console.log('Hi'), 1000);
+
+  // Update schedule boards every hour
   setInterval(() => updateScheduleBoards(client), 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
 });
 
