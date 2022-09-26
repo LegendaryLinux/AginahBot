@@ -386,14 +386,14 @@ module.exports = {
       // Find board channel, clean database if channel has been deleted
       const boardChannel = await guild.channels.resolve(board.channelId).fetch();
       if (!boardChannel) {
-        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
         continue;
       }
 
       // Find board message, clean database if message has been deleted
       const boardMessage = await boardChannel.messages.resolve(board.messageId).fetch();
       if (!boardMessage) {
-        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
         continue;
       }
 
