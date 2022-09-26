@@ -452,9 +452,6 @@ module.exports = {
    * @param client {Discord.Client}
    */
   updateScheduleBoards: async (client) => {
-    // Fetch guilds cache
-    await client.guilds.fetch();
-
     // Find all schedule boards
     let sql = `SELECT sb.id, gd.guildId AS guildId, sb.channelId, sb.messageId
                FROM schedule_boards sb
@@ -469,6 +466,7 @@ module.exports = {
       const boardChannel = await guild.channels.fetch(board.channelId);
       if (!boardChannel) {
         await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        console.debug(`Skipping board channel ${board.channelId}.`);
         continue;
       }
 
