@@ -133,11 +133,17 @@ client.on('voiceStateUpdate', async(oldState, newState) => {
 
 // Run the reaction updates through the listeners
 client.on('messageReactionAdd', async(messageReaction, user) => {
+  // TODO: DELETE ME
+  console.log(messageReaction);
+
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true));
 });
 client.on('messageReactionRemove', async(messageReaction, user) => {
+  // TODO: DELETE ME
+  console.log(messageReaction);
+
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false));
@@ -182,11 +188,11 @@ client.once('ready', async () => {
   // Login and initial setup successful
   console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
 
-  // TODO: Delete me
-  setInterval(() => console.log('Hi'), 1000);
-
   // Update schedule boards every hour
-  setInterval(() => updateScheduleBoards(client), 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
+  setInterval(() => {
+    try { updateScheduleBoards(client); }
+    catch (err) { console.error(err); }
+  }, 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
 });
 
 client.login(config.token);
