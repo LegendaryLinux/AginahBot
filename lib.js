@@ -443,7 +443,7 @@ module.exports = {
       }
 
       // Update the schedule board
-      await boardMessage.edit({ content: '', embeds });
+      await boardMessage.edit({ content: '**Upcoming Events:**', embeds });
     }
   },
 
@@ -522,7 +522,7 @@ module.exports = {
       }
 
       // Update the schedule board
-      await boardMessage.edit({ content: '', embeds });
+      await boardMessage.edit({ content: '**Upcoming Events:**', embeds });
     }
   },
 };
