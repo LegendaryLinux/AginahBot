@@ -456,26 +456,26 @@ module.exports = {
     await client.guilds.fetch();
 
     // Find all schedule boards
-    let sql = `SELECT sb.id, gd.id AS guildId, sb.channelId, sb.messageId
+    let sql = `SELECT sb.id, gd.guildId AS guildId, sb.channelId, sb.messageId
                FROM schedule_boards sb
                JOIN guild_data gd ON sb.guildDataId = gd.id`;
     const boards = await module.exports.dbQueryAll(sql);
 
     for (let board of boards) {
       // Fetch updated data for this guild
-      const guild = await client.guilds.resolve(board.guildId).fetch();
+      const guild = await client.guilds.fetch(board.guildId);
 
       // Find board channel, clean database if channel has been deleted
-      const boardChannel = await guild.channels.resolve(board.channelId).fetch();
+      const boardChannel = await guild.channels.fetch(board.channelId);
       if (!boardChannel) {
-        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
         continue;
       }
 
       // Find board message, clean database if message has been deleted
-      const boardMessage = await boardChannel.messages.resolve(board.messageId).fetch();
+      const boardMessage = await boardChannel.messages.fetch(board.messageId);
       if (!boardMessage) {
-        await dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+        await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
         continue;
       }
 
@@ -526,6 +526,19 @@ module.exports = {
 
       // Update the schedule board
       await boardMessage.edit({ content: '', embeds });
+    }
+  },
+
+  cacheRoleSystem: async (client) => {
+    const sql = `SELECT gd.guildId, rs.roleRequestChannelId, rc.messageId
+                 FROM role_categories rc
+                 JOIN role_systems rs ON rc.roleSystemId = rs.id
+                 JOIN guild_data gd ON rs.guildDataId = gd.id`;
+    const messages = await module.exports.dbQueryAll(sql, []);
+    for (let message of messages) {
+      const guild = await client.guilds.fetch(message.guildId);
+      const channel = await guild.channels.fetch(message.roleRequestChannelId);
+      await channel.messages.fetch(message.messageId);
     }
   },
 };

@@ -2,11 +2,12 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
-  verifyGuildSetups, cachePartial, parseArgs, updateScheduleBoards } = require('./lib');
+  verifyGuildSetups, cachePartial, parseArgs, updateScheduleBoards, cacheRoleSystem } = require('./lib');
 const fs = require('fs');
 
 // Catch all unhandled errors
 process.on('uncaughtException', (err) => generalErrorHandler(err));
+process.on('unhandledRejection', (err) => generalErrorHandler(err));
 
 const client = new Client({
   partials: [ 'GUILD_MEMBER', 'MESSAGE', 'REACTION' ],
@@ -131,15 +132,11 @@ client.on('voiceStateUpdate', async(oldState, newState) => {
 
 // Run the reaction updates through the listeners
 client.on('messageReactionAdd', async(messageReaction, user) => {
-  console.log(messageReaction);
-
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true));
 });
 client.on('messageReactionRemove', async(messageReaction, user) => {
-  console.log(messageReaction);
-
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false));
@@ -168,8 +165,12 @@ client.once('ready', async() => {
   await verifyGuildSetups(client);
   console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
 
+  // Fetch all role system messages into the cache so the bot can handle their reactions
+  await cacheRoleSystem(client);
+
   // Update all schedule boards every hour
-  setInterval(() => updateScheduleBoards(client), 3600000);
+  await updateScheduleBoards(client);
+  setInterval(() => updateScheduleBoards(client), 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
 });
 
 client.login(config.token);
