@@ -536,6 +536,8 @@ module.exports = {
                  JOIN guild_data gd ON rs.guildDataId = gd.id`;
     const messages = await module.exports.dbQueryAll(sql, []);
     for (let message of messages) {
+      // TODO: DELETE ME
+      console.log(message.guildId);
       const guild = await client.guilds.fetch(message.guildId);
       const channel = await guild.channels.fetch(message.roleRequestChannelId);
       await channel.messages.fetch(message.messageId);

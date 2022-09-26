@@ -171,6 +171,7 @@ client.once('ready', async() => {
   // Update all schedule boards every hour
   await updateScheduleBoards(client);
 
+  // TODO: DELETE ME
   console.log('Hi');
 
   setInterval(() => updateScheduleBoards(client), 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
