@@ -2,7 +2,8 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
-  verifyGuildSetups, cachePartial, parseArgs, updateScheduleBoards, cacheRoleSystem } = require('./lib');
+  verifyGuildSetups, cachePartial, parseArgs, updateScheduleBoards, cacheRoleSystem,
+  cleanGuildData } = require('./lib');
 const fs = require('fs');
 
 // Catch all unhandled errors
@@ -162,6 +163,8 @@ client.on('guildDelete', async(guild) => handleGuildDelete(client, guild));
 client.on('error', async(error) => generalErrorHandler(error));
 
 client.once('ready', async() => {
+  await cleanGuildData();
+
   await verifyGuildSetups(client);
   console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
 
@@ -170,10 +173,6 @@ client.once('ready', async() => {
 
   // Update all schedule boards every hour
   await updateScheduleBoards(client);
-
-  // TODO: DELETE ME
-  console.log('Hi');
-
   setInterval(() => updateScheduleBoards(client), 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
 });
 
