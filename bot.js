@@ -163,7 +163,7 @@ client.on('guildDelete', async(guild) => handleGuildDelete(client, guild));
 client.on('error', async(error) => generalErrorHandler(error));
 
 client.once('ready', async() => {
-  await cleanGuildData();
+  await cleanGuildData(client);
 
   await verifyGuildSetups(client);
   console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
