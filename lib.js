@@ -528,32 +528,4 @@ module.exports = {
       await boardMessage.edit({ content: '', embeds });
     }
   },
-
-  cacheRoleSystem: async (client) => {
-    const sql = `SELECT gd.guildId, rs.roleRequestChannelId, rc.messageId
-                 FROM role_categories rc
-                 JOIN role_systems rs ON rc.roleSystemId = rs.id
-                 JOIN guild_data gd ON rs.guildDataId = gd.id`;
-    const messages = await module.exports.dbQueryAll(sql, []);
-    for (let message of messages) {
-      const guild = await client.guilds.fetch(message.guildId);
-      const channel = await guild.channels.fetch(message.roleRequestChannelId);
-      await channel.messages.fetch(message.messageId);
-    }
-  },
-
-  cleanGuildData: async (client) => {
-    // Get a current list of all guilds the bot is present in
-    const currentGuilds = [];
-    client.guilds.cache.each((guild) => currentGuilds.push(guild.id));
-
-    // Get a list of all the guilds the bot has guildData for
-    const guildData = await module.exports.dbQueryAll('SELECT guildId FROM guild_data');
-    for (let guild of guildData) {
-      // If the bot is no longer present in a guild it has data for, delete the data for that guild
-      if (!currentGuilds.includes(guild.guildId)) {
-        await module.exports.handleGuildDelete(client, { id: guild.guildId, name: 'Unknown' });
-      }
-    }
-  },
 };

@@ -1,9 +1,8 @@
 const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
-const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete,
-  verifyGuildSetups, cachePartial, parseArgs, updateScheduleBoards, cacheRoleSystem,
-  cleanGuildData } = require('./lib');
+const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete, verifyGuildSetups,
+  cachePartial, parseArgs, updateScheduleBoards } = require('./lib');
 const fs = require('fs');
 
 // Catch all unhandled errors
@@ -133,17 +132,11 @@ client.on('voiceStateUpdate', async(oldState, newState) => {
 
 // Run the reaction updates through the listeners
 client.on('messageReactionAdd', async(messageReaction, user) => {
-  // TODO: DELETE ME
-  console.log(messageReaction);
-
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true));
 });
 client.on('messageReactionRemove', async(messageReaction, user) => {
-  // TODO: DELETE ME
-  console.log(messageReaction);
-
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false));
@@ -169,24 +162,16 @@ client.on('guildDelete', async(guild) => handleGuildDelete(client, guild));
 client.on('error', async(error) => generalErrorHandler(error));
 
 client.once('ready', async () => {
-  // Remove guild data for any guilds to bot is no longer a part of
-  // try{ await cleanGuildData(client); }
-  // catch (err) { console.error(err); }
-
   // Update data for each guild if necessary
   try{ await verifyGuildSetups(client); }
   catch (err) { console.error(err); }
-
-  // Fetch all role system messages into the cache so the bot can handle their reactions
-  // try { await cacheRoleSystem(client); }
-  // catch (err) { console.error(err); }
 
   // Update all schedule boards
   try { await updateScheduleBoards(client); }
   catch (err) { console.error(err); }
 
   // Login and initial setup successful
-  console.log(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
+  console.info(`Connected to Discord. Active in ${client.guilds.cache.size} guilds.`);
 
   // Update schedule boards every hour
   setInterval(() => {
