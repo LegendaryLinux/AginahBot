@@ -414,7 +414,7 @@ module.exports = {
       const embeds = [];
 
       for (let event of events) {
-        const eventChannel = guild.channels.fetch(event.channelId);
+        const eventChannel = await guild.channels.fetch(event.channelId);
         const eventMessage = await eventChannel.messages.fetch(event.messageId);
 
         // Determine RSVP count
