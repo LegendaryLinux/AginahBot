@@ -1,5 +1,5 @@
 const { getModeratorRole, dbQueryOne, dbQueryAll, dbExecute, parseArgs } = require('../lib');
-const { PermissionsBitField } = require('discord.js');
+const { PermissionsBitField, EmbedBuilder } = require('discord.js');
 
 module.exports = async (client, message) => {
   if (!message.guild) { return; }
@@ -19,12 +19,15 @@ module.exports = async (client, message) => {
   const roomSystem = await dbQueryOne(sql, [message.author.id, message.channel.id, message.guild.id]);
   if (!roomSystem) { return; }
 
+  // Fetch room system voice channel
+  const voiceChannel = await message.guild.channels.fetch(roomSystem.voiceChannelId);
+
   switch(command[0]) {
     // Player wants to alert players a game is about to start
     case '.ping':
       if (!command[1]) { return message.channel.send('You must provide a room code to ping players.'); }
 
-      sql = `SELECT se.messageId, se.channelId
+      sql = `SELECT se.messageId, se.channelId, se.schedulingUserTag
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE se.eventCode=?
@@ -54,15 +57,25 @@ module.exports = async (client, message) => {
         return message.channel.send('No RSVPs exist for this game, so no reminder message was sent.');
       }
 
-      // Build the reminder message
-      let reminderMessage = `As per <${scheduleMessage.url}>,\n**${message.author.tag}** would like to remind the `+
-        `following people a game they have RSVPed for is about to start in ${message.channel}:\n`;
+      let attendeeString = '';
       for (let attendee of attendees.values()) {
-        reminderMessage += `> ${attendee}\n`;
+        attendeeString += `${attendee} `;
       }
 
+      // Build the reminder message
+      const embed = new EmbedBuilder()
+        .setTitle(`An event is about to begin in #${message.channel.name}!`)
+        .setColor('#6081cb')
+        .addFields([
+          { name: 'Original Post', value: `[Jump to Schedule Message](${scheduleMessage.url})` },
+          { name: 'Join now!', value: `[Join Voice Channel](${voiceChannel.url})` },
+          { name: 'Organizer', value: schedule.schedulingUserTag },
+          { name: 'RSVPs' , value: attendeeString.trim() },
+          { name: 'Who sent this ping?', value: message.author.tag },
+        ]);
+
       // Send the reminder to the channel the event was originally scheduled in
-      message.guild.channels.resolve(schedule.channelId).send(reminderMessage);
+      message.guild.channels.resolve(schedule.channelId).send({ embeds: [embed] });
       return message.channel.send('Reminder sent. Remember, with great power comes great responsibility.');
 
     // Player has indicated they are ready to begin
@@ -108,7 +121,7 @@ module.exports = async (client, message) => {
 
     // Lock a dynamic voice channel, preventing anyone except moderators from joining
     case '.lock':
-      return await message.guild.channels.resolve(roomSystem.voiceChannelId).edit({
+      return voiceChannel.edit({
         permissionOverwrites: [
           {
             // @everyone may not join the voice channel
@@ -130,14 +143,10 @@ module.exports = async (client, message) => {
 
     // Reopen a dynamic voice channel, allowing anyone to join
     case '.unlock':
-      return await message.guild.channels.resolve(roomSystem.voiceChannelId).edit({
-        permissionOverwrites: [],
-      });
+      return voiceChannel.edit({ permissionOverwrites: [], });
 
     case '.close':
       if (!command[1]) { return message.channel.send('You must provide a room code to close the channel.'); }
-
-      let voiceChannel = message.guild.channels.resolve(roomSystem.voiceChannelId);
 
       // Do not re-close an already closed channel
       if (voiceChannel.name.search(/ \(Closed\)$/g) > -1) { return; }
