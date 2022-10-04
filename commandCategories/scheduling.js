@@ -77,7 +77,45 @@ module.exports = {
       adminOnly: false,
       async execute(message, args) {
         if (args.length === 0) {
-          let sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
+          // Check if the schedule boards feature is enabled
+          let sql = `SELECT sb.channelId, sb.messageId
+                     FROM schedule_boards sb
+                     JOIN guild_data gd ON sb.guildDataId=gd.id
+                     WHERE gd.guildId=?`;
+          const boards = await dbQueryAll(sql, [message.guild.id]);
+          if (boards.length > 0) {
+            // Fetch channel and message of schedule boards in this guild
+            const guildBoards = [];
+            for (let board of boards) {
+              const channel = await message.guild.channels.fetch(board.channelId);
+              if (!channel) { continue; }
+              const thisMsg = await channel.messages.fetch(board.messageId);
+              if (!thisMsg) { continue; }
+              guildBoards.push({ channel, message: thisMsg });
+            }
+
+            // Create an embed and populate its fields with schedule boards
+            if (guildBoards.length > 0) {
+              const boardFields = [];
+              for (let board of guildBoards) {
+                boardFields.push({
+                  name: `Pinned in #${board.channel.name}`,
+                  value: `[Link to Schedule Board](${board.message.url})`,
+                });
+              }
+
+              // Send a message alerting the user of the available schedule boards
+              const embed = new Discord.EmbedBuilder()
+                .setTitle('This server has schedule boards enabled!')
+                .setColor('#6081cb')
+                .setDescription('Schedule boards track all upcoming events, and update automatically.')
+                .addFields(boardFields);
+              return message.channel.send({ embeds: [embed] });
+            }
+          }
+
+          // Send individual messages for each upcoming event
+          sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
                      FROM scheduled_events se
                      JOIN guild_data gd ON se.guildDataId = gd.id
                      WHERE gd.guildId=?
