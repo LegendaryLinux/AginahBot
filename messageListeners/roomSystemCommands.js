@@ -70,12 +70,14 @@ module.exports = async (client, message) => {
           { name: 'Original Post', value: `[Jump to Schedule Message](${scheduleMessage.url})` },
           { name: 'Join now!', value: `[Join Voice Channel](${voiceChannel.url})` },
           { name: 'Organizer', value: schedule.schedulingUserTag },
-          { name: 'RSVPs' , value: attendeeString.trim() },
           { name: 'Who sent this ping?', value: message.author.tag },
         ]);
 
       // Send the reminder to the channel the event was originally scheduled in
-      message.guild.channels.resolve(schedule.channelId).send({ embeds: [embed] });
+      message.guild.channels.resolve(schedule.channelId).send({
+        content: `Attention RSVPs: ${attendeeString}`,
+        embeds: [embed]
+      });
       return message.channel.send('Reminder sent. Remember, with great power comes great responsibility.');
 
     // Player has indicated they are ready to begin
