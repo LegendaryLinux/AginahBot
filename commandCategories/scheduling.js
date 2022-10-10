@@ -99,7 +99,7 @@ module.exports = {
               const boardFields = [];
               for (let board of guildBoards) {
                 boardFields.push({
-                  name: `Pinned in #${board.channel.name}`,
+                  name: `${board.pinned ? 'Pinned' : 'Located'} in #${board.channel.name}`,
                   value: `[Link to Schedule Board](${board.message.url})`,
                 });
               }
