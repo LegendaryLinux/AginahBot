@@ -452,9 +452,6 @@ module.exports = {
    * @param client {Discord.Client}
    */
   updateScheduleBoards: async (client) => {
-    // Clean expired events from database
-    await module.exports.dbExecute('DELETE FROM scheduled_events WHERE (timestamp / 1000) < UNIX_TIMESTAMP()');
-
     // Find all schedule boards
     let sql = `SELECT sb.id, gd.guildId AS guildId, sb.channelId, sb.messageId
                FROM schedule_boards sb
