@@ -17,8 +17,23 @@ client.login(config.token).then(async () => {
              JOIN guild_data gd ON rs.guildDataId = gd.id`;
   const games = await dbQueryAll(sql, []);
   for (let game of games) {
+
     try{
       // Check that the bot is a member of the guild, and that the game's channels and role exist
+      await client.guilds.fetch(game.guildId);
+    } catch(e) {
+      if (e.status && e.status === 404) {
+        console.log(`Bot does not appear to be a member of guild with id ${game.guildId}. Removing DB entries.`);
+        await dbExecute('DELETE FROM room_system_games WHERE id=?', [game.gameId]);
+        await dbExecute('DELETE FROM room_systems WHERE id=?', [game.roomSystemId]);
+        continue;
+      }
+      // Print the error to the console
+      console.error(e);
+      continue;
+    }
+
+    try {
       const guild = await client.guilds.fetch(game.guildId);
       await guild.channels.fetch(game.voiceChannelId);
       await guild.channels.fetch(game.textChannelId);
@@ -26,7 +41,7 @@ client.login(config.token).then(async () => {
     } catch(e) {
       if (e.status && e.status === 404) {
         console.log(`Room system game with id ${game.gameId} appears invalid. Removing DB entries.`);
-        await cleanRoomSystem(game);
+        await dbExecute('DELETE FROM room_system_games WHERE id=?', [game.gameId]);
         continue;
       }
       // Print the error to the console
@@ -38,8 +53,3 @@ client.login(config.token).then(async () => {
   console.log('Done.');
   client.destroy();
 });
-
-const cleanRoomSystem = async (game) => {
-  await dbExecute('DELETE FROM room_system_games WHERE id=?', [game.gameId]);
-  await dbExecute('DELETE FROM room_systems WHERE id=?', [game.roomSystemId]);
-};
