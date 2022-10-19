@@ -10,9 +10,9 @@
     "7zip-bin": "^5.2.0",
     "archipelago.js": "^0.4.1",
     "axios": "^0.27.2",
-    "discord.js": "^14.5.0",
+    "discord.js": "^14.6.0",
     "form-data": "^4.0.0",
-    "moment-timezone": "^0.5.37",
+    "moment-timezone": "^0.5.38",
     "mysql2": "^2.3.3",
     "node-7z": "^3.0.0",
     "node-emoji": "^1.11.0",
@@ -25,6 +25,6 @@
   },
   "devDependencies": {
     "depcheck": "^1.4.3",
-    "eslint": "^8.24.0"
+    "eslint": "^8.25.0"
   }
 }
