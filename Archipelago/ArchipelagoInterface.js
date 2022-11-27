@@ -3,7 +3,7 @@ const { User } = require('discord.js');
 const { v4: uuid } = require('uuid');
 
 class ArchipelagoInterface {
-  version = { major: 0, minor: 3, build: 2 };
+  version = { major: 0, minor: 3, build: 6 };
   itemsHandling = ItemsHandlingFlags.REMOTE_ALL;
 
 
