@@ -39,7 +39,7 @@ module.exports = {
 
             // Automatically disconnect and destroy this interface after six hours
             return setTimeout(() => {
-              if (message.channel.template.apInterfaces.has(message.channel.id)) {
+              if (message.client.tempData.apInterfaces.has(message.channel.id)) {
                 message.client.tempData.apInterfaces.get(message.channel.id).disconnect();
                 message.client.tempData.apInterfaces.delete(message.channel.id);
               }
