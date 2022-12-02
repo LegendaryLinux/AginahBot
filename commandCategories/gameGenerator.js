@@ -68,7 +68,7 @@ module.exports = {
                 tempFile.removeCallback();
               }).catch((error) => {
                 message.channel.send('I couldn\'t generate that game, sorry.');
-                if(error.isAxiosError && error.response.data){
+                if(error.isAxiosError && error.response && error.response.data){
                   console.error(`Unable to generate game on ${API_ENDPOINT}. The following ` +
                                       'data was returned from the endpoint:');
                   return console.error(error.response.data);
