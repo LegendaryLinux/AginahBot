@@ -52,6 +52,8 @@ const sendScheduleMessage = async (message, targetDate) => {
   }).catch((error) => generalErrorHandler(error));
 };
 
+// TODO: Convert to slash commands
+
 module.exports = {
   category: 'Event Scheduling',
   commands: [

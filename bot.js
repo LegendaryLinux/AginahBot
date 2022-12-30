@@ -28,6 +28,7 @@ client.tempData = {
   apInterfaces: new Map(),
 };
 
+// TODO: Convert to slash command handling
 // Load command category files
 fs.readdirSync('./commandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {
   const commandCategory = require(`./commandCategories/${categoryFile}`);

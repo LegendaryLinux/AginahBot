@@ -3,6 +3,8 @@ const { verifyModeratorRole, verifyIsAdmin } = require('../lib');
 const tmp = require('tmp');
 const fs = require('fs');
 
+// TODO: Convert to slash commands. Possibly delete this file altogether.
+
 module.exports = {
   category: 'Help',
   commands: [

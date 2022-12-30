@@ -6,6 +6,8 @@ const fs = require('fs');
 
 const API_ENDPOINT = 'https://archipelago.gg/api/generate';
 
+// TODO: Convert to slash commands
+
 module.exports = {
   category: 'Game Generator',
   commands: [

@@ -36,6 +36,8 @@ const updateCategoryMessage = async (client, guild, messageId) => {
       .then().catch((err) => generalErrorHandler(err)));
 };
 
+// TODO: Convert to slash commands
+
 module.exports = {
   category: 'Role Requestor',
   commands: [

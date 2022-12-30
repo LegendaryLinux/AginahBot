@@ -15,6 +15,8 @@ const sendTimestampMessage = async (message, targetDate) => {
   return message.channel.send({ embeds: [embed] });
 };
 
+// TODO: Convert to slash commands
+
 module.exports = {
   category: 'Utility Commands',
   commands: [

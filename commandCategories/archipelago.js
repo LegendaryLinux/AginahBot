@@ -1,30 +1,43 @@
 const ArchipelagoInterface = require('../Archipelago/ArchipelagoInterface');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   category: 'Archipelago',
   commands: [
     {
-      name: 'ap-connect',
-      description: 'Begin monitoring an Archipelago game in the current text channel',
-      longDescription: null,
-      aliases: ['apc'],
-      usage: '`!aginah ap-connect server:port gameName slotName`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        if (args.length < 3) {
-          return message.channel.send('Invalid arguments passed. Syntax:' +
-                      '```!aginah apc server:port gameName slotName```');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apConnect')
+        .setDescription('Begin monitoring an Archipelago game in the current text channel')
+        .setDMPermission(false)
+        .addStringOption((opt) => opt
+          .setName('serverAddress')
+          .setDescription('Server address and port (ex. archipelago.gg:12345) of the Archipelago server to connect to')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('gameName')
+          .setDescription('Name of the game to connect as a client of')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('slotName')
+          .setDescription('`name` field in your settings file')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('password')
+          .setDescription('Optional password required to connect to the server')
+          .setRequired(false)),
+      async execute(interaction) {
+        const serverAddress = interaction.options.getString('serverAddress');
+        const gameName = interaction.options.getString('gameName');
+        const slotName = interaction.options.getString('slowName');
+        const password = interaction.options.getString('password') ?? null;
 
-        if (message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('An Archipelago game is already being monitored in this channel ' +
+        if (interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('An Archipelago game is already being monitored in this channel ' +
                       'and must be disconnected before a new game can be monitored.');
         }
 
         // Establish a connection to the Archipelago game
-        const APInterface = new ArchipelagoInterface(message.channel, args[0], args[1], args[2]);
+        const APInterface = new ArchipelagoInterface(interaction.channel, serverAddress, gameName, slotName, password);
 
         // Check if the connection was successful every half second for ten seconds
         for (let i=0; i<20; ++i){
@@ -32,16 +45,19 @@ module.exports = {
           await new Promise((resolve) => (setTimeout(resolve, 500)));
 
           // If the client fails to connect, its status will eventually read disconnected
-          if (APInterface.APClient.status === 'Disconnected') { return; }
+          if (APInterface.APClient.status === 'Disconnected') {
+            return interaction.reply(`Unable to connect to AP server at ${serverAddress}.`);
+          }
 
           if (APInterface.APClient.status === 'Connected') {
-            message.client.tempData.apInterfaces.set(message.channel.id, APInterface);
+            interaction.client.tempData.apInterfaces.set(interaction.channel.id, APInterface);
+            await interaction.reply(`Connected to ${serverAddress} using game ${gameName} with slot ${slotName}.`);
 
             // Automatically disconnect and destroy this interface after six hours
             return setTimeout(() => {
-              if (message.client.tempData.apInterfaces.has(message.channel.id)) {
-                message.client.tempData.apInterfaces.get(message.channel.id).disconnect();
-                message.client.tempData.apInterfaces.delete(message.channel.id);
+              if (interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+                interaction.client.tempData.apInterfaces.get(interaction.channel.id).disconnect();
+                interaction.client.tempData.apInterfaces.delete(interaction.channel.id);
               }
             }, 21600000);
           }
@@ -49,206 +65,179 @@ module.exports = {
       },
     },
     {
-      name: 'ap-disconnect',
-      description: 'Stop monitoring an Archipelago game in the current text channel',
-      longDescription: null,
-      aliases: ['apd'],
-      usage: '`!aginah ap-disconnect`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apDisconnect')
+        .setDescription('Stop monitoring an Archipelago game in the current text channel')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Disconnect the ArchipelagoInterface from the game and destroy the object in tempData
-        message.client.tempData.apInterfaces.get(message.channel.id).disconnect();
-        message.client.tempData.apInterfaces.delete(message.channel.id);
-        return message.channel.send('Disconnected from Archipelago game.');
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).disconnect();
+        interaction.client.tempData.apInterfaces.delete(interaction.channel.id);
+        return interaction.reply('Disconnected from Archipelago game.');
       },
     },
     {
-      name: 'ap-set-alias',
-      description: 'Associate your discord user with a specified alias',
-      longDescription: null,
-      aliases: ['apsa'],
-      usage: '`!aginah ap-set-alias alias`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apSetAlias')
+        .setDescription('Associate your discord user with a specified alias')
+        .addStringOption((opt) => opt
+          .setName('alias')
+          .setDescription('Your new alias')
+          .setRequired(true))
+        .setDMPermission(false),
+      async execute(interaction) {
+        const alias = interaction.options.getString('alias');
 
-        if (args.length < 1) {
-          return message.channel.send('You must specify an alias to associate with');
+        // Notify the user if there is no game being monitored in the current text channel
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Associate the user with the specified alias
-        message.client.tempData.apInterfaces.get(message.channel.id).setPlayer(args[0], message.author);
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).setPlayer(alias, interaction.user);
+        return interaction.reply(`Associated ${interaction.user} with alias ${alias}.`);
       },
     },
     {
-      name: 'ap-unset-alias',
-      description: 'Disassociate your discord user with a specified alias',
-      longDescription: null,
-      aliases: ['apua'],
-      usage: '`!aginah ap-unset-alias alias`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apUnsetAlias')
+        .setDescription('Disassociate your discord user with a specified alias')
+        .addStringOption((opt) => opt
+          .setName('alias')
+          .setDescription('Alias to disassociate from')
+          .setRequired(true))
+        .setDMPermission(false),
+      async execute(interaction) {
+        const alias = interaction.options.getString('alias');
 
-        if (args.length < 1) {
-          return message.channel.send('You must specify an alias to associate with');
+        // Notify the user if there is no game being monitored in the current text channel
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Disassociate the user from the specified alias
-        message.client.tempData.apInterfaces.get(message.channel.id).unsetPlayer(args[0]);
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).unsetPlayer(alias);
+        return interaction.reply(`User ${interaction.user} disassociated from ${alias}.`);
       },
     },
     {
-      name: 'ap-show-chat',
-      description: 'Show normal messages while connected to an AP game',
-      longDescription: null,
-      aliases: ['apsc'],
-      usage: '`!aginah ap-show-chat`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apShowChat')
+        .setDescription('Show normal messages while connected to an AP game')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Set the APInterface to show chat messages
-        message.client.tempData.apInterfaces.get(message.channel.id).showChat = true;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showChat = true;
+        return interaction.reply('Showing normal chat messages.');
       },
     },
     {
-      name: 'ap-hide-chat',
-      description: 'Hide normal messages while connected to an AP game',
-      longDescription: null,
-      aliases: ['aphc'],
-      usage: '`!aginah ap-hide-chat`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apHideChat')
+        .setDescription('Hide normal messages while connected to an AP game')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Set the APInterface to show chat messages
-        message.client.tempData.apInterfaces.get(message.channel.id).showChat = false;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showChat = false;
+        return interaction.reply('Hiding normal chat messages.');
       },
     },
     {
-      name: 'ap-show-hints',
-      description: 'Show hint messages while connected to an AP game',
-      longDescription: null,
-      aliases: ['apsh'],
-      usage: '`!aginah ap-show-hints`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apShowHints')
+        .setDescription('Show hint messages while connected to an AP game')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Set the APInterface to show chat messages
-        message.client.tempData.apInterfaces.get(message.channel.id).showHints = true;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showHints = true;
+        return interaction.reply('Showing hints.');
       },
     },
     {
-      name: 'ap-hide-hints',
-      description: 'Hide hint messages while connected to an AP game',
-      longDescription: null,
-      aliases: ['aphh'],
-      usage: '`!aginah ap-hide-hints`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apHideHints')
+        .setDescription('Hide hint messages while connected to an AP game')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Set the APInterface to show chat messages
-        message.client.tempData.apInterfaces.get(message.channel.id).showHints = false;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showHints = false;
+        return interaction.reply('Hiding hints.');
       },
     },
     {
-      name: 'ap-show-progression',
-      description: 'Show progression item messages while connected to an AP game. Hides other item messages',
-      longDescription: null,
-      aliases: ['apsp'],
-      usage: '`!aginah ap-show-progression`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apShowProgression')
+        .setDescription('Show progression item messages while connected to an AP game. Hides other item messages')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Set the APInterface to show chat messages
-        message.client.tempData.apInterfaces.get(message.channel.id).showItems = false;
-        message.client.tempData.apInterfaces.get(message.channel.id).showProgression = true;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showItems = false;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showProgression = true;
+        return interaction.reply('Showing progression.');
       },
     },
     {
-      name: 'ap-show-items',
-      description: 'Show all item messages while connected to an AP game',
-      longDescription: null,
-      aliases: ['apsi'],
-      usage: '`!aginah ap-show-item`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apShowItems')
+        .setDescription('Show all item messages while connected to an AP game')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Set the APInterface to show chat messages
-        message.client.tempData.apInterfaces.get(message.channel.id).showItems = true;
-        message.client.tempData.apInterfaces.get(message.channel.id).showProgression = true;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showItems = true;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showProgression = true;
+        return interaction.reply('Showing all item messages.');
       },
     },
     {
-      name: 'ap-hide-items',
-      description: 'Hide all item messages while connected to an AP game',
-      longDescription: null,
-      aliases: ['aphi'],
-      usage: '`!aginah ap-hide-items`',
-      moderatorRequired: false,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apHideItems')
+        .setDescription('Hide all item messages while connected to an AP game')
+        .setDMPermission(false),
+      async execute(interaction) {
         // Notify the user if there is no game being monitored in the current text channel
-        if (!message.client.tempData.apInterfaces.has(message.channel.id)) {
-          return message.channel.send('There is no Archipelago game being monitored in this channel.');
+        if (!interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
+          return interaction.reply('There is no Archipelago game being monitored in this channel.');
         }
 
         // Set the APInterface to show chat messages
-        message.client.tempData.apInterfaces.get(message.channel.id).showItems = false;
-        message.client.tempData.apInterfaces.get(message.channel.id).showProgression = false;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showItems = false;
+        interaction.client.tempData.apInterfaces.get(interaction.channel.id).showProgression = false;
+        return interaction.reply('Hiding all item messages.');
       },
     },
   ],

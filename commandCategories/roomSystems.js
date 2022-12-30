@@ -4,6 +4,8 @@ const { ChannelType } = require('discord.js');
 const DEFAULT_ROLE_NAME = 'Dynamic Room Category';
 const VOICE_CHANNEL_NAME = 'Start Game';
 
+// TODO: Convert to slash commands
+
 module.exports = {
   category: 'Dynamic Room Systems',
   commands: [

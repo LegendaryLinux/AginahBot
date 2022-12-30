@@ -1,6 +1,8 @@
 const { dbQueryOne, dbExecute } = require('../lib');
 const { ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField, ActionRowBuilder } = require('discord.js');
 
+// TODO: Convert to slash commands
+
 module.exports = {
   category: 'Mod Contact',
   commands: [

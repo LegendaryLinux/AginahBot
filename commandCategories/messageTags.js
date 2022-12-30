@@ -1,5 +1,7 @@
 const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
 
+// TODO: Convert to slash commands
+
 module.exports = {
   category: 'Message Tags',
   commands: [

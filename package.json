@@ -1,6 +1,6 @@
 {
   "name": "aginah-bot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "license": "MIT",
   "scripts": {
     "production": "node bot.js",
@@ -9,8 +9,8 @@
   "dependencies": {
     "7zip-bin": "^5.2.0",
     "archipelago.js": "^0.4.1",
-    "axios": "^0.27.2",
-    "discord.js": "^14.6.0",
+    "axios": "^1.2.1",
+    "discord.js": "^14.7.1",
     "form-data": "^4.0.0",
     "moment-timezone": "^0.5.39",
     "mysql2": "^2.3.3",
@@ -25,6 +25,6 @@
   },
   "devDependencies": {
     "depcheck": "^1.4.3",
-    "eslint": "^8.28.0"
+    "eslint": "^8.29.0"
   }
 }
