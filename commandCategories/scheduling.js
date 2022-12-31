@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
-const { dbQueryOne, dbQueryAll, dbExecute, verifyModeratorRole, parseTimeString,
+const { dbQueryOne, dbQueryAll, dbExecute, verifyIsAdmin,
   updateScheduleBoard } = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
@@ -19,173 +20,233 @@ const generateEventCode = () => {
   return code;
 };
 
-const sendScheduleMessage = async (message, targetDate) => {
+const sendScheduleMessage = async (interaction, targetDate) => {
   const eventCode = generateEventCode();
 
   const embedTimestamp = Math.floor(targetDate.getTime()/1000);
   const embed = new Discord.EmbedBuilder()
     .setTitle(`New Event on <t:${embedTimestamp}:F>`)
     .setColor('#6081cb')
-    .setDescription(`**${message.author.username}** has scheduled a new event!` +
+    .setDescription(`**${interaction.user.username}** has scheduled a new event!` +
       '\nReact with 👍 if you intend to join this event.' +
       '\nReact with 🤔 if you don\'t know yet.')
     .addFields({ name: 'Event Code', value: eventCode });
 
-  message.channel.send({ embeds: [embed] }).then(async (scheduleMessage) => {
+  interaction.reply({ embeds: [embed] }).then(async (scheduleMessage) => {
     // Save scheduled game to database
-    const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [message.guild.id]);
+    const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
     if (!guildData) {
-      throw new Error(`Unable to find guild ${message.guild.name} (${message.guild.id}) in guild_data table.`);
+      throw new Error(`Unable to find guild ${interaction.guild.name} (${interaction.guildId}) in guild_data table.`);
     }
     const sql = `INSERT INTO scheduled_events
              (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag, eventCode)
              VALUES (?, ?, ?, ?, ?, ?, ?)`;
     await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-      message.member.user.id, message.member.user.tag, eventCode]);
+      interaction.user.id, interaction.user.tag, eventCode]);
 
     // Put appropriate reactions onto the message
     await scheduleMessage.react('👍');
     await scheduleMessage.react('🤔');
 
     // Update schedule messages
-    await updateScheduleBoard(message.client, message.guild);
+    await updateScheduleBoard(interaction.client, interaction.guild);
   }).catch((error) => generalErrorHandler(error));
 };
-
-// TODO: Convert to slash commands
 
 module.exports = {
   category: 'Event Scheduling',
   commands: [
     {
-      name: 'schedule',
-      description: 'View upcoming events or schedule a new one',
-      longDescription: 'View upcoming events or Schedule a new one. Allowed times look like:\n\n' +
-        '`X:00`: Schedule a game for the next occurrence of the provided minutes value\n' +
-        '`X+2:15` Schedule a game for a set number of hours in the future, at the provided minute value\n' +
-        '`HH:MM TZ`: Schedule a game for the next occurrence of the provided time.\n' +
-        '`MM/DD/YYYY HH:MM TZ`: Schedule a game for the specific provided date and time.\n' +
-        '`YYYY-MM-DD HH:MM TZ` Schedule a game for a specific provided date and time.\n\n' +
-        'In all cases where an hour value is accepted, 24-hour time is required.\n' +
-        'Strict ISO-8601 formatted datetime values are allowed.\n' +
-        'UNIX Timestamps are allowed.\n' +
-        'A list of timezones can be found on the Wikipedia timezone page under the `TZ database name` column.\n' +
-        'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones\n' +
-        'If you schedule a game by mistake, you may use the `!aginah cancel eventCode` command to cancel it.',
-      aliases: [],
-      usage: '`!aginah schedule [date/time]`',
-      guildOnly: true,
-      moderatorRequired: false,
-      adminOnly: false,
-      async execute(message, args) {
-        if (args.length === 0) {
-          // Check if the schedule boards feature is enabled
-          let sql = `SELECT sb.channelId, sb.messageId
-                     FROM schedule_boards sb
-                     JOIN guild_data gd ON sb.guildDataId=gd.id
-                     WHERE gd.guildId=?`;
-          const boards = await dbQueryAll(sql, [message.guild.id]);
-          if (boards.length > 0) {
-            // Fetch channel and message of schedule boards in this guild
-            const guildBoards = [];
-            for (let board of boards) {
-              const channel = await message.guild.channels.fetch(board.channelId);
-              if (!channel) { continue; }
-              const thisMsg = await channel.messages.fetch(board.messageId);
-              if (!thisMsg) { continue; }
-              guildBoards.push({ channel, message: thisMsg });
-            }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('scheduleView')
+        .setDescription('View upcoming events')
+        .setDMPermission(false),
+      async execute(interaction) {
+        await interaction.deferReply();
 
-            // Create an embed and populate its fields with schedule boards
-            if (guildBoards.length > 0) {
-              const boardFields = [];
-              for (let board of guildBoards) {
-                boardFields.push({
-                  name: `${board.pinned ? 'Pinned' : 'Located'} in #${board.channel.name}`,
-                  value: `[Link to Schedule Board](${board.message.url})`,
-                });
-              }
-
-              // Send a message alerting the user of the available schedule boards
-              const embed = new Discord.EmbedBuilder()
-                .setTitle('This server has schedule boards enabled!')
-                .setColor('#6081cb')
-                .setDescription('Schedule boards track all upcoming events, and update automatically.')
-                .addFields(boardFields);
-              return message.channel.send({ embeds: [embed] });
-            }
+        // Check if the schedule boards feature is enabled
+        let sql = `SELECT sb.channelId, sb.messageId
+                   FROM schedule_boards sb
+                   JOIN guild_data gd ON sb.guildDataId=gd.id
+                   WHERE gd.guildId=?`;
+        const boards = await dbQueryAll(sql, [interaction.guildId]);
+        if (boards.length > 0) {
+          // Fetch channel and message of schedule boards in this guild
+          const guildBoards = [];
+          for (let board of boards) {
+            const channel = await interaction.guild.channels.fetch(board.channelId);
+            if (!channel) { continue; }
+            const thisMsg = await channel.messages.fetch(board.messageId);
+            if (!thisMsg) { continue; }
+            guildBoards.push({ channel, message: thisMsg });
           }
 
-          // Send individual messages for each upcoming event
-          sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
-                     FROM scheduled_events se
-                     JOIN guild_data gd ON se.guildDataId = gd.id
-                     WHERE gd.guildId=?
-                       AND se.timestamp > ?
-                     ORDER BY se.timestamp`;
-          const games = await dbQueryAll(sql, [message.guild.id, new Date().getTime()]);
-          for (let game of games) {
-            const channel = message.guild.channels.resolve(game.channelId);
-            if (!channel) { continue; }
-            const scheduleMessage = await channel.messages.fetch(game.messageId);
-
-            // Determine RSVP count
-            const rsvps = new Map();
-            for (let reaction of scheduleMessage.reactions.cache) {
-              const reactors = await reaction[1].users.fetch();
-              reactors.each((reactor) => {
-                if (reactor.bot) { return; }
-                if (rsvps.has(reactor.id)) { return; }
-                rsvps.set(reactor.id, reactor);
+          // Create an embed and populate its fields with schedule boards
+          if (guildBoards.length > 0) {
+            const boardFields = [];
+            for (let board of guildBoards) {
+              boardFields.push({
+                name: `${board.pinned ? 'Pinned' : 'Located'} in #${board.channel.name}`,
+                value: `[Link to Schedule Board](${board.message.url})`,
               });
             }
 
+            // Send a message alerting the user of the available schedule boards
             const embed = new Discord.EmbedBuilder()
-              .setTitle(`Upcoming Event on <t:${Math.floor(game.timestamp / 1000)}:F>`)
+              .setTitle('This server has schedule boards enabled!')
               .setColor('#6081cb')
-              .setDescription('**Click the title of this message to jump to the original.**')
-              .setURL(scheduleMessage.url)
-              .addFields(
-                { name: 'Scheduled By', value: `@${game.schedulingUserTag}` },
-                { name: 'Planning Channel', value: `#${channel.name}` },
-                { name: 'Event Code', value: game.eventCode },
-                { name: 'Current RSVPs', value: rsvps.size.toString() },
-              );
-            await message.channel.send({ embeds: [embed] });
+              .setDescription('Schedule boards track all upcoming events, and update automatically.')
+              .addFields(boardFields);
+            return interaction.followUp({ embeds: [embed], ephemeral: true });
           }
-
-          if (games.length === 0) { return message.channel.send('There are currently no games scheduled.'); }
-          return;
         }
 
-        const timeString = args.join(' ').toUpperCase().trim();
-        const currentDate = new Date();
+        // Send individual messages for each upcoming event
+        sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
+                   FROM scheduled_events se
+                   JOIN guild_data gd ON se.guildDataId = gd.id
+                   WHERE gd.guildId=?
+                     AND se.timestamp > ?
+                   ORDER BY se.timestamp`;
+        const games = await dbQueryAll(sql, [interaction.guildId, new Date().getTime()]);
+
+        if (games.length === 0) {
+          return interaction.followUp({ content: 'There are currently no games scheduled.', ephemeral: true });
+        }
+
+        for (let game of games) {
+          const channel = interaction.guild.channels.resolve(game.channelId);
+          if (!channel) { continue; }
+          const scheduleMessage = await channel.messages.fetch(game.messageId);
+
+          // Determine RSVP count
+          const rsvps = new Map();
+          for (let reaction of scheduleMessage.reactions.cache) {
+            const reactors = await reaction[1].users.fetch();
+            reactors.each((reactor) => {
+              if (reactor.bot) { return; }
+              if (rsvps.has(reactor.id)) { return; }
+              rsvps.set(reactor.id, reactor);
+            });
+          }
+
+          const embed = new Discord.EmbedBuilder()
+            .setTitle(`Upcoming Event on <t:${Math.floor(game.timestamp / 1000)}:F>`)
+            .setColor('#6081cb')
+            .setDescription('**Click the title of this message to jump to the original.**')
+            .setURL(scheduleMessage.url)
+            .addFields(
+              { name: 'Scheduled By', value: `@${game.schedulingUserTag}` },
+              { name: 'Planning Channel', value: `#${channel.name}` },
+              { name: 'Event Code', value: game.eventCode },
+              { name: 'Current RSVPs', value: rsvps.size.toString() },
+            );
+          await interaction.followUp({ embeds: [embed], ephemeral: true });
+        }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('scheduleNew')
+        .setDescription('Schedule a new event. If you schedule a game by mistake, you may use the `/cancel` ' +
+          'command to cancel it.')
+        .addStringOption((opt) => opt
+          .setName('date')
+          .setDescription('Format: YYYY-MM-DD')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('time')
+          .setDescription('24-Hour format: HH:MM')
+          .setRequired(true))
+        .addIntegerOption((opt) => opt
+          .setName('timezone')
+          .setDescription('Nearest timezone to you')
+          .setRequired(false)
+          .addChoices(
+            { name: 'UTC - 12', value: -12 },
+            { name: 'UTC - 11', value: -11 },
+            { name: 'UTC - 10', value: -10 },
+            { name: 'UTC - 9', value: -9 },
+            { name: 'UTC - 8', value: -8 },
+            { name: 'UTC - 7', value: -7 },
+            { name: 'UTC - 6', value: -6 },
+            { name: 'UTC - 5', value: -5 },
+            { name: 'UTC - 4', value: -4 },
+            { name: 'UTC - 3', value: -3 },
+            { name: 'UTC - 2', value: -2 },
+            { name: 'UTC - 1', value: -1 },
+            { name: 'UTC + 0', value: 0 },
+            { name: 'UTC + 1', value: 1 },
+            { name: 'UTC + 2', value: 2 },
+            { name: 'UTC + 3', value: 3 },
+            { name: 'UTC + 4', value: 4 },
+            { name: 'UTC + 5', value: 5 },
+            { name: 'UTC + 6', value: 6 },
+            { name: 'UTC + 7', value: 7 },
+            { name: 'UTC + 8', value: 8 },
+            { name: 'UTC + 9', value: 9 },
+            { name: 'UTC + 10', value: 10 },
+            { name: 'UTC + 11', value: 11 },
+            { name: 'UTC + 12', value: 12 },
+          ))
+        .setDMPermission(false),
+      async execute(interaction) {
+        const dateString = interaction.options.getString('date');
+        const timeString = interaction.options.getString('time');
+        const utcOffset = interaction.options.getInteger('timezone');
+
+        if (!(new RegExp(/\d{4}-\d{2}-\d{2}/).test(dateString))) {
+          return interaction.reply({
+            content: 'Invalid date format provided. Must be of format: YYYY-MM-DD.',
+            ephemeral: true,
+          });
+        }
+
+        if (!(new RegExp(/\d{2}:\d{2}/).test(timeString))) {
+          return interaction.reply({
+            content: 'Invalid time format provided. Must be of format: HH:MM.',
+            ephemeral: true,
+          });
+        }
+
+        const dateTimeString = (utcOffset > 0) ?
+          `${dateString}T${timeString}:00+${utcOffset.toString().padStart(2,'0')}:00` :
+          `${dateString}T${timeString}:00-${utcOffset.toString().padStart(2,'0')}:00`;
 
         try{
-          const targetDate = parseTimeString(timeString);
+          const currentDate = new Date();
+          const targetDate = new Date(dateTimeString);
+
           if (targetDate.getTime() < currentDate.getTime()) {
-            return message.channel.send('You can\'t schedule a game in the past!');
+            return interaction.reply({
+              content: 'You can\'t schedule a game in the past!',
+              ephemeral: true,
+            });
           }
-          return sendScheduleMessage(message, targetDate);
+
+          return sendScheduleMessage(interaction, targetDate);
         } catch (error) {
           if (error.name === 'TimeParserValidationError') {
-            return message.channel.send(error.message);
+            return interaction.channel.send(error.message);
           }
           generalErrorHandler(error);
         }
       }
     },
     {
-      name: 'cancel',
-      description: 'Cancel an upcoming scheduled event',
-      longDescription: 'Cancel an upcoming scheduled event. A game can only be cancelled by a moderator or by the ' +
-        'user who scheduled it.',
-      aliases: [],
-      usage: '`!aginah cancel eventCode`',
-      guildOnly: true,
-      moderatorRequired: false,
-      adminOnly: false,
-      async execute(message, args) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('scheduleCancel')
+        .setDescription('Cancel an upcoming scheduled event. A game can only be cancelled by a moderator or by the ' +
+          'user who scheduled it.')
+        .addStringOption((opt) => opt
+          .setName('eventCode')
+          .setDescription('Six character code of the upcoming event you wish to cancel.')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const eventCode = interaction.options.getString('eventCode');
+
         let sql = `SELECT se.id, se.channelId, se.messageId, se.schedulingUserId, se.schedulingUserTag
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
@@ -193,25 +254,28 @@ module.exports = {
                      AND se.eventCode=?
                      AND timestamp > ?`;
         const eventData = await dbQueryOne(sql, [
-          message.guild.id, args[0].toUpperCase(), new Date().getTime().toString(),
+          interaction.guildId, eventCode.toUpperCase(), new Date().getTime().toString(),
         ]);
 
         // If no event is found, notify the user
         if (!eventData) {
-          return await message.channel.send('There is no upcoming event with that code.');
+          return await interaction.reply('There is no upcoming event with that code.');
         }
 
         // If the user is not a moderator and not the scheduling user, deny the cancellation
-        if (message.author.id !== eventData.schedulingUserId && !await verifyModeratorRole(message.user)) {
-          return await message.channel.send('This game can only be cancelled by the user who scheduled it ' +
-          `(${eventData.schedulingUserTag}), or by a moderator.`);
+        if (interaction.user.id !== eventData.schedulingUserId) {
+          const guildMember = await interaction.guild.members.fetch(interaction.user.id);
+          if (guildMember && !verifyIsAdmin(guildMember)) {
+            return interaction.reply('This game can only be cancelled by the user who scheduled it ' +
+              `(${eventData.schedulingUserTag}), or by an administrator.`);
+          }
         }
 
         // The game is to be cancelled. Replace the schedule message with a cancellation notice
-        const scheduleChannel = await message.guild.channels.fetch(eventData.channelId);
+        const scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
         const scheduleMsg = await scheduleChannel.messages.fetch(eventData.messageId);
         await scheduleMsg.edit({
-          content: `This game has been cancelled by ${message.author}.`,
+          content: `This game has been cancelled by ${interaction.user}.`,
           embeds: [],
         });
 
@@ -221,81 +285,78 @@ module.exports = {
         // Remove the game's entry from the database
         await dbExecute('DELETE FROM scheduled_events WHERE id=?', [eventData.id]);
 
-        await updateScheduleBoard(message.client, message.guild);
+        await updateScheduleBoard(interaction.client, interaction.guild);
+        return interaction.reply(`Event with code ${eventCode} has been cancelled.`);
       }
     },
     {
-      name: 'post-schedule-board',
-      description: 'Create and pin a message containing an automatically updated list of scheduled events to ' +
-        'this channel.',
-      longDescription: 'Create and pin a message containing an automatically updated list of scheduled events ' +
-        'to this channel. The message will automatically update whenever an event is scheduled or cancelled, ' +
-        'and will automatically remove past events once per hour.',
-      aliases: [],
-      usage: '`!aginah post-schedule-board`',
-      guildOnly: true,
-      moderatorRequired: true,
-      adminOnly: false,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('scheduleBoardPost')
+        .setDescription('Create and pin a message containing an automatically updated list of scheduled events ' +
+          'to this channel. The message will automatically update whenever an event is scheduled or cancelled, ' +
+          'and will automatically remove past events once per hour.')
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        await interaction.deferReply();
+
         // Check for existing schedule board in this channel
         let sql = `SELECT sb.id, sb.messageId
                    FROM schedule_boards sb
                    JOIN guild_data gd ON sb.guildDataId = gd.id
                    WHERE gd.guildId=?
                         AND sb.channelId=?`;
-        const existingBoard = await dbQueryOne(sql, [message.guild.id, message.channel.id]);
+        const existingBoard = await dbQueryOne(sql, [interaction.guildId, interaction.channel.id]);
         if (existingBoard) {
           // Fetch message object for existing schedule board
-          const existingMessage = await message.channel.messages.fetch(existingBoard.messageId);
+          const existingMessage = await interaction.channel.messages.fetch(existingBoard.messageId);
           // Schedule board already exists, and message is present in channel
           if (existingMessage) {
-            return message.channel.send('This channel already has a schedule board, located here:' +
+            return interaction.followUp('This channel already has a schedule board, located here:' +
               `\n${existingMessage.url}`);
           }
 
           // Message object has been deleted. Remove its entry from schedule_boards
           await dbExecute('DELETE FROM schedule_boards WHERE id=?', [existingMessage.id]);
-          await message.channel.send('It appears a schedule board previously existed in this channel but was ' +
+          await interaction.followUp('It appears a schedule board previously existed in this channel but was ' +
             'deleted without my knowledge (I blame Discord). A new schedule board is being created.');
         }
 
         // Create schedule board message, pin it, add schedule_boards entry, update contents
-        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [message.guild.id]);
-        const scheduleBoardMessage = await message.channel.send('Fetching scheduled events. Please wait...');
+        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
+        const scheduleBoardMessage = await interaction.channel.send('Fetching scheduled events. Please wait...');
         await scheduleBoardMessage.pin();
         sql = 'INSERT INTO schedule_boards (guildDataId, channelId, messageId) VALUES(?, ?, ?)';
-        await dbExecute(sql, [guildData.id, message.channel.id, scheduleBoardMessage.id]);
-        await updateScheduleBoard(message.client, message.guild);
+        await dbExecute(sql, [guildData.id, interaction.channel.id, scheduleBoardMessage.id]);
+        await updateScheduleBoard(interaction.client, interaction.guild);
+        return interaction.followUp('Schedule board created.');
       }
     },
     {
-      name: 'delete-schedule-board',
-      description: 'Delete a schedule board if it exists in this channel.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah delete-schedule-board`',
-      guildOnly: true,
-      moderatorRequired: true,
-      adminOnly: false,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('scheduleBoardDelete')
+        .setDescription('Delete a schedule board if it exists in this channel.')
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
         // Check for existing schedule board in this channel
         let sql = `SELECT sb.id, sb.messageId
                    FROM schedule_boards sb
                    JOIN guild_data gd ON sb.guildDataId = gd.id
                    WHERE gd.guildId=?
                         AND sb.channelId=?`;
-        const existingBoard = await dbQueryOne(sql, [message.guild.id, message.channel.id]);
+        const existingBoard = await dbQueryOne(sql, [interaction.guildId, interaction.channel.id]);
         if (!existingBoard) {
-          return message.channel.send('No message board exists in this channel.');
+          return interaction.reply('No message board exists in this channel.');
         }
 
         // Delete schedule board message
-        const board = await message.channel.messages.fetch(existingBoard.messageId);
+        const board = await interaction.channel.messages.fetch(existingBoard.messageId);
         await board.delete();
 
         // Delete row from schedule_boards
         await dbExecute('DELETE FROM schedule_boards WHERE id=?', [existingBoard.id]);
-        return message.channel.send('Schedule board deleted.');
+        return interaction.reply('Schedule board deleted.');
       }
     },
   ],

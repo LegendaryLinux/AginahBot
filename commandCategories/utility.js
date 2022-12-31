@@ -1,55 +1,10 @@
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
-const { parseTimeString } = require('../lib');
-const { generalErrorHandler } = require('../errorHandlers');
+const { SlashCommandBuilder } = require('discord.js');
 const tmp = require('tmp');
 const fs = require('fs');
-
-const sendTimestampMessage = async (interaction, targetDate) => {
-  const embed = new EmbedBuilder()
-    .setTitle(`<t:${Math.floor(targetDate.getTime() / 1000)}:F>`)
-    .setColor('#6081cb')
-    .addFields(
-      { name: 'Javascript / Node.js Timestamp', value: targetDate.getTime().toString() },
-      { name: 'UNIX Timestamp', value: Math.floor(targetDate.getTime() / 1000).toString() },
-    );
-  return interaction.reply({ embeds: [embed] });
-};
 
 module.exports = {
   category: 'Utility Commands',
   commands: [
-    {
-      commandBuilder: new SlashCommandBuilder()
-        .setName('timestamp')
-        .setDescription('Enter a date/time to determine its unix timestamp')
-        .addStringOption((opt) => opt
-          .setName('dateTime')
-          .setDescription('Allowed date/times look like:\n\n' +
-            '`X:00`: The next occurrence of the provided minutes value\n' +
-            '`X+2:15` A set number of hours in the future, at the provided minute value\n' +
-            '`HH:MM TZ`: The next occurrence of the provided time.\n' +
-            '`MM/DD/YYYY HH:MM TZ`: The specific provided date and time.\n' +
-            '`YYYY-MM-DD HH:MM TZ`: The specific provided date and time.\n\n' +
-            'Strict ISO-8601 formatted datetime values are allowed.\n' +
-            'UNIX Timestamps are allowed.\n' +
-            'A list of timezones can be found on the Wikipedia timezone page under the `TZ database name` column.\n' +
-            'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones')
-          .setRequired(true))
-        .setDMPermission(true),
-      async execute(interaction) {
-        const timeString = interaction.options.getString('dateTime').toUpperCase().trim();
-
-        try{
-          const targetDate = parseTimeString(timeString);
-          return sendTimestampMessage(interaction, targetDate);
-        } catch (error) {
-          if (error.name && error.name === 'TimeParserValidationError') {
-            return interaction.reply(error.message);
-          }
-          generalErrorHandler(error);
-        }
-      }
-    },
     {
       commandBuilder: new SlashCommandBuilder()
         .setName('saveLog')
