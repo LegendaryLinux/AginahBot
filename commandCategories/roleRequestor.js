@@ -1,6 +1,6 @@
 const {generalErrorHandler} = require('../errorHandlers');
 const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { ChannelType, PermissionsBitField } = require('discord.js');
+const { ChannelType, PermissionsBitField, SlashCommandBuilder } = require('discord.js');
 
 const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
@@ -36,44 +36,39 @@ const updateCategoryMessage = async (client, guild, messageId) => {
       .then().catch((err) => generalErrorHandler(err)));
 };
 
-// TODO: Convert to slash commands
-
 module.exports = {
   category: 'Role Requestor',
   commands: [
     {
-      name: 'init-role-system',
-      description: 'Create a role-request channel for users to interact with AginahBot and request roles.',
-      longDescription: 'Create a #role-request text channel for users to interact with AginahBot and request ' +
-        'roles. This channel will be used to post role category messages users can react to to add or ' +
-        'remove roles.',
-      aliases: ['irs'],
-      usage: '`!aginah init-role-system`',
-      moderatorRequired: false,
-      adminOnly: true,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleSystemEnable')
+        .setDescription('Create a #role-request text channel for users to interact with' +
+          'AginahBot and request roles. This channel will be used to post role category messages users can react to ' +
+          'to add or remove roles.')
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
         let sql = `SELECT gd.id AS guildDataId, rs.id AS roleSystemId
                     FROM guild_data gd
                     LEFT JOIN role_systems rs ON gd.id = rs.guildDataId
                     WHERE gd.guildId=?`;
-        const row = await dbQueryOne(sql, [message.guild.id]);
+        const row = await dbQueryOne(sql, [interaction.guildId]);
         if (!row) { throw new Error(); }
         if (row.roleSystemId) {
-          return message.channel.send('The role system has already been set up on your server.');
+          return interaction.reply('The role system has already been set up on your server.');
         }
-        message.guild.channels.create({
+        interaction.guild.channels.create({
           name: 'role-request',
           type: ChannelType.GuildText,
           topic: 'Request roles so that you may be pinged for various notifications.',
           reason: 'Role Request system created.',
           permissionOverwrites: [
             {
-              id: message.client.user.id,
+              id: interaction.client.user.id,
               allow: [ PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.AddReactions ],
             },
             {
-              id: message.guild.roles.everyone.id,
+              id: interaction.guild.roles.everyone.id,
               deny: [ PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.AddReactions ],
             }
           ],
@@ -85,26 +80,24 @@ module.exports = {
               'assigned a role, please react to the appropriate message with the indicated ' +
               'emoji. All roles are pingable by everyone on the server. Remember, with great ' +
               'power comes great responsibility.');
+          interaction.reply('Role system enabled.');
         }).catch((error) => generalErrorHandler(error));
       }
     },
     {
-      name: 'destroy-role-system',
-      description: 'Delete the role-request channel and all categories and permissions created by this bot.',
-      longDescription: null,
-      aliases: ['drs'],
-      usage: '`!aginah destroy-role-system`',
-      moderatorRequired: false,
-      adminOnly: true,
-      guildOnly: true,
-      async execute(message) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleSystemDestroy')
+        .setDescription('Delete the role-request channel and all categories and permissions created by this bot.')
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
         let sql = `SELECT rs.id, rs.roleRequestChannelId FROM role_systems rs
                     JOIN guild_data gd ON rs.guildDataId = gd.id
                     WHERE gd.guildId=?`;
-        const roleSystem = await dbQueryOne(sql, [message.guild.id]);
+        const roleSystem = await dbQueryOne(sql, [interaction.guildId]);
         if (!roleSystem) {
           // If the role system does not exist, there is no need to attempt to delete it
-          return message.channel.send('The role system is not currently installed on this server.');
+          return interaction.reply('The role system is not currently installed on this server.');
         }
 
         // Loop over the role categories and delete them
@@ -114,72 +107,77 @@ module.exports = {
           // Loop over the roles in each category and delete them from the server
           const roles = await dbQueryAll('SELECT roleId FROM roles WHERE categoryId=?', [roleCategory.id]);
           for (let role of roles) {
-            await message.guild.roles.resolve(role.roleId).delete();
+            await interaction.guild.roles.resolve(role.roleId).delete();
           }
           await dbExecute('DELETE FROM roles WHERE categoryId=?', [roleCategory.id]);
         }
 
         // Database cleanup
         await dbExecute('DELETE FROM role_categories WHERE roleSystemId=?', [roleSystem.id]);
-        message.guild.channels.resolve(roleSystem.roleRequestChannelId).delete();
+        interaction.guild.channels.resolve(roleSystem.roleRequestChannelId).delete();
         await dbExecute('DELETE FROM role_systems WHERE id=?', [roleSystem.id]);
+        return interaction.reply('Role system disabled.');
       }
     },
     {
-      name: 'create-role-category',
-      description: 'Create a category for roles to be added to.',
-      longDescription: 'Create a category for roles to be added to. Each category will have its own message ' +
-        'in the #role-request channel. Category names must be a single alphanumeric word.',
-      aliases: [],
-      usage: '`!aginah create-role-category CategoryName`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        if (args.length === 0) {
-          return message.channel.send('You must specify a name for the category!');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleCategoryCreate')
+        .setDescription('Create a category for roles to be added to. Each category will have its own message ' +
+          'in the #role-request channel. Category names must be a single alphanumeric word.')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Name of the new category')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('categoryName');
 
         let sql = `SELECT 1 FROM role_categories rc
                    JOIN role_systems rs ON rc.roleSystemId = rs.id
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE gd.guildId=?
                      AND rc.categoryName=?`;
-        const row = await dbQueryOne(sql, [message.guild.id, args[0]]);
-        if (row) { return message.channel.send('That category already exists!'); }
+        const row = await dbQueryOne(sql, [interaction.guildId, categoryName]);
+        if (row) { return interaction.reply('That category already exists!'); }
 
         sql = `SELECT rs.id, rs.roleRequestChannelId
                FROM role_systems rs
                JOIN guild_data gd ON rs.guildDataId=gd.id
                WHERE gd.guildId=?`;
-        const roleSystem = await dbQueryOne(sql, [message.guild.id]);
+        const roleSystem = await dbQueryOne(sql, [interaction.guildId]);
         if (!roleSystem) {
-          return message.channel.send('The role system has not been setup on this server.');
+          return interaction.reply('The role system has not been setup on this server.');
         }
 
         // Add the category message to the #role-request channel
-        message.guild.channels.resolve(roleSystem.roleRequestChannelId).send('Creating new category...')
+        interaction.guild.channels.resolve(roleSystem.roleRequestChannelId).send('Creating new category...')
           .then(async (categoryMessage) => {
             // Update database with new category message data
             let sql = 'INSERT INTO role_categories (roleSystemId, categoryName, messageId) VALUES (?, ?, ?)';
-            await dbExecute(sql, [roleSystem.id, args[0], categoryMessage.id]);
-            await updateCategoryMessage(message.client, message.guild, categoryMessage.id);
+            await dbExecute(sql, [roleSystem.id, categoryName, categoryMessage.id]);
+            await updateCategoryMessage(interaction.client, interaction.guild, categoryMessage.id);
+            return interaction.reply(`Created role category: ${categoryName}.`);
           });
       }
     },
     {
-      name: 'modify-role-category',
-      description: 'Change the name of a role category.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah modify-role-category oldName newName`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args){
-        if (args.length !== 2) {
-          return message.channel.send('Invalid arguments. Use `!aginah help modify-role-category` for more info.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleCategoryRename')
+        .setDescription('Change the name of a role category.')
+        .addStringOption((opt) => opt
+          .setName('oldName')
+          .setDescription('Current name of the category you wish to rename')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('newName')
+          .setDescription('New name of the category')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction){
+        const oldName = interaction.options.getString('oldName');
+        const newName = interaction.options.getString('newName');
 
         // Find a matching role category
         let sql = `SELECT rc.id, rc.messageId
@@ -188,53 +186,75 @@ module.exports = {
                    JOIN role_categories rc ON rc.roleSystemId = rs.id
                    WHERE gd.guildId=?
                      AND rc.categoryName=?`;
-        const categoryData = await dbQueryOne(sql, [message.guild.id, args[0]]);
-        if (!categoryData) { return message.channel.send('That category does not exist!'); }
-        await dbExecute('UPDATE role_categories SET categoryName=? WHERE id=?', [args[1], categoryData.id]);
-        await updateCategoryMessage(message.client, message.guild, categoryData.messageId);
+        const categoryData = await dbQueryOne(sql, [interaction.guildId, oldName]);
+        if (!categoryData) { return interaction.channel.send('That category does not exist!'); }
+        await dbExecute('UPDATE role_categories SET categoryName=? WHERE id=?', [newName, categoryData.id]);
+        await updateCategoryMessage(interaction.client, interaction.guild, categoryData.messageId);
+        return interaction.reply(`Role category renamed from ${oldName} to ${newName}.`);
       }
     },
     {
-      name: 'delete-role-category',
-      description: 'Delete a role category.',
-      longDescription: 'Delete a role category. All roles within this category will also be deleted.',
-      aliases: [],
-      usage: '`!aginah delete-role-category CategoryName`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        if (args.length === 0) {
-          return message.channel.send('You must specify the category to delete!');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleCategoryDelete')
+        .setDescription('Delete a role category. All roles within this category will also be deleted.')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Name of the category you wish to delete')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('categoryName');
 
         // Get the role category data
-        let sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
+        let sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId
+                   FROM role_categories rc
                    JOIN role_systems rs ON rc.roleSystemId = rs.id
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE gd.guildId=?
                      AND rc.categoryName=?`;
-        const roleCategory = await dbQueryOne(sql, [message.guild.id, args[0]]);
-        if (!roleCategory) { return message.channel.send('That category does not exist!'); }
+        const roleCategory = await dbQueryOne(sql, [interaction.guildId, categoryName]);
+        if (!roleCategory) { return interaction.reply('That category does not exist!'); }
+
+        const roleIds = await dbQueryAll('SELECT roleId FROM roles WHERE categoryId=?', [roleCategory.id]);
+        for (const roleId of roleIds) {
+          const role = await interaction.guild.roles.fetch(roleId);
+          await role.delete();
+        }
+
         await dbExecute('DELETE FROM roles WHERE categoryId=?', [roleCategory.id]);
         await dbExecute('DELETE FROM role_categories WHERE id=?', [roleCategory.id]);
-        message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
+        interaction.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
           .then((categoryMessage) => categoryMessage.delete()).catch((err) => generalErrorHandler(err));
       }
     },
     {
-      name: 'create-role',
-      description: 'Create a pingable role.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah cmd create-role CategoryName RoleName Reaction [Description]`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        if (args.length < 4) {
-          return message.channel.send('Invalid argument count. Use `!aginah help create-role` for more info.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleCreate')
+        .setDescription('Create a pingable role.')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('The category your new role should be placed into')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('roleName')
+          .setDescription('The name of the role you wish to create')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('reaction')
+          .setDescription('The emoji you wish to associate with this role')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('description')
+          .setDescription('An optional description to associate with the role')
+          .setRequired(false))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('categoryName');
+        const roleName = interaction.options.getString('roleName');
+        const reaction = interaction.options.getString('reaction');
+        const description = interaction.options.getString('description', false) ?? null;
 
         // Check for existing role
         let sql = `SELECT 1 FROM roles r
@@ -244,57 +264,69 @@ module.exports = {
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
                      AND r.roleName=?`;
-        const row = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
+        const row = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
         // If the role already exists, do nothing
-        if (row) { return message.channel.send('That role already exists!'); }
+        if (row) { return interaction.reply('That role already exists!'); }
 
         // Verify the requested emoji is available on this server
-        const emoji = await parseEmoji(message.guild, args[2], true);
-        if (!emoji) { return message.channel.send('That emoji is not available on this server!'); }
+        const emoji = await parseEmoji(interaction.guild, reaction, true);
+        if (!emoji) { return interaction.reply('That emoji is not available on this server!'); }
 
         sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
                JOIN role_systems rs ON rc.roleSystemId = rs.id
                JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE gd.guildId=?
                  AND rc.categoryName=?`;
-        const roleCategory = await dbQueryOne(sql, [message.guild.id, args[0]]);
+        const roleCategory = await dbQueryOne(sql, [interaction.guildId, categoryName]);
         // If there is no such category, warn the user and do nothing
-        if (!roleCategory) { return message.channel.send('That category doesn\'t exist!'); }
+        if (!roleCategory) { return interaction.reply('That category doesn\'t exist!'); }
 
         // Create the role on the server
-        message.guild.roles.create({
-          name: args[1],
+        interaction.guild.roles.create({
+          name: roleName,
           mentionable: true,
           reason: 'Added as part of role-request system.',
         }).then(async (role) => {
           // Add the role to the database
           await dbExecute(
             'INSERT INTO roles (categoryId, roleId, roleName, reaction, description) VALUES (?, ?, ?, ?, ?)',
-            [roleCategory.id, role.id, args[1], emoji.toString(), (args[3] ? args.slice(3).join(' ') : null)]
+            [roleCategory.id, role.id, roleName, emoji.toString(), description]
           );
-          await updateCategoryMessage(message.client, message.guild, roleCategory.messageId);
+          await updateCategoryMessage(interaction.client, interaction.guild, roleCategory.messageId);
 
           // Add the reaction to the category message
-          message.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
-            .then((categoryMessage) => categoryMessage.react(emoji).catch((err) => generalErrorHandler(err)));
+          interaction.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
+            .then((categoryMessage) => {
+              categoryMessage.react(emoji).catch((err) => generalErrorHandler(err));
+              interaction.reply(`Created role ${roleName} in the ${categoryName} category.`);
+            });
         }).catch((error) => {
           throw new Error(`Unable to create guild role. ${error}`);
         });
       }
     },
     {
-      name: 'modify-role',
-      description: 'Change the name of a role.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah modify-role categoryName oldName newName`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args){
-        if (args.length !== 3) {
-          return message.channel.send('Invalid arguments. Use `!aginah help modify-role for more info.`');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleRename')
+        .setDescription('Change the name of a role')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Name of the category containing the target role')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('oldName')
+          .setDescription('Current name of the role you wish to rename')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('newName')
+          .setDescription('The new name of the role')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction){
+        const categoryName = interaction.options.getString('categoryName');
+        const oldName = interaction.options.getString('oldName');
+        const newName = interaction.options.getString('newName');
 
         let sql = `SELECT r.id, r.roleId, rc.messageId
                    FROM guild_data gd
@@ -304,32 +336,42 @@ module.exports = {
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
                      AND r.roleName=?`;
-        const roleData = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
-        if (!roleData) { return message.channel.send('That role does not exist!'); }
+        const roleData = await dbQueryOne(sql, [interaction.guildId, categoryName, oldName]);
+        if (!roleData) { return interaction.reply('That role does not exist!'); }
 
         // Update role name in the database
-        await dbExecute('UPDATE roles SET roleName=? WHERE id=?', [args[2], roleData.id]);
+        await dbExecute('UPDATE roles SET roleName=? WHERE id=?', [newName, roleData.id]);
 
         // Update role on Discord
-        await message.guild.roles.edit(roleData.roleId.toString(), { name: args[2] });
+        await interaction.guild.roles.edit(roleData.roleId.toString(), { name: newName });
 
         // Update the category message to display the new role name
-        await updateCategoryMessage(message.client, message.guild, roleData.messageId);
+        await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
+        return interaction.reply(`Renamed role ${oldName} to ${newName} in category ${categoryName}.`);
       }
     },
     {
-      name: 'modify-role-reaction',
-      description: 'Alter the reaction associated with a role created by this bot.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah modify-role-reaction CategoryName RoleName Reaction`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        if (args.length < 3) {
-          return message.channel.send('Invalid argument count. Use `!aginah help modify-role-reaction` for more info.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleReactionChange')
+        .setDescription('Alter the reaction associated with a role')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Name of the category containing the target role')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('roleName')
+          .setDescription('Name of the role you wish to change the reaction for')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('reaction')
+          .setDescription('New reaction to associate with the role')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('categoryName');
+        const roleName = interaction.options.getString('roleName');
+        const reaction = interaction.options.getString('reaction');
 
         // Check for existing role
         let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId, r.reaction FROM roles r
@@ -339,16 +381,17 @@ module.exports = {
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
                      AND r.roleName=?`;
-        const role = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
-        // If the role already exists, do nothing
-        if (!role) { return message.channel.send('That role does not exist!'); }
+        const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
+
+        // If the role does not exist, inform the user
+        if (!role) { return interaction.reply('That role does not exist!'); }
 
         // Verify the requested emoji is available on this server
-        const emoji = await parseEmoji(message.guild, args[2], true);
-        if (!emoji) { return message.channel.send('That emoji is not available on this server!'); }
+        const emoji = await parseEmoji(interaction.guild, reaction, true);
+        if (!emoji) { return interaction.reply('That emoji is not available on this server!'); }
 
         // Remove reactions from the role category message
-        message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
+        interaction.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
           .then((categoryMessage) => {
             categoryMessage.reactions.cache.each((reaction) => {
               if (reaction.emoji.toString() === role.reaction) { reaction.remove(); }
@@ -359,23 +402,32 @@ module.exports = {
           }).catch((err) => generalErrorHandler(err));
 
         await dbExecute('UPDATE roles SET reaction=? WHERE id=?', [emoji.toString(), role.id]);
-        await updateCategoryMessage(message.client, message.guild, role.messageId);
+        await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
+        return interaction.reply(`Role ${roleName} reaction updated to ${reaction} in category ${categoryName}.`);
       }
     },
     {
-      name: 'modify-role-description',
-      description: 'Alter the description associated with a role created by this bot.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah modify-role-description CategoryName RoleName [Description]`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
-      async execute(message, args) {
-        if (args.length < 2) {
-          return message.channel.send('Invalid argument count. Use `!aginah help modify-role-description` ' +
-            'for more info.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleDescriptionChange')
+        .setDescription('Alter the description associated with a role')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Name of the category containing the target role')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('roleName')
+          .setDescription('Name of the role you wish to change the description of')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('description')
+          .setDescription('New description for the role')
+          .setRequired(false))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('categoryName');
+        const roleName = interaction.options.getString('roleName');
+        const description = interaction.options.getString('description', false) ?? null;
 
         // Check for existing role
         let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId FROM roles r
@@ -385,12 +437,13 @@ module.exports = {
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
                      AND r.roleName=?`;
-        const role = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
-        if (!role) { return message.channel.send('That role does not exist!'); }
+        const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
+        if (!role) { return interaction.reply('That role does not exist!'); }
 
         sql = 'UPDATE roles SET description=? WHERE id=?';
-        await dbExecute(sql, [(args[2] ? args.slice(2).join(' ') : null), role.id]);
-        await updateCategoryMessage(message.client, message.guild, role.messageId);
+        await dbExecute(sql, [description, role.id]);
+        await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
+        return interaction.reply(`Updated description or role ${roleName} in category ${categoryName}.`);
       }
     },
     {
@@ -402,10 +455,22 @@ module.exports = {
       moderatorRequired: true,
       adminOnly: false,
       guildOnly: true,
-      async execute(message, args) {
-        if (args.length < 2) {
-          return message.channel.send('Invalid argument count. Use `!aginah help delete-role` for more info.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roleDelete')
+        .setDescription('Delete a role in the role request system.')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Name of the category containing the target role')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('roleName')
+          .setDescription('Name of the role you wish to delete')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('categoryName');
+        const roleName = interaction.options.getString('roleName');
 
         let sql = `SELECT r.id, rc.id AS categoryId, rc.messageId, r.reaction, r.roleId, rs.roleRequestChannelId
                    FROM roles r
@@ -415,22 +480,23 @@ module.exports = {
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
                      AND r.roleName=?`;
-        const role = await dbQueryOne(sql, [message.guild.id, args[0], args[1]]);
-        if (!role) { return message.channel.send('That role does not exist!'); }
+        const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
+        if (!role) { return interaction.reply('That role does not exist!'); }
 
         // Remove reactions from the role category message
-        message.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
+        interaction.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
           .then((categoryMessage) => categoryMessage.reactions.cache.each((r) => {
             if (r.emoji.toString() === role.reaction) { r.remove(); }
           }))
           .catch((err) => generalErrorHandler(err));
 
         // Remove the role from the guild
-        await message.guild.roles.resolve(role.roleId).delete();
+        await interaction.guild.roles.resolve(role.roleId).delete();
 
         // Delete rows from the roles table and update role category message
         await dbExecute('DELETE FROM roles WHERE id=? AND categoryId=?', [role.id, role.categoryId]);
-        await updateCategoryMessage(message.client, message.guild, role.messageId);
+        await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
+        return interaction.reply(`Deleted role ${roleName} from category ${categoryName}.`);
       }
     },
   ],

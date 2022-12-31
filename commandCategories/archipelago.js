@@ -29,7 +29,7 @@ module.exports = {
         const serverAddress = interaction.options.getString('serverAddress');
         const gameName = interaction.options.getString('gameName');
         const slotName = interaction.options.getString('slowName');
-        const password = interaction.options.getString('password') ?? null;
+        const password = interaction.options.getString('password', false) ?? null;
 
         if (interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
           return interaction.reply('An Archipelago game is already being monitored in this channel ' +
