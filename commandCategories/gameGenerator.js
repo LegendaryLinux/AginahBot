@@ -3,27 +3,28 @@ const request = require('request');
 const FormData = require('form-data');
 const tmp = require('tmp');
 const fs = require('fs');
+const { SlashCommandBuilder } = require('discord.js');
 
 const API_ENDPOINT = 'https://archipelago.gg/api/generate';
-
-// TODO: Convert to slash commands
 
 module.exports = {
   category: 'Game Generator',
   commands: [
     {
-      name: 'generate',
-      description: 'Generate a game based on an uploaded file.',
-      longDescription: null,
-      aliases: ['gen'],
-      usage: '`!aginah generate configFile [race|tournament]`',
-      guildOnly: false,
-      moderatorRequired: false,
-      adminOnly: false,
-      execute(message, args) {
-        if (message.attachments.size === 0) {
-          return message.channel.send('You must upload a zip or yaml file to generate a game.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('apGenerate')
+        .setDescription('Generate a game based on an uploaded file.')
+        .setDMPermission(true)
+        .addAttachmentOption((opt) => opt
+          .setName('configFile')
+          .setDescription('Archipelago config file')
+          .setRequired(true))
+        .addBooleanOption((opt) => opt
+          .setName('raceMode')
+          .setDescription('If true, a spoiler will not be generated')
+          .setRequired(false)),
+      async execute(interaction, args) {
+        const configFile = interaction.options.getAttachment('configFile');
 
         // Handle requests to generate a game from a file
         // If the word "race" is provided as an argument anywhere, treat this as a race seed
@@ -49,9 +50,9 @@ module.exports = {
           }
         });
 
-        const postfix = '.'+message.attachments.first().name.split('.').reverse()[0];
+        const postfix = '.' + configFile.name.split('.').reverse()[0];
         const tempFile = tmp.fileSync({ prefix: 'upload-', postfix });
-        return request.get(message.attachments.first().url)
+        return request.get(configFile.url)
           .pipe(fs.createWriteStream(tempFile.name))
           .on('close', () => {
             // Send request to api
@@ -65,11 +66,11 @@ module.exports = {
             const axiosOpts = { headers: formData.getHeaders() };
             axios.post(API_ENDPOINT, formData, axiosOpts)
               .then((apResponse) => {
-                message.channel.send('Seed generation underway. When it\'s ready, you will be ' +
+                interaction.reply('Seed generation underway. When it\'s ready, you will be ' +
                                     `able to download your patch file from:\n${apResponse.data.url}`);
                 tempFile.removeCallback();
               }).catch((error) => {
-                message.channel.send('I couldn\'t generate that game, sorry.');
+                interaction.reply('I couldn\'t generate that game, sorry.');
                 if(error.isAxiosError && error.response && error.response.data){
                   console.error(`Unable to generate game on ${API_ENDPOINT}. The following ` +
                                       'data was returned from the endpoint:');

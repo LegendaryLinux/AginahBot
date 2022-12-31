@@ -62,11 +62,13 @@ fs.readdirSync('./interactionListeners').filter((file) => file.endsWith('.js')).
   client.interactionListeners.push(listener);
 });
 
+// Load channelDeleted listeners
 fs.readdirSync('./channelDeletedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
   const listener = require(`./channelDeletedListeners/${listenerFile}`);
   client.channelDeletedListeners.push(listener);
 });
 
+// TODO: Convert to slash command handling. This whole section probably has to go
 client.on('messageCreate', async (msg) => {
   // Fetch message if partial
   const message = await cachePartial(msg);
