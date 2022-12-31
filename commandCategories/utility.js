@@ -1,10 +1,10 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const { parseTimeString } = require('../lib');
 const { generalErrorHandler } = require('../errorHandlers');
 const tmp = require('tmp');
 const fs = require('fs');
 
-const sendTimestampMessage = async (message, targetDate) => {
+const sendTimestampMessage = async (interaction, targetDate) => {
   const embed = new EmbedBuilder()
     .setTitle(`<t:${Math.floor(targetDate.getTime() / 1000)}:F>`)
     .setColor('#6081cb')
@@ -12,81 +12,75 @@ const sendTimestampMessage = async (message, targetDate) => {
       { name: 'Javascript / Node.js Timestamp', value: targetDate.getTime().toString() },
       { name: 'UNIX Timestamp', value: Math.floor(targetDate.getTime() / 1000).toString() },
     );
-  return message.channel.send({ embeds: [embed] });
+  return interaction.reply({ embeds: [embed] });
 };
-
-// TODO: Convert to slash commands
 
 module.exports = {
   category: 'Utility Commands',
   commands: [
     {
-      name: 'timestamp',
-      description: 'Enter a date/time to determine its unix timestamp.',
-      longDescription: 'Allowed date/times look like:\n\n' +
-              '`X:00`: The next occurrence of the provided minutes value\n' +
-              '`X+2:15` A set number of hours in the future, at the provided minute value\n' +
-              '`HH:MM TZ`: The next occurrence of the provided time.\n' +
-              '`MM/DD/YYYY HH:MM TZ`: The specific provided date and time.\n' +
-              '`YYYY-MM-DD HH:MM TZ`: The specific provided date and time.\n\n' +
-              'Strict ISO-8601 formatted datetime values are allowed.\n' +
-              'UNIX Timestamps are allowed.\n' +
-              'A list of timezones can be found on the Wikipedia timezone page under the `TZ database name` column.\n' +
-              'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones',
-      aliases: ['ts'],
-      usage: '`!aginah timestamp date/time`',
-      guildOnly: false,
-      moderatorRequired: false,
-      adminOnly: false,
-      async execute(message, args) {
-        if (args.length === 0) {
-          return message.channel.send('You must specify a date/time value.');
-        }
-
-        const timeString = args.join(' ').toUpperCase().trim();
+      commandBuilder: new SlashCommandBuilder()
+        .setName('timestamp')
+        .setDescription('Enter a date/time to determine its unix timestamp')
+        .addStringOption((opt) => opt
+          .setName('dateTime')
+          .setDescription('Allowed date/times look like:\n\n' +
+            '`X:00`: The next occurrence of the provided minutes value\n' +
+            '`X+2:15` A set number of hours in the future, at the provided minute value\n' +
+            '`HH:MM TZ`: The next occurrence of the provided time.\n' +
+            '`MM/DD/YYYY HH:MM TZ`: The specific provided date and time.\n' +
+            '`YYYY-MM-DD HH:MM TZ`: The specific provided date and time.\n\n' +
+            'Strict ISO-8601 formatted datetime values are allowed.\n' +
+            'UNIX Timestamps are allowed.\n' +
+            'A list of timezones can be found on the Wikipedia timezone page under the `TZ database name` column.\n' +
+            'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones')
+          .setRequired(true))
+        .setDMPermission(true),
+      async execute(interaction) {
+        const timeString = interaction.options.getString('dateTime').toUpperCase().trim();
 
         try{
           const targetDate = parseTimeString(timeString);
-          return sendTimestampMessage(message, targetDate);
+          return sendTimestampMessage(interaction, targetDate);
         } catch (error) {
           if (error.name && error.name === 'TimeParserValidationError') {
-            return message.channel.send(error.message);
+            return interaction.reply(error.message);
           }
           generalErrorHandler(error);
         }
       }
     },
     {
-      name: 'save-log',
-      description: 'Save a log of recent channel messages to a text file.',
-      longDescription: 'Save a log of up to 1000 recent channel messages to a text file. ' +
-              'Defaults to one hundred messages.',
-      aliases: [],
-      usage: '`!aginah save-log [limit]`',
-      guildOnly: true,
-      moderatorRequired: true,
-      adminOnly: false,
-      async execute(message, args) {
-        if ((args.length > 0) && (!args[0].match(/^\d+$/))) {
-          return message.channel.send('Limit argument must be an integer from 1 to 1000.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('saveLog')
+        .setDescription('Save a log of recent channel messages to a text file.')
+        .addIntegerOption((opt) => opt
+          .setName('limit')
+          .setDescription('Number of messages to save. Min 1, max 1000, default 100')
+          .setRequired(false))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const limit = interaction.options.getInteger('limit') ?? 100;
 
         // Control variables
-        const logLimit = (args.length > 0) ? parseInt(args[0], 10) : 100;
         const logs = [];
-        let lastMessageId = message.id;
+        let lastMessageId = interaction.id;
 
         // Do not fetch more than 1000 messages from the Discord API
-        if (logLimit < 1 || logLimit > 1000) {
-          return message.channel.send('Limit argument must be an integer from 1 to 1000.');
+        if (limit < 1 || limit > 1000) {
+          return interaction.reply({
+            content: 'Limit argument must be an integer from 1 to 1000.',
+            ephemeral: true,
+          });
         }
 
-        while (logs.length < logLimit) {
+        while (logs.length < limit) {
           // Determine number of messages to be fetched this request
-          const fetchLimit = ((logLimit - logs.length) > 100) ? 100 : (logLimit - logs.length);
+          const fetchLimit = ((limit - logs.length) > 100) ? 100 : (limit - logs.length);
 
           // Fetch messages from Discord API
-          const messages = await message.channel.messages.fetch({
+          const messages = await interaction.channel.messages.fetch({
             before: lastMessageId,
             limit: fetchLimit,
           });
@@ -121,10 +115,12 @@ module.exports = {
         // Save the output to a temporary file and send it to the channel
         return tmp.file((err, tmpFilePath, fd, cleanupCallback) => {
           fs.writeFile(tmpFilePath, output, () => {
-            return message.channel.send({
+            return interaction.reply({
+              ephemeral: true,
+              content: `Saved a log of the previous ${limit} messages in this channel.`,
               files: [
                 {
-                  name: `${message.channel.name}-log.txt`,
+                  name: `${interaction.channel.name}-log.txt`,
                   attachment: tmpFilePath,
                 }
               ]
