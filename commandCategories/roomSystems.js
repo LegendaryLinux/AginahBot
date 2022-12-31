@@ -1,75 +1,75 @@
 const { dbQueryOne, dbExecute } = require('../lib');
-const { ChannelType } = require('discord.js');
+const { ChannelType, SlashCommandBuilder } = require('discord.js');
 
-const DEFAULT_ROLE_NAME = 'Dynamic Room Category';
-const VOICE_CHANNEL_NAME = 'Start Game';
-
-// TODO: Convert to slash commands
+const VOICE_CHANNEL_NAME = 'Create Room';
 
 module.exports = {
   category: 'Dynamic Room Systems',
   commands: [
     {
-      name: 'create-room-system',
-      description: 'Add a dynamic room system to this server. It will automatically create voice and text ' +
-        'channels on demand.',
-      longDescription: null,
-      aliases: ['crs'],
-      usage: '`!aginah create-room-system [categoryName]`',
-      guildOnly: true,
-      moderatorRequired: false,
-      adminOnly: true,
-      async execute(message, args) {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roomSystemCreate')
+        .setDescription('Add a dynamic room system to this server. It will automatically create voice and text ' +
+          'channels on demand.')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Category name for the new room system')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
         // Create the system
-        const roleName = args[0] ? args[0] : DEFAULT_ROLE_NAME;
-        const category = await message.guild.channels.create({ name: roleName, type: ChannelType.GuildCategory });
-        const voiceChannel = await message.guild.channels.create({
+        const categoryName = interaction.options.getString('categoryName');
+        const category = await interaction.guild.channels.create({
+          name: categoryName,
+          type: ChannelType.GuildCategory
+        });
+        const voiceChannel = await interaction.guild.channels.create({
           name: VOICE_CHANNEL_NAME,
           type: ChannelType.GuildVoice,
           parent: category
         });
-        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [message.guild.id]);
+        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
         let sql = 'INSERT INTO room_systems (guildDataId, channelCategoryId, newGameChannelId) VALUES (?, ?, ?)';
         await dbExecute(sql, [guildData.id, category.id, voiceChannel.id]);
+        return interaction.reply(`Created room system ${categoryName}.`);
       }
     },
     {
-      name: 'destroy-room-system',
-      description: 'Remove a role system system from this server.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah destroy-room-system categoryName`',
-      guildOnly: true,
-      moderatorRequired: false,
-      adminOnly: true,
-      async execute(message, args) {
-        if (!args[0]) {
-          return message.channel.send('You must provide the name of the dynamic room system to delete.\n' +
-            '`!aginah help destroy-room-system` for more info.');
-        }
+      commandBuilder: new SlashCommandBuilder()
+        .setName('roomSystemDestroy')
+        .setDescription('Remove a role system system from this server.')
+        .addStringOption((opt) => opt
+          .setName('categoryName')
+          .setDescription('Category name of the room system you wish to destroy')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('categoryName');
 
-        const guild = await message.guild.fetch();
+        const guild = await interaction.guild.fetch();
         // Find a category whose name matches the argument
-        const category = guild.channels.cache.find((el) => el.name === args[0]);
+        const category = guild.channels.cache.find((el) => el.name === categoryName);
 
         // If no category matching the provided argument was found, inform the user
-        if (!category) { return message.channel.send('No dynamic room category with that name exists!'); }
+        if (!category) { return interaction.reply('No dynamic room category with that name exists!'); }
 
         let sql = `SELECT rs.id
                    FROM room_systems rs
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE channelCategoryId=?
                      AND gd.guildId=?`;
-        const row = await dbQueryOne(sql, [category.id, message.guild.id]);
+        const row = await dbQueryOne(sql, [category.id, interaction.guildId]);
         if (!row) {
-          return message.channel.send('Your server does not have a dynamic room category with that name.');
+          return interaction.reply('Your server does not have a dynamic room category with that name.');
         }
-
 
         await category.children.cache.each(async (channel) => await channel.delete());
         await category.delete();
         await dbExecute('DELETE FROM room_system_games WHERE roomSystemId=?', [row.id]);
         await dbExecute('DELETE FROM room_systems WHERE id=?', [row.id]);
+        return interaction.reply(`Destroyed room system ${categoryName}.`);
       }
     },
   ],
