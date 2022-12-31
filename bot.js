@@ -1,4 +1,4 @@
-const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete, verifyGuildSetups,
@@ -30,8 +30,8 @@ client.tempData = {
 
 // TODO: Convert to slash command handling
 // Load command category files
-fs.readdirSync('./commandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {
-  const commandCategory = require(`./commandCategories/${categoryFile}`);
+fs.readdirSync('./slashCommandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {
+  const commandCategory = require(`./slashCommandCategories/${categoryFile}`);
   client.commandCategories.push(commandCategory);
   commandCategory.commands.forEach((command) => {
     client.commands.set(command.name, command);
@@ -68,8 +68,8 @@ fs.readdirSync('./channelDeletedListeners').filter((file) => file.endsWith('.js'
   client.channelDeletedListeners.push(listener);
 });
 
-// TODO: Convert to slash command handling. This whole section probably has to go
-client.on('messageCreate', async (msg) => {
+// Run messages through the listeners
+client.on(Events.MessageCreate, async (msg) => {
   // Fetch message if partial
   const message = await cachePartial(msg);
   if (message.member) { message.member = await cachePartial(message.member); }
@@ -78,93 +78,51 @@ client.on('messageCreate', async (msg) => {
   // Ignore all bot messages
   if (message.author.bot) { return; }
 
-  // If the message does not begin with the command prefix, run it through the message listeners
-  if (!message.content.startsWith(config.commandPrefix)) {
-    return client.messageListeners.forEach((listener) => listener(client, message));
-  }
-
-  // If the message is a command, parse the command and arguments
-  const args = parseArgs(message.content.slice(config.commandPrefix.length).trim());
-  const commandName = args.shift().toLowerCase();
-
-  try{
-    // Get the command object
-    const command = client.commands.get(commandName) ||
-            client.commands.find((cmd) => cmd.aliases && cmd.aliases.includes(commandName));
-    // If the command does not exist, alert the user
-    if (!command) { return message.channel.send('I do not know that command. Use `!aginah help` for more info.'); }
-
-    // If the command does not require a guild, just run it
-    if (!command.guildOnly) { return command.execute(message, args); }
-
-    // If this message was not sent from a guild, deny it
-    if (!message.guild) { return message.reply('That command may only be used in a server.'); }
-
-    // If the command is available only to administrators, run it only if the user is an administrator
-    if (command.adminOnly) {
-      if (verifyIsAdmin(message.member)) {
-        return command.execute(message, args);
-      } else {
-        // If the user is not an admin, warn them and bail
-        return message.author.send('You do not have permission to use that command.');
-      }
-    }
-
-    // If the command is available to everyone, just run it
-    if (!command.moderatorRequired) { return command.execute(message, args); }
-
-    // Otherwise, the user must have permission to access this command
-    if (await verifyModeratorRole(message.member)) {
-      return command.execute(message, args);
-    }
-
-    return message.reply('You are not authorized to use that command.');
-  }catch (error) {
-    // Log the error, report a problem
-    console.error(error);
-    message.reply('Something broke. Maybe check your command?');
-  }
+  // Run the message through the message listeners
+  return client.messageListeners.forEach((listener) => listener(client, message));
 });
 
 // Run the voice states through the listeners
-client.on('voiceStateUpdate', async(oldState, newState) => {
+client.on(Events.VoiceStateUpdate, async(oldState, newState) => {
   oldState.member = await cachePartial(oldState.member);
   newState.member = await cachePartial(newState.member);
   client.voiceStateListeners.forEach((listener) => listener(client, oldState, newState));
 });
 
 // Run the reaction updates through the listeners
-client.on('messageReactionAdd', async(messageReaction, user) => {
+client.on(Events.MessageReactionAdd, async(messageReaction, user) => {
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true));
 });
-client.on('messageReactionRemove', async(messageReaction, user) => {
+client.on(Events.MessageReactionRemove, async(messageReaction, user) => {
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
   client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false));
 });
 
 // Run the interactions through the interactionListeners
-client.on('interactionCreate', async(interaction) => {
+client.on(Events.InteractionCreate, async(interaction) => {
+  // TODO: Differentiate slash commands from other interactions, and handle them here
+
   client.interactionListeners.forEach((listener) => listener(client, interaction));
 });
 
 // Run channelDelete events through their listeners
-client.on('channelDelete', async(channel) => {
+client.on(Events.ChannelDelete, async(channel) => {
   client.channelDeletedListeners.forEach((listener) => listener(client, channel));
 });
 
 // Handle the bot being added to a new guild
-client.on('guildCreate', async(guild) => handleGuildCreate(client, guild));
+client.on(Events.GuildCreate, async(guild) => handleGuildCreate(client, guild));
 
 // Handle the bot being removed from a guild
-client.on('guildDelete', async(guild) => handleGuildDelete(client, guild));
+client.on(Events.GuildDelete, async(guild) => handleGuildDelete(client, guild));
 
 // Use the general error handler to handle unexpected errors
-client.on('error', async(error) => generalErrorHandler(error));
+client.on(Events.Error, async(error) => generalErrorHandler(error));
 
-client.once('ready', async () => {
+client.once(Events.ClientReady, async () => {
   // Update data for each guild if necessary
   try{ await verifyGuildSetups(client); }
   catch (err) { console.error(err); }
