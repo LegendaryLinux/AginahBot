@@ -1,8 +1,7 @@
 const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
-const { dbQueryOne, dbQueryAll, dbExecute, verifyIsAdmin,
-  updateScheduleBoard } = require('../lib');
+const { dbQueryOne, dbQueryAll, dbExecute, verifyIsAdmin, updateScheduleBoard } = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
 const generateEventCode = () => {
@@ -58,7 +57,7 @@ module.exports = {
   commands: [
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('scheduleView')
+        .setName('schedule-view')
         .setDescription('View upcoming events')
         .setDMPermission(false),
       async execute(interaction) {
@@ -147,9 +146,8 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('scheduleNew')
-        .setDescription('Schedule a new event. If you schedule a game by mistake, you may use the `/cancel` ' +
-          'command to cancel it.')
+        .setName('schedule-new')
+        .setDescription('Schedule a new event.')
         .addStringOption((opt) => opt
           .setName('date')
           .setDescription('Format: YYYY-MM-DD')
@@ -234,18 +232,18 @@ module.exports = {
       }
     },
     {
+      longDescription: 'Cancel an upcoming scheduled event. A game can only be cancelled by a moderator or by the ' +
+        'user who scheduled it.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('scheduleCancel')
-        .setDescription('Cancel an upcoming scheduled event. A game can only be cancelled by a moderator or by the ' +
-          'user who scheduled it.')
+        .setName('schedule-cancel')
+        .setDescription('Cancel your upcoming event.')
         .addStringOption((opt) => opt
-          .setName('eventCode')
+          .setName('event-code')
           .setDescription('Six character code of the upcoming event you wish to cancel.')
           .setRequired(true))
-        .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDMPermission(false),
       async execute(interaction) {
-        const eventCode = interaction.options.getString('eventCode');
+        const eventCode = interaction.options.getString('event-code');
 
         let sql = `SELECT se.id, se.channelId, se.messageId, se.schedulingUserId, se.schedulingUserTag
                    FROM scheduled_events se
@@ -263,7 +261,7 @@ module.exports = {
         }
 
         // If the user is not a moderator and not the scheduling user, deny the cancellation
-        if (interaction.user.id !== eventData.schedulingUserId) {
+        if (!verifyIsAdmin(interaction.member) && (interaction.user.id !== eventData.schedulingUserId)) {
           const guildMember = await interaction.guild.members.fetch(interaction.user.id);
           if (guildMember && !verifyIsAdmin(guildMember)) {
             return interaction.reply('This game can only be cancelled by the user who scheduled it ' +
@@ -290,11 +288,12 @@ module.exports = {
       }
     },
     {
+      longDescription: 'Create and pin a message containing an automatically updated list of scheduled events ' +
+        'to this channel. The message will automatically update whenever an event is scheduled or cancelled, ' +
+        'and will automatically remove past events once per hour.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('scheduleBoardPost')
-        .setDescription('Create and pin a message containing an automatically updated list of scheduled events ' +
-          'to this channel. The message will automatically update whenever an event is scheduled or cancelled, ' +
-          'and will automatically remove past events once per hour.')
+        .setName('schedule-board-post')
+        .setDescription('Post a schedule board in this channel.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
@@ -334,7 +333,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('scheduleBoardDelete')
+        .setName('schedule-board-delete')
         .setDescription('Delete a schedule board if it exists in this channel.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),

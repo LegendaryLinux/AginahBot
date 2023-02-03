@@ -7,19 +7,20 @@ module.exports = {
   category: 'Dynamic Room Systems',
   commands: [
     {
+      longDescription: 'Add a dynamic room system to this server. It will automatically create voice and text ' +
+        'channels on demand.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('roomSystemCreate')
-        .setDescription('Add a dynamic room system to this server. It will automatically create voice and text ' +
-          'channels on demand.')
+        .setName('room-system-create')
+        .setDescription('Add a dynamic room system to this server.')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Category name for the new room system')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
         // Create the system
-        const categoryName = interaction.options.getString('categoryName');
+        const categoryName = interaction.options.getString('category-name');
         const category = await interaction.guild.channels.create({
           name: categoryName,
           type: ChannelType.GuildCategory
@@ -37,16 +38,16 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roomSystemDestroy')
+        .setName('room-system-destroy')
         .setDescription('Remove a role system system from this server.')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Category name of the room system you wish to destroy')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const categoryName = interaction.options.getString('categoryName');
+        const categoryName = interaction.options.getString('category-name');
 
         const guild = await interaction.guild.fetch();
         // Find a category whose name matches the argument

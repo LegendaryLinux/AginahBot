@@ -5,13 +5,14 @@ module.exports = {
   category: 'Message Tags',
   commands: [
     {
+      longDescription: 'Add or update a tag for a server. If a user includes this tag in any part of ' +
+        'a message, the bot will respond with the content of this tag. Tags may contain only letters, ' +
+        'numbers, and underscores.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('tagAdd')
-        .setDescription('Add or update a tag for a server. If a user includes this tag in any part of ' +
-          'a message, the bot will respond with the content of this tag. Tags may contain only letters, ' +
-          'numbers, and underscores.')
+        .setName('tag-add')
+        .setDescription('Add or update a tag for this server.')
         .addStringOption((opt) => opt
-          .setName('tagName')
+          .setName('tag-name')
           .setDescription('The tag to respond to')
           .setRequired(true))
         .addStringOption((opt) => opt
@@ -21,7 +22,7 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const tagName = interaction.options.getString('tagName');
+        const tagName = interaction.options.getString('tag-name');
         const content = interaction.options.getString('content');
 
         // Tags may contain only alphanumeric characters
@@ -42,15 +43,15 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('tagDelete')
+        .setName('tag-delete')
         .setDescription('Remove a &tag from a server.')
         .addStringOption((opt) => opt
-          .setName('tagName')
+          .setName('tag-name')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const tagName = interaction.options.getString('tagName');
+        const tagName = interaction.options.getString('tag-name');
 
         // Fetch guildDataId
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
@@ -79,7 +80,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('tagList')
+        .setName('tag-list')
         .setDescription('List all &tags available on this server.')
         .setDMPermission(false),
       async execute(interaction) {

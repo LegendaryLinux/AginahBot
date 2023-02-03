@@ -1,8 +1,8 @@
 const { Client, Collection, Events, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
-const { verifyModeratorRole, verifyIsAdmin, handleGuildCreate, handleGuildDelete, verifyGuildSetups,
-  cachePartial, parseArgs, updateScheduleBoards } = require('./lib');
+const { handleGuildCreate, handleGuildDelete, verifyGuildSetups,
+  cachePartial, updateScheduleBoards } = require('./lib');
 const fs = require('fs');
 
 // Catch all unhandled errors
@@ -17,7 +17,7 @@ const client = new Client({
 });
 client.devMode = process.argv[2] && process.argv[2] === 'dev';
 client.commands = new Collection();
-client.commandCategories = [];
+client.slashCommandCategories = [];
 client.messageListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
@@ -28,14 +28,17 @@ client.tempData = {
   apInterfaces: new Map(),
 };
 
-// TODO: Convert to slash command handling
+
 // Load command category files
 fs.readdirSync('./slashCommandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {
-  const commandCategory = require(`./slashCommandCategories/${categoryFile}`);
-  client.commandCategories.push(commandCategory);
-  commandCategory.commands.forEach((command) => {
-    client.commands.set(command.name, command);
+  const slashCommandCategory = require(`./slashCommandCategories/${categoryFile}`);
+  client.slashCommandCategories.push(slashCommandCategory);
+  /*
+  // TODO: Is this still needed?
+  slashCommandCategory.commands.forEach((command) => {
+    // client.commands.set(command.name, command);
   });
+  */
 });
 
 // Load message listener files
@@ -103,8 +106,20 @@ client.on(Events.MessageReactionRemove, async(messageReaction, user) => {
 
 // Run the interactions through the interactionListeners
 client.on(Events.InteractionCreate, async(interaction) => {
-  // TODO: Differentiate slash commands from other interactions, and handle them here
+  // Handle slash command interactions independently of other interactions
+  if (interaction.isChatInputCommand()) {
+    for (const listener of client.slashCommandCategories.commands) {
+      if (listener.commandBuilder.name === interaction.commandName) {
+        return listener(interaction);
+      }
+    }
 
+    // If this slash command has no known listener, notify the user and log a warning
+    console.warn(`Unknown slash command received: ${interaction.commandName}`);
+    return interaction.reply('Unknown command.');
+  }
+
+  // All other interactions are grouped together and handled independently
   client.interactionListeners.forEach((listener) => listener(client, interaction));
 });
 

@@ -40,11 +40,12 @@ module.exports = {
   category: 'Role Requestor',
   commands: [
     {
+      longDescription: 'Create a #role-request text channel for users to interact with' +
+        'AginahBot and request roles. This channel will be used to post role category messages users can react to ' +
+        'to add or remove roles.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleSystemEnable')
-        .setDescription('Create a #role-request text channel for users to interact with' +
-          'AginahBot and request roles. This channel will be used to post role category messages users can react to ' +
-          'to add or remove roles.')
+        .setName('role-system-enable')
+        .setDescription('Enable the role system on this server.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
@@ -86,7 +87,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleSystemDestroy')
+        .setName('role-system-destroy')
         .setDescription('Delete the role-request channel and all categories and permissions created by this bot.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
@@ -120,18 +121,19 @@ module.exports = {
       }
     },
     {
+      longDescription: 'Create a category for roles to be added to. Each category will have its own message ' +
+        'in the #role-request channel. Category names must be a single alphanumeric word.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleCategoryCreate')
-        .setDescription('Create a category for roles to be added to. Each category will have its own message ' +
-          'in the #role-request channel. Category names must be a single alphanumeric word.')
+        .setName('role-category-create')
+        .setDescription('Create a role category.')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Name of the new category')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const categoryName = interaction.options.getString('categoryName');
+        const categoryName = interaction.options.getString('category-name');
 
         let sql = `SELECT 1 FROM role_categories rc
                    JOIN role_systems rs ON rc.roleSystemId = rs.id
@@ -163,21 +165,21 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleCategoryRename')
+        .setName('role-category-rename')
         .setDescription('Change the name of a role category.')
         .addStringOption((opt) => opt
-          .setName('oldName')
+          .setName('old-name')
           .setDescription('Current name of the category you wish to rename')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('newName')
+          .setName('new-name')
           .setDescription('New name of the category')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction){
-        const oldName = interaction.options.getString('oldName');
-        const newName = interaction.options.getString('newName');
+        const oldName = interaction.options.getString('old-name');
+        const newName = interaction.options.getString('new-name');
 
         // Find a matching role category
         let sql = `SELECT rc.id, rc.messageId
@@ -195,16 +197,16 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleCategoryDelete')
+        .setName('role-category-delete')
         .setDescription('Delete a role category. All roles within this category will also be deleted.')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Name of the category you wish to delete')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const categoryName = interaction.options.getString('categoryName');
+        const categoryName = interaction.options.getString('category-name');
 
         // Get the role category data
         let sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId
@@ -230,14 +232,14 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleCreate')
+        .setName('role-create')
         .setDescription('Create a pingable role.')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('The category your new role should be placed into')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('roleName')
+          .setName('role-name')
           .setDescription('The name of the role you wish to create')
           .setRequired(true))
         .addStringOption((opt) => opt
@@ -251,8 +253,8 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const categoryName = interaction.options.getString('categoryName');
-        const roleName = interaction.options.getString('roleName');
+        const categoryName = interaction.options.getString('category-name');
+        const roleName = interaction.options.getString('role-name');
         const reaction = interaction.options.getString('reaction');
         const description = interaction.options.getString('description', false) ?? null;
 
@@ -307,26 +309,26 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleRename')
+        .setName('role-rename')
         .setDescription('Change the name of a role')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('oldName')
+          .setName('old-name')
           .setDescription('Current name of the role you wish to rename')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('newName')
+          .setName('new-name')
           .setDescription('The new name of the role')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction){
-        const categoryName = interaction.options.getString('categoryName');
-        const oldName = interaction.options.getString('oldName');
-        const newName = interaction.options.getString('newName');
+        const categoryName = interaction.options.getString('category-name');
+        const oldName = interaction.options.getString('old-name');
+        const newName = interaction.options.getString('new-name');
 
         let sql = `SELECT r.id, r.roleId, rc.messageId
                    FROM guild_data gd
@@ -352,14 +354,14 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleReactionChange')
+        .setName('role-reaction-change')
         .setDescription('Alter the reaction associated with a role')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('roleName')
+          .setName('role-name')
           .setDescription('Name of the role you wish to change the reaction for')
           .setRequired(true))
         .addStringOption((opt) => opt
@@ -369,8 +371,8 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const categoryName = interaction.options.getString('categoryName');
-        const roleName = interaction.options.getString('roleName');
+        const categoryName = interaction.options.getString('category-name');
+        const roleName = interaction.options.getString('role-name');
         const reaction = interaction.options.getString('reaction');
 
         // Check for existing role
@@ -408,14 +410,14 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleDescriptionChange')
+        .setName('role-description-change')
         .setDescription('Alter the description associated with a role')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('roleName')
+          .setName('role-name')
           .setDescription('Name of the role you wish to change the description of')
           .setRequired(true))
         .addStringOption((opt) => opt
@@ -425,8 +427,8 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const categoryName = interaction.options.getString('categoryName');
-        const roleName = interaction.options.getString('roleName');
+        const categoryName = interaction.options.getString('category-name');
+        const roleName = interaction.options.getString('role-name');
         const description = interaction.options.getString('description', false) ?? null;
 
         // Check for existing role
@@ -447,30 +449,22 @@ module.exports = {
       }
     },
     {
-      name: 'delete-role',
-      description: 'Delete a role created by this bot.',
-      longDescription: null,
-      aliases: [],
-      usage: '`!aginah delete-role CategoryName RoleName`',
-      moderatorRequired: true,
-      adminOnly: false,
-      guildOnly: true,
       commandBuilder: new SlashCommandBuilder()
-        .setName('roleDelete')
+        .setName('role-delete')
         .setDescription('Delete a role in the role request system.')
         .addStringOption((opt) => opt
-          .setName('categoryName')
+          .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('roleName')
+          .setName('role-name')
           .setDescription('Name of the role you wish to delete')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        const categoryName = interaction.options.getString('categoryName');
-        const roleName = interaction.options.getString('roleName');
+        const categoryName = interaction.options.getString('category-name');
+        const roleName = interaction.options.getString('role-name');
 
         let sql = `SELECT r.id, rc.id AS categoryId, rc.messageId, r.reaction, r.roleId, rs.roleRequestChannelId
                    FROM roles r

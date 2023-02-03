@@ -7,7 +7,7 @@ module.exports = {
   commands: [
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('saveLog')
+        .setName('save-log')
         .setDescription('Save a log of recent channel messages to a text file.')
         .addIntegerOption((opt) => opt
           .setName('limit')

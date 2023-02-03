@@ -11,7 +11,10 @@ module.exports = {
     resolve(moderatorRole.position <= guildMember.roles.highest.position);
   }),
 
-  verifyIsAdmin: (guildMember) => guildMember.permissions.has(Discord.PermissionFlagsBits.Administrator),
+  verifyIsAdmin: (guildMember) => {
+    if (!guildMember) { return false; }
+    return guildMember.permissions.has(Discord.PermissionFlagsBits.Administrator);
+  },
 
   getModeratorRole: (guild) => new Promise(async (resolve) => {
     let modRole = null;

@@ -6,10 +6,11 @@ module.exports = {
   category: 'Mod Contact',
   commands: [
     {
+      longDescription: 'Enable the Mod Contact feature in a server. This will create a category ' +
+        'containing a single channel with a message where users can click on a button to contact the mods.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('modContactEnable')
-        .setDescription('Enable the Mod Contact feature in a Discord server. This will create a category ' +
-          'containing a single channel with a message where users can click on a button to contact the mods.')
+        .setName('mod-contact-enable')
+        .setDescription('Enable the Mod Contact feature in this server.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
@@ -80,10 +81,11 @@ module.exports = {
       },
     },
     {
+      longDescription: 'Remove the Mod Contact feature from a Discord server. This also removes all ' +
+        'Mod Contact history.',
       commandBuilder: new SlashCommandBuilder()
-        .setName('modContactDisable')
-        .setDescription('Remove the Mod Contact feature from a Discord server. This also removes all ' +
-          'Mod Contact history.')
+        .setName('mod-contact-disable')
+        .setDescription('Remove the Mod Contact feature from this server.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {

@@ -12,43 +12,27 @@ module.exports = {
   commands: [
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apGenerate')
+        .setName('ap-generate')
         .setDescription('Generate a game based on an uploaded file.')
         .setDMPermission(true)
         .addAttachmentOption((opt) => opt
-          .setName('configFile')
+          .setName('config-file')
           .setDescription('Archipelago config file')
           .setRequired(true))
         .addBooleanOption((opt) => opt
-          .setName('raceMode')
+          .setName('race-mode')
           .setDescription('If true, a spoiler will not be generated')
           .setRequired(false)),
-      async execute(interaction, args) {
-        const configFile = interaction.options.getAttachment('configFile');
+      async execute(interaction) {
+        const configFile = interaction.options.getAttachment('config-file');
+        const raceMode = interaction.options.getBoolean('race-mode') ?? false;
 
         // Handle requests to generate a game from a file
-        // If the word "race" is provided as an argument anywhere, treat this as a race seed
-        let race = '0';
+        let race = raceMode ? '1' : '0';
         let hintCost = '10';
         let forfeitMode = 'auto';
         let remainingMode = 'disabled';
-        let collectMode = 'goal';
-        args.forEach((arg) => {
-          if (arg.toLowerCase() === 'race') {
-            race = '1';
-            hintCost = '10';
-            forfeitMode = 'auto';
-            remainingMode = 'disabled';
-            collectMode = 'disabled';
-          }
-          if (arg.toLowerCase() === 'tournament') {
-            race = '1';
-            hintCost = '101';
-            forfeitMode = 'disabled';
-            remainingMode = 'disabled';
-            collectMode = 'disabled';
-          }
-        });
+        let collectMode = raceMode ? 'disabled' : 'goal';
 
         const postfix = '.' + configFile.name.split('.').reverse()[0];
         const tempFile = tmp.fileSync({ prefix: 'upload-', postfix });

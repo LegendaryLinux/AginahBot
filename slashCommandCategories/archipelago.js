@@ -6,19 +6,19 @@ module.exports = {
   commands: [
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apConnect')
+        .setName('ap-connect')
         .setDescription('Begin monitoring an Archipelago game in the current text channel')
         .setDMPermission(false)
         .addStringOption((opt) => opt
-          .setName('serverAddress')
+          .setName('server-address')
           .setDescription('Server address and port (ex. archipelago.gg:12345) of the Archipelago server to connect to')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('gameName')
+          .setName('game-name')
           .setDescription('Name of the game to connect as a client of')
           .setRequired(true))
         .addStringOption((opt) => opt
-          .setName('slotName')
+          .setName('slot-name')
           .setDescription('`name` field in your settings file')
           .setRequired(true))
         .addStringOption((opt) => opt
@@ -27,8 +27,8 @@ module.exports = {
           .setRequired(false)),
       async execute(interaction) {
         const serverAddress = interaction.options.getString('serverAddress');
-        const gameName = interaction.options.getString('gameName');
-        const slotName = interaction.options.getString('slowName');
+        const gameName = interaction.options.getString('game-name');
+        const slotName = interaction.options.getString('slot-name');
         const password = interaction.options.getString('password', false) ?? null;
 
         if (interaction.client.tempData.apInterfaces.has(interaction.channel.id)) {
@@ -66,7 +66,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apDisconnect')
+        .setName('ap-disconnect')
         .setDescription('Stop monitoring an Archipelago game in the current text channel')
         .setDMPermission(false),
       async execute(interaction) {
@@ -83,7 +83,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apSetAlias')
+        .setName('ap-set-alias')
         .setDescription('Associate your discord user with a specified alias')
         .addStringOption((opt) => opt
           .setName('alias')
@@ -105,7 +105,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apUnsetAlias')
+        .setName('ap-unset-alias')
         .setDescription('Disassociate your discord user with a specified alias')
         .addStringOption((opt) => opt
           .setName('alias')
@@ -127,7 +127,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apShowChat')
+        .setName('ap-show-chat')
         .setDescription('Show normal messages while connected to an AP game')
         .setDMPermission(false),
       async execute(interaction) {
@@ -143,7 +143,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apHideChat')
+        .setName('ap-hide-chat')
         .setDescription('Hide normal messages while connected to an AP game')
         .setDMPermission(false),
       async execute(interaction) {
@@ -159,7 +159,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apShowHints')
+        .setName('ap-show-hints')
         .setDescription('Show hint messages while connected to an AP game')
         .setDMPermission(false),
       async execute(interaction) {
@@ -175,7 +175,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apHideHints')
+        .setName('ap-hide-hints')
         .setDescription('Hide hint messages while connected to an AP game')
         .setDMPermission(false),
       async execute(interaction) {
@@ -191,7 +191,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apShowProgression')
+        .setName('ap-show-progression')
         .setDescription('Show progression item messages while connected to an AP game. Hides other item messages')
         .setDMPermission(false),
       async execute(interaction) {
@@ -208,7 +208,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apShowItems')
+        .setName('ap-show-items')
         .setDescription('Show all item messages while connected to an AP game')
         .setDMPermission(false),
       async execute(interaction) {
@@ -225,7 +225,7 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('apHideItems')
+        .setName('ap-hide-items')
         .setDescription('Hide all item messages while connected to an AP game')
         .setDMPermission(false),
       async execute(interaction) {
