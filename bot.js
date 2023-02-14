@@ -33,12 +33,6 @@ client.tempData = {
 fs.readdirSync('./slashCommandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {
   const slashCommandCategory = require(`./slashCommandCategories/${categoryFile}`);
   client.slashCommandCategories.push(slashCommandCategory);
-  /*
-  // TODO: Is this still needed?
-  slashCommandCategory.commands.forEach((command) => {
-    // client.commands.set(command.name, command);
-  });
-  */
 });
 
 // Load message listener files
