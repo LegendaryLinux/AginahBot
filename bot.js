@@ -102,9 +102,11 @@ client.on(Events.MessageReactionRemove, async(messageReaction, user) => {
 client.on(Events.InteractionCreate, async(interaction) => {
   // Handle slash command interactions independently of other interactions
   if (interaction.isChatInputCommand()) {
-    for (const listener of client.slashCommandCategories.commands) {
-      if (listener.commandBuilder.name === interaction.commandName) {
-        return listener(interaction);
+    for (const category of client.slashCommandCategories) {
+      for (const listener of category.commands) {
+        if (listener.commandBuilder.name === interaction.commandName) {
+          return listener.execute(interaction);
+        }
       }
     }
 
