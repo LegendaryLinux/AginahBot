@@ -47,6 +47,7 @@ module.exports = {
         .setDescription('Remove a &tag from a server.')
         .addStringOption((opt) => opt
           .setName('tag-name')
+          .setDescription('Name of the tag to be removed.')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),

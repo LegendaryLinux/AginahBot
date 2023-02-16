@@ -4,11 +4,11 @@
   "license": "MIT",
   "scripts": {
     "production": "node bot.js",
-    "dev": "node --trace-warnings bot.js dev"
+    "dev": "node --trace-warnings bot.js dev",
+    "registerSlashCommands": "node scripts/registerSlashCommands.js"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",
-    "archipelago.js": "^0.4.1",
     "axios": "^1.3.1",
     "discord.js": "^14.7.1",
     "form-data": "^4.0.0",
