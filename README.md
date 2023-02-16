@@ -45,19 +45,24 @@ Example config:
 ```
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
-permissions granted by the permissions integer `285273168`.
+permissions granted by the permissions integer `293416987728`.
 
 The following permissions will be granted
 to AginahBot:
-- Manage Roles
+- View Channels
 - Manage Channels
-- Read Text Channels & See Voice Channels
+- Manage Roles
+- Manage Emojis and Stickers
 - Send Messages
-- Manage Messages
+- Send Messages in Threads
 - Embed Links
 - Attach Files
 - Add Reactions
-- Move Members (Voice Channels)
+- Mention @everyone, @here, and All Roles
+- Manage Messages
+- Manage Threads
+- Read Message History
+- Move Members
 
 ## Setup
 ```shell script

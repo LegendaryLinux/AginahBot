@@ -329,16 +329,34 @@ module.exports = {
       const guild = await client.guilds.fetch(board.guildId);
 
       // Find board channel, clean database if channel has been deleted
-      const boardChannel = await guild.channels.fetch(board.channelId);
-      if (!boardChannel) {
-        await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+      let boardChannel = null;
+      try {
+        boardChannel = await guild.channels.fetch(board.channelId);
+      } catch (err) {
+        if (err.status === 404) {
+          await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+          continue;
+        }
+      }
+
+      // Ensure boardChannel is non-null
+      if (boardChannel === null) {
         continue;
       }
 
       // Find board message, clean database if message has been deleted
-      const boardMessage = await boardChannel.messages.fetch(board.messageId);
-      if (!boardMessage) {
-        await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+      let boardMessage = null;
+      try {
+        boardMessage = await boardChannel.messages.fetch(board.messageId);
+      } catch (err) {
+        if (err.status === 404) {
+          await module.exports.dbExecute('DELETE FROM schedule_boards WHERE id=?', [board.id]);
+          continue;
+        }
+      }
+
+      // Ensure boardMessage is non-null
+      if (boardMessage === null) {
         continue;
       }
 
