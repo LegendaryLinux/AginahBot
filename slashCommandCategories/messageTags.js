@@ -27,11 +27,22 @@ module.exports = {
 
         // Tags may contain only alphanumeric characters
         if (tagName.search(/\W/) > -1) {
-          return interaction.reply('Tag names may contain only letters, numbers, and underscores.');
+          return interaction.reply({
+            content: 'Tag names may contain only letters, numbers, and underscores.',
+            ephemeral: true,
+          });
         }
 
         // Fetch guildDataId
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
+        if (!guildData) {
+          return interaction.reply({
+            content: 'Uh-oh. Something is weird in my database. Please report this bug at:\n' +
+              'https://discord.gg/2EZNrAw9Ja.\n\nPaste this error message into the `#bug-reports` channel:\n' +
+              `\`\`\`guild data is missing for guild with id ${interaction.guildId}\`\`\``,
+            ephemeral: true,
+          });
+        }
 
         // Save new tag to database
         let sql = `REPLACE INTO message_tags (guildDataId, tagName, tagContent, createdByUserId)
@@ -57,7 +68,12 @@ module.exports = {
         // Fetch guildDataId
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
         if (!guildData) {
-          return interaction.reply('That tag does not exist on this server.');
+          return interaction.reply({
+            content: 'Uh-oh. Something is weird in my database. Please report this bug at:\n' +
+              'https://discord.gg/2EZNrAw9Ja.\n\nPaste this error message into the `#bug-reports` channel:\n' +
+              `\`\`\`guild data is missing for guild with id ${interaction.guildId}\`\`\``,
+            ephemeral: true,
+          });
         }
 
         // If the tag does not exist, inform the user
@@ -68,7 +84,10 @@ module.exports = {
                     AND mt.tagName=?`;
         const existing = await dbQueryOne(sql, [interaction.guildId, tagName.toLowerCase()]);
         if (!existing) {
-          return interaction.reply('That tag does not exist on this server.');
+          return interaction.reply({
+            content: 'That tag does not exist on this server.',
+            ephemeral: true,
+          });
         }
 
         // Delete the tag from the database
