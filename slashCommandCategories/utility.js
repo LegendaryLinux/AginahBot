@@ -88,8 +88,8 @@ module.exports = {
           });
         } catch (e) {
           console.error(e);
-          return interaction.followUp('Something went wrong and the Mod Contact feature could not be enabled ' +
-            'on this server. Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+          return interaction.followUp('Something went wrong and the channel logs could not be saved. ' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       }
     },
