@@ -21,25 +21,36 @@ module.exports = {
       async execute(interaction) {
         // Create the system
         const categoryName = interaction.options.getString('category-name');
-        const category = await interaction.guild.channels.create({
-          name: categoryName,
-          type: ChannelType.GuildCategory
-        });
-        const voiceChannel = await interaction.guild.channels.create({
-          name: VOICE_CHANNEL_NAME,
-          type: ChannelType.GuildVoice,
-          parent: category
-        });
-        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
-        let sql = 'INSERT INTO room_systems (guildDataId, channelCategoryId, newGameChannelId) VALUES (?, ?, ?)';
-        await dbExecute(sql, [guildData.id, category.id, voiceChannel.id]);
-        return interaction.reply(`Created room system ${categoryName}.`);
+
+        try {
+          // Several requests are made, and it might take a few seconds
+          await interaction.deferReply({ ephemeral: true });
+
+          const category = await interaction.guild.channels.create({
+            name: categoryName,
+            type: ChannelType.GuildCategory
+          });
+          const voiceChannel = await interaction.guild.channels.create({
+            name: VOICE_CHANNEL_NAME,
+            type: ChannelType.GuildVoice,
+            parent: category
+          });
+
+          const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
+          let sql = 'INSERT INTO room_systems (guildDataId, channelCategoryId, newGameChannelId) VALUES (?, ?, ?)';
+          await dbExecute(sql, [guildData.id, category.id, voiceChannel.id]);
+          return interaction.followUp(`Created room system ${categoryName}.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the room system could not be created.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
       commandBuilder: new SlashCommandBuilder()
         .setName('room-system-destroy')
-        .setDescription('Remove a role system system from this server.')
+        .setDescription('Remove a dynamic room system system from this server.')
         .addStringOption((opt) => opt
           .setName('category-name')
           .setDescription('Category name of the room system you wish to destroy')
@@ -49,28 +60,37 @@ module.exports = {
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
 
-        const guild = await interaction.guild.fetch();
-        // Find a category whose name matches the argument
-        const category = guild.channels.cache.find((el) => el.name === categoryName);
+        try {
+          // Several requests are made, and it might take a few seconds
+          await interaction.deferReply({ ephemeral: true });
 
-        // If no category matching the provided argument was found, inform the user
-        if (!category) { return interaction.reply('No dynamic room category with that name exists!'); }
+          const guild = await interaction.guild.fetch();
+          // Find a category whose name matches the argument
+          const category = guild.channels.cache.find((el) => el.name === categoryName);
 
-        let sql = `SELECT rs.id
-                   FROM room_systems rs
-                   JOIN guild_data gd ON rs.guildDataId = gd.id
-                   WHERE channelCategoryId=?
-                     AND gd.guildId=?`;
-        const row = await dbQueryOne(sql, [category.id, interaction.guildId]);
-        if (!row) {
-          return interaction.reply('Your server does not have a dynamic room category with that name.');
+          // If no category matching the provided argument was found, inform the user
+          if (!category) { return interaction.followUp('No category with that name exists!'); }
+
+          let sql = `SELECT rs.id
+                     FROM room_systems rs
+                     JOIN guild_data gd ON rs.guildDataId = gd.id
+                     WHERE channelCategoryId=?
+                       AND gd.guildId=?`;
+          const row = await dbQueryOne(sql, [category.id, interaction.guildId]);
+          if (!row) {
+            return interaction.followUp('That category is not a dynamic room category.');
+          }
+
+          await category.children.cache.each(async (channel) => await channel.delete());
+          await category.delete();
+          await dbExecute('DELETE FROM room_system_games WHERE roomSystemId=?', [row.id]);
+          await dbExecute('DELETE FROM room_systems WHERE id=?', [row.id]);
+          return interaction.followUp(`Destroyed dynamic room system ${categoryName}.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the room system could not be deleted.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
-
-        await category.children.cache.each(async (channel) => await channel.delete());
-        await category.delete();
-        await dbExecute('DELETE FROM room_system_games WHERE roomSystemId=?', [row.id]);
-        await dbExecute('DELETE FROM room_systems WHERE id=?', [row.id]);
-        return interaction.reply(`Destroyed room system ${categoryName}.`);
       }
     },
   ],
