@@ -92,7 +92,7 @@ module.exports = async (client, oldState, newState) => {
             ],
           })
         ]).then(async (channels) => {
-          channels[1].send(`Hello! Use this channel to discuss the ${channelName} game.\n` +
+          channels[1].send(`Hello! Use this channel to discuss happenings in the ${channelName} voice channel.\n` +
             '__Alerts__\n' +
             '`.ping roomCode` to ping RSVPed attendees with a reminder\n\n' +
             '__Ready Checks:__\n' +

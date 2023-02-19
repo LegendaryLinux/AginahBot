@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const { SlashCommandBuilder } = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
-const { dbQueryOne, dbQueryAll, dbExecute, verifyIsAdmin, updateScheduleBoard, verifyModeratorRole} = require('../lib');
+const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole} = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
 const generateEventCode = () => {
