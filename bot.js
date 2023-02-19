@@ -21,7 +21,6 @@ client.slashCommandCategories = [];
 client.messageListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
-client.channelDeletedListeners = [];
 client.voiceStateListeners = [];
 client.tempData = {
   voiceRooms: new Map(),
@@ -56,12 +55,6 @@ fs.readdirSync('./voiceStateListeners').filter((file) => file.endsWith('.js')).f
 fs.readdirSync('./interactionListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
   const listener = require(`./interactionListeners/${listenerFile}`);
   client.interactionListeners.push(listener);
-});
-
-// Load channelDeleted listeners
-fs.readdirSync('./channelDeletedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
-  const listener = require(`./channelDeletedListeners/${listenerFile}`);
-  client.channelDeletedListeners.push(listener);
 });
 
 // Run messages through the listeners
@@ -116,11 +109,6 @@ client.on(Events.InteractionCreate, async(interaction) => {
 
   // All other interactions are grouped together and handled independently
   client.interactionListeners.forEach((listener) => listener(client, interaction));
-});
-
-// Run channelDelete events through their listeners
-client.on(Events.ChannelDelete, async(channel) => {
-  client.channelDeletedListeners.forEach((listener) => listener(client, channel));
 });
 
 // Handle the bot being added to a new guild
