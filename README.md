@@ -1,45 +1,37 @@
 # AginahBot
-A Discord bot designed to help organize and moderate Multiplayer-Capable Randomizer games.  
+A Discord bot designed to make your life as a community manager easier.  
 Find it in use at the [Archipelago Discord](https://discord.gg/B5pjMYy).
 
 [Click here to learn how to add AginahBot to your Discord server!](https://github.com/LegendaryLinux/AginahBot/wiki/Using-AginahBot-on-Your-Discord-Server)
 
 ## Current Features
 - Support dynamic voice and text channels, and automatic assignment of permissions on those channels
+- Custom role system to allow users to assign themselves roles
+- A mod-contact feature, which allows users to privately contact your moderation team
+- Event scheduling features for those times when the server-wide event system would not be appropriate
 - Ready check system for users in dynamic game channels
 - Privacy controls for users in dynamic game channels
-- Automatically delete ROM files, and compressed files containing them
-- Organization features to help schedule games
-- Alert players in game lobbies that their seeds are ready
-- Custom role system to allow users to assign themselves pingable roles to be alerted of games
-- Generate single-player or multiplayer games using the `generate` command
-
-## Supported Games
-All games supported by the Multiworld Multi-Game Randomizer
-[Archipelago](https://github.com/ArchipelagoMW/Archipelago)
-are compatible and have full MultiWorld compatibility with each other
 
 # Self-Hosting
 
 ## Prerequisites
 - `node` and `npm` should be installed to run the bot and install dependencies
-- `unrar` should be installed on your system to process `.rar` files.
 - A MySQL 8 server should be installed, and a database available.
 
 ## Configuration
 A `config.json` file is required to be present in the base directory of the repository. This file should contain
-your Discord bot's secret key, database information, a command prefix, and a name for the Moderator role which
+your Discord bot's secret key, client id, database information, and a name for the Moderator role which
 will be created on servers the bot joins if it does not exist already. 
 
 Example config:
 ```json
 {
   "token": "discord-bot-token",
+  "clientId": "application-client-id",
   "dbHost": "hostname-of-mysql-server",
   "dbUser": "database-username",
   "dbPass": "database-password",
   "dbName": "database-name",
-  "commandPrefix": "!aginah ",
   "moderatorRole": "Moderator"
 }
 ```
