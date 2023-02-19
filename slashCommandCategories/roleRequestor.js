@@ -1,4 +1,3 @@
-const {generalErrorHandler} = require('../errorHandlers');
 const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
 const { ChannelType, PermissionsBitField, SlashCommandBuilder } = require('discord.js');
 
@@ -31,9 +30,9 @@ const updateCategoryMessage = async (client, guild, messageId) => {
   }
 
   // Fetch and edit the category message
-  guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(messageId)
-    .then((categoryMessage) => categoryMessage.edit({ content: null, embeds: [roleInfoEmbed] })
-      .then().catch((err) => generalErrorHandler(err)));
+  const roleRequestChannel = guild.channels.resolve(roleCategory.roleRequestChannelId);
+  const categoryMessage = await roleRequestChannel.messages.fetch(messageId);
+  await categoryMessage.edit({ content: null, embeds: [roleInfoEmbed] });
 };
 
 module.exports = {
@@ -56,8 +55,13 @@ module.exports = {
         const row = await dbQueryOne(sql, [interaction.guildId]);
         if (!row) { throw new Error(); }
         if (row.roleSystemId) {
-          return interaction.reply('The role system has already been set up on your server.');
+          return interaction.reply({
+            content: 'The role system has already been set up on your server.',
+            ephemeral: true,
+          });
         }
+
+        await interaction.deferReply({ ephemeral: true });
         interaction.guild.channels.create({
           name: 'role-request',
           type: ChannelType.GuildText,
@@ -81,13 +85,20 @@ module.exports = {
               'assigned a role, please react to the appropriate message with the indicated ' +
               'emoji. All roles are pingable by everyone on the server. Remember, with great ' +
               'power comes great responsibility.');
-          interaction.reply('Role system enabled.');
-        }).catch((error) => generalErrorHandler(error));
+          return interaction.followUp({
+            content: 'Role system enabled.',
+            ephemeral: true,
+          });
+        }).catch((e) => {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role system could not be created.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        });
       }
     },
     {
       commandBuilder: new SlashCommandBuilder()
-        .setName('role-system-destroy')
+        .setName('role-system-disable')
         .setDescription('Delete the role-request channel and all categories and permissions created by this bot.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
@@ -98,26 +109,37 @@ module.exports = {
         const roleSystem = await dbQueryOne(sql, [interaction.guildId]);
         if (!roleSystem) {
           // If the role system does not exist, there is no need to attempt to delete it
-          return interaction.reply('The role system is not currently installed on this server.');
+          return interaction.reply({
+            content: 'The role system is not currently installed on this server.',
+            ephemeral: true,
+          });
         }
 
-        // Loop over the role categories and delete them
-        sql = 'SELECT id FROM role_categories WHERE roleSystemId=?';
-        const roleCategories = await dbQueryAll(sql, [roleSystem.id]);
-        for (let roleCategory of roleCategories) {
-          // Loop over the roles in each category and delete them from the server
-          const roles = await dbQueryAll('SELECT roleId FROM roles WHERE categoryId=?', [roleCategory.id]);
-          for (let role of roles) {
-            await interaction.guild.roles.resolve(role.roleId).delete();
+        try{
+          await interaction.deferReply({ ephemeral: true });
+
+          // Loop over the role categories and delete them
+          sql = 'SELECT id FROM role_categories WHERE roleSystemId=?';
+          const roleCategories = await dbQueryAll(sql, [roleSystem.id]);
+          for (let roleCategory of roleCategories) {
+            // Loop over the roles in each category and delete them from the server
+            const roles = await dbQueryAll('SELECT roleId FROM roles WHERE categoryId=?', [roleCategory.id]);
+            for (let role of roles) {
+              await interaction.guild.roles.resolve(role.roleId).delete();
+            }
+            await dbExecute('DELETE FROM roles WHERE categoryId=?', [roleCategory.id]);
           }
-          await dbExecute('DELETE FROM roles WHERE categoryId=?', [roleCategory.id]);
-        }
 
-        // Database cleanup
-        await dbExecute('DELETE FROM role_categories WHERE roleSystemId=?', [roleSystem.id]);
-        interaction.guild.channels.resolve(roleSystem.roleRequestChannelId).delete();
-        await dbExecute('DELETE FROM role_systems WHERE id=?', [roleSystem.id]);
-        return interaction.reply('Role system disabled.');
+          // Database cleanup
+          await dbExecute('DELETE FROM role_categories WHERE roleSystemId=?', [roleSystem.id]);
+          interaction.guild.channels.resolve(roleSystem.roleRequestChannelId).delete();
+          await dbExecute('DELETE FROM role_systems WHERE id=?', [roleSystem.id]);
+          return interaction.followUp('Role system disabled.');
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role system could not be destroyed.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -135,32 +157,48 @@ module.exports = {
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
 
-        let sql = `SELECT 1 FROM role_categories rc
-                   JOIN role_systems rs ON rc.roleSystemId = rs.id
-                   JOIN guild_data gd ON rs.guildDataId = gd.id
-                   WHERE gd.guildId=?
-                     AND rc.categoryName=?`;
-        const row = await dbQueryOne(sql, [interaction.guildId, categoryName]);
-        if (row) { return interaction.reply('That category already exists!'); }
-
-        sql = `SELECT rs.id, rs.roleRequestChannelId
-               FROM role_systems rs
-               JOIN guild_data gd ON rs.guildDataId=gd.id
-               WHERE gd.guildId=?`;
+        let sql = `SELECT rs.id, rs.roleRequestChannelId
+                   FROM role_systems rs
+                   JOIN guild_data gd ON rs.guildDataId=gd.id
+                   WHERE gd.guildId=?`;
         const roleSystem = await dbQueryOne(sql, [interaction.guildId]);
         if (!roleSystem) {
-          return interaction.reply('The role system has not been setup on this server.');
+          return interaction.reply({
+            content: 'The role system has not been setup on this server.',
+            ephemeral: true,
+          });
         }
 
-        // Add the category message to the #role-request channel
-        interaction.guild.channels.resolve(roleSystem.roleRequestChannelId).send('Creating new category...')
-          .then(async (categoryMessage) => {
-            // Update database with new category message data
-            let sql = 'INSERT INTO role_categories (roleSystemId, categoryName, messageId) VALUES (?, ?, ?)';
-            await dbExecute(sql, [roleSystem.id, categoryName, categoryMessage.id]);
-            await updateCategoryMessage(interaction.client, interaction.guild, categoryMessage.id);
-            return interaction.reply(`Created role category: ${categoryName}.`);
+        sql = `SELECT 1 FROM role_categories rc
+               JOIN role_systems rs ON rc.roleSystemId = rs.id
+               JOIN guild_data gd ON rs.guildDataId = gd.id
+               WHERE gd.guildId=?
+                 AND rc.categoryName=?`;
+        const row = await dbQueryOne(sql, [interaction.guildId, categoryName]);
+        if (row) {
+          return interaction.reply({
+            content: 'That role category already exists!',
+            ephemeral: true,
           });
+        }
+
+        try {
+          await interaction.deferReply({ ephemeral: true });
+
+          // Add the category message to the #role-request channel
+          interaction.guild.channels.resolve(roleSystem.roleRequestChannelId).send('Creating new category...')
+            .then(async (categoryMessage) => {
+              // Update database with new category message data
+              let sql = 'INSERT INTO role_categories (roleSystemId, categoryName, messageId) VALUES (?, ?, ?)';
+              await dbExecute(sql, [roleSystem.id, categoryName, categoryMessage.id]);
+              await updateCategoryMessage(interaction.client, interaction.guild, categoryMessage.id);
+              return interaction.followUp(`Created role category: ${categoryName}.`);
+            });
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role category could not be created.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -181,18 +219,29 @@ module.exports = {
         const oldName = interaction.options.getString('old-name');
         const newName = interaction.options.getString('new-name');
 
-        // Find a matching role category
-        let sql = `SELECT rc.id, rc.messageId
-                   FROM guild_data gd
-                   JOIN role_systems rs ON rs.guildDataId = gd.id
-                   JOIN role_categories rc ON rc.roleSystemId = rs.id
-                   WHERE gd.guildId=?
-                     AND rc.categoryName=?`;
-        const categoryData = await dbQueryOne(sql, [interaction.guildId, oldName]);
-        if (!categoryData) { return interaction.channel.send('That category does not exist!'); }
-        await dbExecute('UPDATE role_categories SET categoryName=? WHERE id=?', [newName, categoryData.id]);
-        await updateCategoryMessage(interaction.client, interaction.guild, categoryData.messageId);
-        return interaction.reply(`Role category renamed from ${oldName} to ${newName}.`);
+        try {
+          await interaction.deferReply({ ephemeral: true });
+
+          // Find a matching role category
+          let sql = `SELECT rc.id, rc.messageId
+                     FROM guild_data gd
+                     JOIN role_systems rs ON rs.guildDataId = gd.id
+                     JOIN role_categories rc ON rc.roleSystemId = rs.id
+                     WHERE gd.guildId=?
+                       AND rc.categoryName=?`;
+          const categoryData = await dbQueryOne(sql, [interaction.guildId, oldName]);
+          if (!categoryData) {
+            return interaction.followUp('That role category does not exist!');
+          }
+
+          await dbExecute('UPDATE role_categories SET categoryName=? WHERE id=?', [newName, categoryData.id]);
+          await updateCategoryMessage(interaction.client, interaction.guild, categoryData.messageId);
+          return interaction.followUp(`Role category renamed from ${oldName} to ${newName}.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role category could not be renamed.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -216,18 +265,33 @@ module.exports = {
                    WHERE gd.guildId=?
                      AND rc.categoryName=?`;
         const roleCategory = await dbQueryOne(sql, [interaction.guildId, categoryName]);
-        if (!roleCategory) { return interaction.reply('That category does not exist!'); }
-
-        const roleIds = await dbQueryAll('SELECT roleId FROM roles WHERE categoryId=?', [roleCategory.id]);
-        for (const roleId of roleIds) {
-          const role = await interaction.guild.roles.fetch(roleId);
-          await role.delete();
+        if (!roleCategory) {
+          return interaction.reply({
+            content: 'That category does not exist!',
+            ephemeral: true,
+          });
         }
 
-        await dbExecute('DELETE FROM roles WHERE categoryId=?', [roleCategory.id]);
-        await dbExecute('DELETE FROM role_categories WHERE id=?', [roleCategory.id]);
-        interaction.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
-          .then((categoryMessage) => categoryMessage.delete()).catch((err) => generalErrorHandler(err));
+        try {
+          await interaction.deferReply({ ephemeral: true });
+
+          const roles = await dbQueryAll('SELECT roleId FROM roles WHERE categoryId=?', [roleCategory.id]);
+          for (const roleObj of roles) {
+            const role = await interaction.guild.roles.fetch(roleObj.roleId);
+            await role.delete();
+          }
+
+          await dbExecute('DELETE FROM roles WHERE categoryId=?', [roleCategory.id]);
+          await dbExecute('DELETE FROM role_categories WHERE id=?', [roleCategory.id]);
+          const roleRequestChannel = interaction.guild.channels.resolve(roleCategory.roleRequestChannelId);
+          const categoryMessage = await roleRequestChannel.messages.fetch(roleCategory.messageId);
+          await categoryMessage.delete();
+          return interaction.followUp(`Role category ${categoryName} deleted.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role category could not be deleted.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -268,27 +332,38 @@ module.exports = {
                      AND r.roleName=?`;
         const row = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
         // If the role already exists, do nothing
-        if (row) { return interaction.reply('That role already exists!'); }
+        if (row) {
+          return interaction.reply({
+            content: 'That role already exists!',
+            ephemeral: true,
+          });
+        }
 
-        // Verify the requested emoji is available on this server
-        const emoji = await parseEmoji(interaction.guild, reaction, true);
-        if (!emoji) { return interaction.reply('That emoji is not available on this server!'); }
+        try {
+          await interaction.deferReply({ ephemeral: true });
 
-        sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
-               JOIN role_systems rs ON rc.roleSystemId = rs.id
-               JOIN guild_data gd ON rs.guildDataId = gd.id
-               WHERE gd.guildId=?
-                 AND rc.categoryName=?`;
-        const roleCategory = await dbQueryOne(sql, [interaction.guildId, categoryName]);
-        // If there is no such category, warn the user and do nothing
-        if (!roleCategory) { return interaction.reply('That category doesn\'t exist!'); }
+          // Verify the requested emoji is available on this server
+          const emoji = await parseEmoji(interaction.guild, reaction, true);
+          if (!emoji) { return interaction.reply('That emoji is not available on this server!'); }
 
-        // Create the role on the server
-        interaction.guild.roles.create({
-          name: roleName,
-          mentionable: true,
-          reason: 'Added as part of role-request system.',
-        }).then(async (role) => {
+          sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
+                 JOIN role_systems rs ON rc.roleSystemId = rs.id
+                 JOIN guild_data gd ON rs.guildDataId = gd.id
+                 WHERE gd.guildId=?
+                   AND rc.categoryName=?`;
+          const roleCategory = await dbQueryOne(sql, [interaction.guildId, categoryName]);
+          // If there is no such category, warn the user and do nothing
+          if (!roleCategory) {
+            return interaction.followUp('That category doesn\'t exist!');
+          }
+
+          // Create the role on the server
+          const role = await interaction.guild.roles.create({
+            name: roleName,
+            mentionable: true,
+            reason: 'Added as part of role-request system.',
+          });
+
           // Add the role to the database
           await dbExecute(
             'INSERT INTO roles (categoryId, roleId, roleName, reaction, description) VALUES (?, ?, ?, ?, ?)',
@@ -297,14 +372,15 @@ module.exports = {
           await updateCategoryMessage(interaction.client, interaction.guild, roleCategory.messageId);
 
           // Add the reaction to the category message
-          interaction.guild.channels.resolve(roleCategory.roleRequestChannelId).messages.fetch(roleCategory.messageId)
-            .then((categoryMessage) => {
-              categoryMessage.react(emoji).catch((err) => generalErrorHandler(err));
-              interaction.reply(`Created role ${roleName} in the ${categoryName} category.`);
-            });
-        }).catch((error) => {
-          throw new Error(`Unable to create guild role. ${error}`);
-        });
+          const roleRequestChannel = interaction.guild.channels.resolve(roleCategory.roleRequestChannelId);
+          const categoryMessage = await roleRequestChannel.messages.fetch(roleCategory.messageId);
+          await categoryMessage.react(emoji);
+          return interaction.followUp(`Created role ${roleName} in the ${categoryName} category.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role could not be created.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -339,17 +415,30 @@ module.exports = {
                      AND rc.categoryName=?
                      AND r.roleName=?`;
         const roleData = await dbQueryOne(sql, [interaction.guildId, categoryName, oldName]);
-        if (!roleData) { return interaction.reply('That role does not exist!'); }
+        if (!roleData) {
+          return interaction.reply({
+            content: 'That role does not exist!',
+            ephemeral: true,
+          });
+        }
 
-        // Update role name in the database
-        await dbExecute('UPDATE roles SET roleName=? WHERE id=?', [newName, roleData.id]);
+        try {
+          await interaction.deferReply({ ephemeral: true });
 
-        // Update role on Discord
-        await interaction.guild.roles.edit(roleData.roleId.toString(), { name: newName });
+          // Update role name in the database
+          await dbExecute('UPDATE roles SET roleName=? WHERE id=?', [newName, roleData.id]);
 
-        // Update the category message to display the new role name
-        await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
-        return interaction.reply(`Renamed role ${oldName} to ${newName} in category ${categoryName}.`);
+          // Update role on Discord
+          await interaction.guild.roles.edit(roleData.roleId.toString(), { name: newName });
+
+          // Update the category message to display the new role name
+          await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
+          return interaction.followUp(`Renamed role ${oldName} to ${newName} in category ${categoryName}.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role could not be renamed.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -386,26 +475,45 @@ module.exports = {
         const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
 
         // If the role does not exist, inform the user
-        if (!role) { return interaction.reply('That role does not exist!'); }
+        if (!role) {
+          return interaction.reply({
+            content: 'That role does not exist!',
+            ephemeral: true,
+          });
+        }
 
-        // Verify the requested emoji is available on this server
-        const emoji = await parseEmoji(interaction.guild, reaction, true);
-        if (!emoji) { return interaction.reply('That emoji is not available on this server!'); }
+        try {
+          await interaction.deferReply({ ephemeral: true });
 
-        // Remove reactions from the role category message
-        interaction.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
-          .then((categoryMessage) => {
-            categoryMessage.reactions.cache.each((reaction) => {
-              if (reaction.emoji.toString() === role.reaction) { reaction.remove(); }
-            });
+          // Verify the requested emoji is available on this server
+          const emoji = await parseEmoji(interaction.guild, reaction, true);
+          if (!emoji) {
+            return interaction.followUp('That emoji is not available on this server!');
+          }
 
-            // Add new reaction to message
-            categoryMessage.react(emoji);
-          }).catch((err) => generalErrorHandler(err));
+          // Remove reactions from the role category message
+          const roleRequestChannel = interaction.guild.channels.resolve(role.roleRequestChannelId);
+          const categoryMessage = await roleRequestChannel.messages.fetch(role.messageId);
+          await categoryMessage.reactions.cache.each(async (reaction) => {
+            if (reaction.emoji.toString() === role.reaction) {
+              await reaction.remove();
+            }
+          });
 
-        await dbExecute('UPDATE roles SET reaction=? WHERE id=?', [emoji.toString(), role.id]);
-        await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
-        return interaction.reply(`Role ${roleName} reaction updated to ${reaction} in category ${categoryName}.`);
+          // Add new reaction to message
+          await categoryMessage.react(emoji);
+
+          await dbExecute('UPDATE roles SET reaction=? WHERE id=?', [emoji.toString(), role.id]);
+          await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
+          return interaction.followUp({
+            content: `Role \`${roleName}\` reaction updated to ${reaction} in category \`${categoryName}\`.`,
+            ephemeral: true,
+          });
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role reaction could not be changed.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -440,12 +548,23 @@ module.exports = {
                      AND rc.categoryName=?
                      AND r.roleName=?`;
         const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
-        if (!role) { return interaction.reply('That role does not exist!'); }
+        if (!role) {
+          return interaction.reply({
+            content: 'That role does not exist!',
+            ephemeral: true,
+          });
+        }
 
-        sql = 'UPDATE roles SET description=? WHERE id=?';
-        await dbExecute(sql, [description, role.id]);
-        await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
-        return interaction.reply(`Updated description or role ${roleName} in category ${categoryName}.`);
+        try {
+          await interaction.deferReply({ ephemeral: true });
+          await dbExecute('UPDATE roles SET description=? WHERE id=?', [description, role.id]);
+          await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
+          return interaction.followUp(`Updated description for role ${roleName} in category ${categoryName}.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role description could not be changed.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
     {
@@ -475,22 +594,35 @@ module.exports = {
                      AND rc.categoryName=?
                      AND r.roleName=?`;
         const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
-        if (!role) { return interaction.reply('That role does not exist!'); }
+        if (!role) {
+          return interaction.reply({
+            content: 'That role does not exist!',
+            ephemeral: true,
+          });
+        }
 
-        // Remove reactions from the role category message
-        interaction.guild.channels.resolve(role.roleRequestChannelId).messages.fetch(role.messageId)
-          .then((categoryMessage) => categoryMessage.reactions.cache.each((r) => {
-            if (r.emoji.toString() === role.reaction) { r.remove(); }
-          }))
-          .catch((err) => generalErrorHandler(err));
+        try {
+          await interaction.deferReply({ ephemeral: true });
 
-        // Remove the role from the guild
-        await interaction.guild.roles.resolve(role.roleId).delete();
+          // Remove reactions from the role category message
+          const roleRequestChannel = interaction.guild.channels.resolve(role.roleRequestChannelId);
+          const categoryMessage = await roleRequestChannel.messages.fetch(role.messageId);
+          await categoryMessage.reactions.cache.each(async (r) => {
+            if (r.emoji.toString() === role.reaction) { await r.remove(); }
+          });
 
-        // Delete rows from the roles table and update role category message
-        await dbExecute('DELETE FROM roles WHERE id=? AND categoryId=?', [role.id, role.categoryId]);
-        await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
-        return interaction.reply(`Deleted role ${roleName} from category ${categoryName}.`);
+          // Remove the role from the guild
+          await interaction.guild.roles.resolve(role.roleId).delete();
+
+          // Delete rows from the roles table and update role category message
+          await dbExecute('DELETE FROM roles WHERE id=? AND categoryId=?', [role.id, role.categoryId]);
+          await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
+          return interaction.followUp(`Deleted role ${roleName} from category ${categoryName}.`);
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role could not be deleted.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
       }
     },
   ],
