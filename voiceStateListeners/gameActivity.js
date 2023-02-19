@@ -7,6 +7,7 @@ const channelNames = [
   'Zucchini', 'Artichoke', 'Pineapple', 'Kumquat', 'Avocado', 'Blueberry', 'Mango', 'Strawberry',
   'Durian', 'Watermelon', 'Papaya', 'Cherry', 'Nectarine', 'Raspberry', 'Cantaloupe', 'Potato', 'Tomato', 'Broccoli',
   'Cauliflower', 'Cucumber', 'Asparagus', 'Rhubarb', 'Eggplant', 'Plantain', 'Banana', 'Apple', 'Cranberry', 'Orange',
+  'Sweet Pea', 'Green Bean', 'Grape', 'Pear',
 ];
 
 const randInRange = (min, max) => {
@@ -19,7 +20,7 @@ module.exports = async (client, oldState, newState) => {
   // If the user changed their voice state but remained in the same channel, do nothing (mute, deafen, etc.)
   if (oldState.channel && newState.channel && oldState.channel.id === newState.channel.id) { return; }
 
-  if (newState.channel) {
+  if (newState.channel && newState.channel.id) {
     // If a user has entered the "Start Game" channel
     let sql = `SELECT rs.id, rs.channelCategoryId
                FROM room_systems rs
@@ -137,7 +138,7 @@ module.exports = async (client, oldState, newState) => {
     }
   }
 
-  if (oldState.channel) {
+  if (oldState.channel && oldState.channel.id) {
     // User leaves a game channel
     let sql = `SELECT rs.id, rs.channelCategoryId
                FROM room_system_games rsg

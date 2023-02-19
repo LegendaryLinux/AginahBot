@@ -25,7 +25,6 @@ client.channelDeletedListeners = [];
 client.voiceStateListeners = [];
 client.tempData = {
   voiceRooms: new Map(),
-  apInterfaces: new Map(),
 };
 
 
