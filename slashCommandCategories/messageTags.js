@@ -49,7 +49,10 @@ module.exports = {
                            VALUES (?,?,?,?)`;
         await dbExecute(sql, [guildData.id, tagName.toLowerCase(), content, interaction.user.id]);
 
-        return interaction.reply(`Set content for tag \`${tagName.toLowerCase()}\`.`);
+        return interaction.reply({
+          content: `Set content for tag \`${tagName.toLowerCase()}\`.`,
+          ephemeral: true,
+        });
       },
     },
     {
@@ -95,7 +98,10 @@ module.exports = {
           [guildData.id, tagName.toLowerCase()]
         );
 
-        return interaction.reply(`Deleted tag \`${tagName.toLowerCase()}\`.`);
+        return interaction.reply({
+          content: `Deleted tag \`${tagName.toLowerCase()}\`.`,
+          ephemeral: true,
+        });
       }
     },
     {
