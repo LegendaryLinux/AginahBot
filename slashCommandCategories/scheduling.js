@@ -146,7 +146,7 @@ module.exports = {
           }
         } catch(e) {
           console.error(e);
-          return interaction.followUp('Something went wrong and the scheduled events could not be listed. ' +
+          return interaction.followUp('Something went wrong and the scheduled events could not be listed.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       }
@@ -233,14 +233,79 @@ module.exports = {
           await sendScheduleMessage(interaction, targetDate);
           return interaction.followUp('New event created.');
         } catch (e) {
-          if (e.name === 'TimeParserValidationError') {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the event could not be created.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('schedule-new-ts')
+        .setDescription('Schedule a new event based on a UNIX timestamp.')
+        .addNumberOption((opt) => opt
+          .setName('unix-timestamp')
+          .setDescription('UNIX timestamp')
+          .setRequired(true))
+        .setDMPermission(false),
+      async execute(interaction) {
+        const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
+
+        try{
+          const currentDate = new Date();
+          const targetDate = new Date(timestamp);
+
+          if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
-              content: e.message,
+              content: 'You can\'t schedule a game in the past!',
               ephemeral: true,
             });
           }
+
+          await interaction.deferReply({ ephemeral: true });
+          await sendScheduleMessage(interaction, targetDate);
+          return interaction.followUp('New event created.');
+        } catch (e) {
           console.error(e);
-          return interaction.followUp('Something went wrong and the event could not be created. ' +
+          return interaction.followUp('Something went wrong and the event could not be created.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('schedule-new-relative')
+        .setDescription('Schedule a new event X hours and Y minutes in the future.')
+        .addIntegerOption((opt) => opt
+          .setName('hours')
+          .setDescription('Hours in the future your game will start')
+          .setRequired(true))
+        .addIntegerOption((opt) => opt
+          .setName('minutes')
+          .setDescription('Minutes in the future your game will start')
+          .setRequired(true))
+        .setDMPermission(false),
+      async execute(interaction) {
+        const hours = interaction.options.getInteger('hours');
+        const minutes = interaction.options.getInteger('minutes');
+
+        try{
+          const currentDate = new Date();
+          const targetDate = new Date(new Date().getTime() + (hours * 60 * 60 * 1000) + (minutes * 60 * 1000));
+
+          if (targetDate.getTime() < currentDate.getTime()) {
+            return interaction.reply({
+              content: 'You can\'t schedule a game in the past!',
+              ephemeral: true,
+            });
+          }
+
+          await interaction.deferReply({ ephemeral: true });
+          await sendScheduleMessage(interaction, targetDate);
+          return interaction.followUp('New event created.');
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the event could not be created.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       }
@@ -308,7 +373,7 @@ module.exports = {
           return interaction.followUp(`Event with code ${eventCode.toUpperCase()} has been cancelled.`);
         } catch(e) {
           console.error(e);
-          return interaction.followUp('Something went wrong and the event could not be cancelled. ' +
+          return interaction.followUp('Something went wrong and the event could not be cancelled.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       }
@@ -364,7 +429,7 @@ module.exports = {
           return interaction.followUp('Schedule board created.');
         } catch (e) {
           console.error(e);
-          return interaction.followUp('Something went wrong and the schedule board could not be created. ' +
+          return interaction.followUp('Something went wrong and the schedule board could not be created.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       }
@@ -402,7 +467,7 @@ module.exports = {
           return interaction.followUp('Schedule board deleted.');
         } catch (e) {
           console.error(e);
-          return interaction.followUp('Something went wrong and the schedule board could not be deleted. ' +
+          return interaction.followUp('Something went wrong and the schedule board could not be deleted.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       }
