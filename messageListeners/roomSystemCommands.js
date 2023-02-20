@@ -23,7 +23,7 @@ module.exports = async (client, message) => {
   const voiceChannel = await message.guild.channels.fetch(roomSystem.voiceChannelId);
 
   switch(command[0]) {
-    // Player wants to alert players a game is about to start
+    // Attendee wants to alert other attendees a game is about to start
     case '.ping':
       if (!command[1]) { return message.channel.send('You must provide a room code to ping players.'); }
 
@@ -35,7 +35,7 @@ module.exports = async (client, message) => {
                AND se.timestamp > ((UNIX_TIMESTAMP()*1000) - (30*60*1000))`;
       const schedule = await dbQueryOne(sql, [command[1].toUpperCase(), message.guild.id]);
       if (!schedule) {
-        return message.channel.send('There is no upcoming game with that code.');
+        return message.channel.send('There is no upcoming event with that code.');
       }
 
       // Fetch original scheduling message
@@ -54,7 +54,7 @@ module.exports = async (client, message) => {
       }
 
       if (attendees.length === 0) {
-        return message.channel.send('No RSVPs exist for this game, so no reminder message was sent.');
+        return message.channel.send('No RSVPs exist for this event, so no reminder message was sent.');
       }
 
       let attendeeString = '';

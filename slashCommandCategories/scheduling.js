@@ -32,7 +32,7 @@ const sendScheduleMessage = async (interaction, targetDate) => {
     .addFields({ name: 'Event Code', value: eventCode });
 
   interaction.channel.send({ embeds: [embed] }).then(async (scheduleMessage) => {
-    // Save scheduled game to database
+    // Save scheduled event to database
     const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
     if (!guildData) {
       throw new Error(`Unable to find guild ${interaction.guild.name} (${interaction.guildId}) in guild_data table.`);
@@ -108,7 +108,7 @@ module.exports = {
         const games = await dbQueryAll(sql, [interaction.guildId, new Date().getTime()]);
 
         if (games.length === 0) {
-          return interaction.reply({ content: 'There are currently no games scheduled.', ephemeral: true });
+          return interaction.reply({ content: 'There are currently no events scheduled.', ephemeral: true });
         }
 
         try{
@@ -224,7 +224,7 @@ module.exports = {
 
           if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
-              content: 'You can\'t schedule a game in the past!',
+              content: 'You can\'t schedule an event in the past!',
               ephemeral: true,
             });
           }
@@ -257,7 +257,7 @@ module.exports = {
 
           if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
-              content: 'You can\'t schedule a game in the past!',
+              content: 'You can\'t schedule an event in the past!',
               ephemeral: true,
             });
           }
@@ -278,11 +278,11 @@ module.exports = {
         .setDescription('Schedule a new event X hours and Y minutes in the future.')
         .addIntegerOption((opt) => opt
           .setName('hours')
-          .setDescription('Hours in the future your game will start')
+          .setDescription('Hours in the future your event will start')
           .setRequired(true))
         .addIntegerOption((opt) => opt
           .setName('minutes')
-          .setDescription('Minutes in the future your game will start')
+          .setDescription('Minutes in the future your event will start')
           .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
@@ -295,7 +295,7 @@ module.exports = {
 
           if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
-              content: 'You can\'t schedule a game in the past!',
+              content: 'You can\'t schedule an event in the past!',
               ephemeral: true,
             });
           }
@@ -311,7 +311,7 @@ module.exports = {
       }
     },
     {
-      longDescription: 'Cancel an upcoming scheduled event. A game can only be cancelled by a moderator or by the ' +
+      longDescription: 'Cancel an upcoming scheduled event. An event can only be cancelled by a moderator or by the ' +
         'user who scheduled it.',
       commandBuilder: new SlashCommandBuilder()
         .setName('schedule-cancel')
@@ -349,24 +349,24 @@ module.exports = {
           // If the user is not a moderator and not the scheduling user, deny the cancellation
           if ((interaction.user.id !== eventData.schedulingUserId) && !await verifyModeratorRole(interaction.member)) {
             return interaction.followUp({
-              content: 'This game can only be cancelled by the user who scheduled it ' +
+              content: 'This event can only be cancelled by the user who scheduled it ' +
                 `(${eventData.schedulingUserTag}), or by an administrator.`,
               ephemeral: true,
             });
           }
 
-          // The game is to be cancelled. Replace the schedule message with a cancellation notice
+          // The event is to be cancelled. Replace the schedule message with a cancellation notice
           const scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
           const scheduleMsg = await scheduleChannel.messages.fetch(eventData.messageId);
           await scheduleMsg.edit({
-            content: `This game has been cancelled by ${interaction.user}.`,
+            content: `This event has been cancelled by ${interaction.user}.`,
             embeds: [],
           });
 
           // Remove all reactions from the message
           await scheduleMsg.reactions.removeAll();
 
-          // Remove the game's entry from the database
+          // Remove the event's entry from the database
           await dbExecute('DELETE FROM scheduled_events WHERE id=?', [eventData.id]);
 
           await updateScheduleBoard(interaction.client, interaction.guild);
