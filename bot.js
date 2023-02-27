@@ -136,7 +136,7 @@ client.once(Events.ClientReady, async () => {
   setInterval(() => {
     try { updateScheduleBoards(client); }
     catch (err) { console.error(err); }
-  }, 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
+  }, 2 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
 });
 
 client.login(config.token);
