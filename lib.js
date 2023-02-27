@@ -325,17 +325,14 @@ module.exports = {
                FROM schedule_boards sb
                JOIN guild_data gd ON sb.guildDataId = gd.id`;
     const boards = await module.exports.dbQueryAll(sql);
-    console.log(boards);
 
     for (let board of boards) {
-      console.log(`Working on guildId ${board.guildId}`);
       // Fetch updated data for this guild
       const guild = await client.guilds.fetch(board.guildId);
 
       // Find board channel, clean database if channel has been deleted
       let boardChannel = null;
       try {
-        console.log(`Fetching board channel ${board.channelId}`);
         boardChannel = await guild.channels.fetch(board.channelId);
       } catch (err) {
         if (err.status === 404) {
@@ -346,14 +343,12 @@ module.exports = {
 
       // Ensure boardChannel is non-null
       if (boardChannel === null) {
-        console.log('Board channel is null.\n');
         continue;
       }
 
       // Find board message, clean database if message has been deleted
       let boardMessage = null;
       try {
-        console.log(`Fetching board message ${board.messageId}`);
         boardMessage = await boardChannel.messages.fetch(board.messageId);
       } catch (err) {
         if (err.status === 404) {
@@ -364,11 +359,9 @@ module.exports = {
 
       // Ensure boardMessage is non-null
       if (boardMessage === null) {
-        console.log('Board message is null.\n');
         continue;
       }
 
-      console.log('Fetching events.');
       sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
@@ -376,11 +369,9 @@ module.exports = {
                  AND se.timestamp > ?
              ORDER BY se.timestamp`;
       const events = await module.exports.dbQueryAll(sql, [guild.id, new Date().getTime()]);
-      console.log(events);
 
       // If there are no scheduled events for this guild, continue to the next schedule board
       if (events.length === 0) {
-        console.log('There are no upcoming events for this guild.');
         await boardMessage.edit({ content: 'There are no upcoming events.', embeds: [] });
         continue;
       }
@@ -389,7 +380,6 @@ module.exports = {
       const embeds = [];
 
       for (let event of events) {
-        console.log(event);
         const eventChannel = await guild.channels.fetch(event.channelId);
         const eventMessage = await eventChannel.messages.fetch(event.messageId);
 
@@ -419,7 +409,6 @@ module.exports = {
       }
 
       // Update the schedule board
-      console.log(`Updating board with ${embeds.length} events.`);
       await boardMessage.edit({ content: '**Upcoming Events:**', embeds });
     }
   },
