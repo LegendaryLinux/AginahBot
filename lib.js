@@ -381,7 +381,8 @@ module.exports = {
       // If there are no scheduled events for this guild, continue to the next schedule board
       if (events.length === 0) {
         console.log('There are no upcoming events for this guild.');
-        return boardMessage.edit({ content: 'There are no upcoming events.', embeds: [] });
+        await boardMessage.edit({ content: 'There are no upcoming events.', embeds: [] });
+        continue;
       }
 
       // Embeds which will be PUT to the schedule board message
