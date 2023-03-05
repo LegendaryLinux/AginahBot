@@ -37,8 +37,7 @@ module.exports = {
           .setDescription('Fifth option in the poll')
           .setMaxLength(70)
           .setRequired(false))
-        .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDMPermission(false),
       async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
