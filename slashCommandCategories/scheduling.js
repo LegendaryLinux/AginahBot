@@ -99,15 +99,15 @@ module.exports = {
         }
 
         // Send individual messages for each upcoming event
-        sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
+        sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode, se.title
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                    WHERE gd.guildId=?
                      AND se.timestamp > ?
                    ORDER BY se.timestamp`;
-        const games = await dbQueryAll(sql, [interaction.guildId, new Date().getTime()]);
+        const events = await dbQueryAll(sql, [interaction.guildId, new Date().getTime()]);
 
-        if (games.length === 0) {
+        if (events.length === 0) {
           return interaction.reply({ content: 'There are currently no events scheduled.', ephemeral: true });
         }
 
@@ -115,10 +115,10 @@ module.exports = {
           // Looping over an unknown number of entries, so this might take a few seconds.
           interaction.deferReply();
 
-          for (let game of games) {
-            const channel = interaction.guild.channels.resolve(game.channelId);
+          for (let event of events) {
+            const channel = interaction.guild.channels.resolve(event.channelId);
             if (!channel) { continue; }
-            const scheduleMessage = await channel.messages.fetch(game.messageId);
+            const scheduleMessage = await channel.messages.fetch(event.messageId);
 
             // Determine RSVP count
             const rsvps = new Map();
@@ -132,14 +132,14 @@ module.exports = {
             }
 
             const embed = new Discord.EmbedBuilder()
-              .setTitle(`Upcoming Event on <t:${Math.floor(game.timestamp / 1000)}:F>`)
+              .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
               .setColor('#6081cb')
               .setDescription('**Click the title of this message to jump to the original.**')
               .setURL(scheduleMessage.url)
               .addFields(
-                { name: 'Scheduled By', value: `@${game.schedulingUserTag}` },
+                { name: 'Scheduled By', value: `@${event.schedulingUserTag}` },
                 { name: 'Planning Channel', value: `#${channel.name}` },
-                { name: 'Event Code', value: game.eventCode },
+                { name: 'Event Code', value: event.eventCode },
                 { name: 'Current RSVPs', value: rsvps.size.toString() },
               );
             await interaction.followUp({ embeds: [embed], ephemeral: true });
