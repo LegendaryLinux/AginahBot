@@ -19,12 +19,12 @@ const generateEventCode = () => {
   return code;
 };
 
-const sendScheduleMessage = async (interaction, targetDate) => {
+const sendScheduleMessage = async (interaction, targetDate, title = null) => {
   const eventCode = generateEventCode();
 
   const embedTimestamp = Math.floor(targetDate.getTime()/1000);
   const embed = new Discord.EmbedBuilder()
-    .setTitle(`New Event on <t:${embedTimestamp}:F>`)
+    .setTitle(`${title || 'New Event'}\n<t:${embedTimestamp}:F>`)
     .setColor('#6081cb')
     .setDescription(`**${interaction.user.username}** has scheduled a new event!` +
       '\nReact with 👍 if you intend to join this event.' +
@@ -194,8 +194,14 @@ module.exports = {
             { name: 'UTC + 11', value: 11 },
             { name: 'UTC + 12', value: 12 },
           ))
+        .addStringOption((opt) => opt
+          .setName('title')
+          .setDescription('Optional title for this event')
+          .setMaxLength(100)
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
+        const title = interaction.options.getString('title', false) ?? null;
         const dateString = interaction.options.getString('date');
         const timeString = interaction.options.getString('time');
         const utcOffset = interaction.options.getInteger('timezone');
@@ -230,7 +236,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate);
+          await sendScheduleMessage(interaction, targetDate, title);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -247,8 +253,14 @@ module.exports = {
           .setName('unix-timestamp')
           .setDescription('UNIX timestamp')
           .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('title')
+          .setDescription('Optional title for this event')
+          .setMaxLength(100)
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
+        const title = interaction.options.getString('title', false) ?? null;
         const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
 
         try{
@@ -263,7 +275,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate);
+          await sendScheduleMessage(interaction, targetDate, title);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -284,8 +296,14 @@ module.exports = {
           .setName('minutes')
           .setDescription('Minutes in the future your event will start')
           .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('title')
+          .setDescription('Optional title for this event')
+          .setMaxLength(100)
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
+        const title = interaction.options.getString('title', false) ?? null;
         const hours = interaction.options.getInteger('hours');
         const minutes = interaction.options.getInteger('minutes');
 
@@ -301,7 +319,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate);
+          await sendScheduleMessage(interaction, targetDate, title);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -331,7 +349,7 @@ module.exports = {
                      AND se.eventCode=?
                      AND timestamp > ?`;
         const eventData = await dbQueryOne(sql, [
-          interaction.guildId, eventCode.toUpperCase(), new Date().getTime().toString(),
+          interaction.guildId, eventCode.toUpperCase(), new Date().getTime(),
         ]);
 
         // If no event is found, notify the user
