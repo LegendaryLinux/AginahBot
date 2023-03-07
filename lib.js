@@ -310,7 +310,7 @@ module.exports = {
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
           .addFields(
-            { name: 'Scheduled by', value: `@${event.schedulingUserTag}` },
+            { name: 'Scheduled by', value: `${event.schedulingUserTag}` },
             { name: 'Planning Channel', value: `#${eventChannel.name}` },
             { name: 'Event Code', value: event.eventCode },
             { name: 'Current RSVPs', value: rsvps.size.toString() },
@@ -423,7 +423,7 @@ module.exports = {
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
           .addFields(
-            { name: 'Scheduled by', value: `@${event.schedulingUserTag}` },
+            { name: 'Scheduled by', value: `${event.schedulingUserTag}` },
             { name: 'Planning Channel', value: `#${eventChannel.name}` },
             { name: 'Event Code', value: event.eventCode },
             { name: 'Current RSVPs', value: rsvps.size.toString() },

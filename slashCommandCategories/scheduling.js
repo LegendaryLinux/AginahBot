@@ -137,7 +137,7 @@ module.exports = {
               .setDescription('**Click the title of this message to jump to the original.**')
               .setURL(scheduleMessage.url)
               .addFields(
-                { name: 'Scheduled By', value: `@${event.schedulingUserTag}` },
+                { name: 'Scheduled By', value: `${event.schedulingUserTag}` },
                 { name: 'Planning Channel', value: `#${channel.name}` },
                 { name: 'Event Code', value: event.eventCode },
                 { name: 'Current RSVPs', value: rsvps.size.toString() },
