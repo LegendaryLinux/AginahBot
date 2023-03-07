@@ -38,10 +38,10 @@ const sendScheduleMessage = async (interaction, targetDate, title = null) => {
       throw new Error(`Unable to find guild ${interaction.guild.name} (${interaction.guildId}) in guild_data table.`);
     }
     const sql = `INSERT INTO scheduled_events
-             (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag, eventCode)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`;
+             (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag, eventCode, title)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-      interaction.user.id, interaction.user.tag, eventCode]);
+      interaction.user.id, interaction.user.tag, eventCode, title]);
 
     // Put appropriate reactions onto the message
     await scheduleMessage.react('👍');

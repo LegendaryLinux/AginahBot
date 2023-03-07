@@ -263,7 +263,7 @@ module.exports = {
         continue;
       }
 
-      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
+      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -305,7 +305,7 @@ module.exports = {
         }
 
         const embed = new Discord.EmbedBuilder()
-          .setTitle(`Upcoming Event on <t:${Math.floor(event.timestamp / 1000)}:F>`)
+          .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
           .setColor('#6081cb')
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
@@ -375,12 +375,13 @@ module.exports = {
         continue;
       }
 
-      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode
+      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
                  AND se.timestamp > ?
-             ORDER BY se.timestamp`;
+             ORDER BY se.timestamp
+             LIMIT 10`;
       const events = await module.exports.dbQueryAll(sql, [guild.id, new Date().getTime()]);
 
       // If there are no scheduled events for this guild, continue to the next schedule board
@@ -388,6 +389,15 @@ module.exports = {
         await boardMessage.edit({ content: 'There are no upcoming events.', embeds: [] });
         continue;
       }
+
+      sql = `SELECT COUNT(*) AS count
+             FROM scheduled_events se
+             JOIN guild_data gd ON se.guildDataId = gd.id
+             WHERE gd.guildId=?
+                 AND se.timestamp > ?
+             ORDER BY se.timestamp
+             LIMIT 10`;
+      const countResult = await module.exports.dbQueryOne(sql, [guild.id, new Date().getTime()]);
 
       // Embeds which will be PUT to the schedule board message
       const embeds = [];
@@ -408,7 +418,7 @@ module.exports = {
         }
 
         const embed = new Discord.EmbedBuilder()
-          .setTitle(`Upcoming Event on <t:${Math.floor(event.timestamp / 1000)}:F>`)
+          .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
           .setColor('#6081cb')
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
@@ -422,7 +432,10 @@ module.exports = {
       }
 
       // Update the schedule board
-      await boardMessage.edit({ content: '**Upcoming Events:**', embeds });
+      await boardMessage.edit({
+        content: (countResult.count > 10) ? '**Next 10 Upcoming Events**' : '**Upcoming Events:**',
+        embeds
+      });
     }
   },
 };
