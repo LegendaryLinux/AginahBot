@@ -62,7 +62,10 @@ module.exports = {
         const embed = new EmbedBuilder()
           .setColor('#6081cb')
           .setTitle(prompt)
-          .setDescription(description);
+          .setDescription(description)
+          .setFooter({
+            text: `Poll created by ${interaction.user.username}#${interaction.user.discriminator}`,
+          });
 
         const pollMessage = await interaction.channel.send({ embeds: [embed] });
         for (let i=0; i < options.length; ++i) {
