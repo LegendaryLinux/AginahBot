@@ -39,8 +39,6 @@ module.exports = {
           .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
-
         const prompt = interaction.options.getString('prompt');
         const optionOne = interaction.options.getString('option-one');
         const optionTwo = interaction.options.getString('option-two');
@@ -62,17 +60,14 @@ module.exports = {
         const embed = new EmbedBuilder()
           .setColor('#6081cb')
           .setTitle(prompt)
-          .setDescription(description)
-          .setFooter({
-            text: `Poll created by ${interaction.user.username}#${interaction.user.discriminator}`,
-          });
+          .setDescription(description);
 
-        const pollMessage = await interaction.channel.send({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
+        const pollMessage = await interaction.fetchReply();
+
         for (let i=0; i < options.length; ++i) {
           await pollMessage.react(optionReactions[i]);
         }
-
-        return interaction.followUp('Poll created.');
       },
     },
   ],
