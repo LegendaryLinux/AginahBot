@@ -60,7 +60,8 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     messageId VARCHAR(64) NOT NULL,
     schedulingUserId VARCHAR(64) NOT NULL,
     schedulingUserTag VARCHAR(256) NOT NULL,
-    eventCode VARCHAR(6) NOT NULL
+    eventCode VARCHAR(6) NOT NULL,
+    title VARCHAR(100)
 )`;
 
 const modContact = `CREATE TABLE IF NOT EXISTS mod_contact (
