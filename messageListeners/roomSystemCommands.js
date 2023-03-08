@@ -27,7 +27,7 @@ module.exports = async (client, message) => {
     case '.ping':
       if (!command[1]) { return message.channel.send('You must provide a room code to ping players.'); }
 
-      sql = `SELECT se.messageId, se.channelId, se.schedulingUserTag
+      sql = `SELECT se.messageId, se.channelId, se.schedulingUserTag, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE se.eventCode=?
@@ -64,7 +64,7 @@ module.exports = async (client, message) => {
 
       // Build the reminder message
       const embed = new EmbedBuilder()
-        .setTitle(`An event is about to begin in #${message.channel.name}!`)
+        .setTitle(`${schedule.title || 'An event'} is about to begin in #${message.channel.name}!`)
         .setColor('#6081cb')
         .addFields([
           { name: 'Original Post', value: `[Jump to Schedule Message](${scheduleMessage.url})` },
