@@ -333,7 +333,7 @@ module.exports = {
         const row = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
         // If the role already exists, do nothing
         if (row) {
-          return interaction.reply({
+          return await interaction.reply({
             content: 'That role already exists!',
             ephemeral: true,
           });
@@ -344,7 +344,12 @@ module.exports = {
 
           // Verify the requested emoji is available on this server
           const emoji = await parseEmoji(interaction.guild, reaction, true);
-          if (!emoji) { return interaction.reply('That emoji is not available on this server!'); }
+          if (!emoji) {
+            return interaction.followUp({
+              content: 'That emoji is not available on this server!',
+              ephemeral: true,
+            });
+          }
 
           sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
                  JOIN role_systems rs ON rc.roleSystemId = rs.id

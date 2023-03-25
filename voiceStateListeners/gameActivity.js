@@ -107,6 +107,7 @@ module.exports = async (client, oldState, newState) => {
           let sql = `INSERT INTO room_system_games (roomSystemId, voiceChannelId, textChannelId, roleId)
                      VALUES (?, ?, ?, ?)`;
           await dbExecute(sql, [roomSystemStartGame.id, channels[0].id, channels[1].id, role.id]);
+          // FIXME: Possible unhandled error: Target user is not connected to voice
           await newState.member.voice.setChannel(channels[0]);
           await newState.member.roles.add(role);
           client.tempData.voiceRooms.get(newState.guild.id).set(channelName, 1);
@@ -174,6 +175,7 @@ module.exports = async (client, oldState, newState) => {
           client.tempData.voiceRooms.get(oldState.guild.id).delete(oldState.channel.name);
         }
 
+        // FIXME: Possible unhandled error: Unknown Role
         await role.delete();
         await oldState.guild.channels.resolve(channelData.textChannelId).delete();
         await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
