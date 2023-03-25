@@ -331,8 +331,6 @@ module.exports = {
    * @param client {Discord.Client}
    */
   updateScheduleBoards: async (client) => {
-    console.info('Attempting to update schedule boards...');
-
     // Find all schedule boards
     let sql = `SELECT sb.id, gd.guildId AS guildId, sb.channelId, sb.messageId
                FROM schedule_boards sb
