@@ -228,6 +228,13 @@ module.exports = {
           const currentDate = new Date();
           const targetDate = new Date(dateTimeString);
 
+          if (isNaN(targetDate.getTime())) {
+            return interaction.reply({
+              content: 'The date you provided appears invalid.',
+              ephemeral: true,
+            });
+          }
+
           if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
               content: 'You can\'t schedule an event in the past!',
