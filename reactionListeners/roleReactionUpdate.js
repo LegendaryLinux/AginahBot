@@ -33,8 +33,10 @@ module.exports = async (client, messageReaction, user, added) => {
   // Identify the user associated with this reaction
   let guildMember = guild.members.resolve(user.id);
   if (!guildMember) {
-    return console.error(`User with id ${user.id} caused a roleReactionUpdate event, but is not a member of ` +
-      `guild ${guild.id}.`);
+    // If the user sent a roleReactionUpdate but is not a member of the guild, simply do nothing.
+    // This can occur if a user is browsing a server but has not officially joined the server, meaning they
+    // do not have a GuildMember object.
+    return;
   }
 
   // Find the GuildMemberRoleManager object attached to the guild member, if present

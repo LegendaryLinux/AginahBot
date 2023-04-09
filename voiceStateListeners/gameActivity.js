@@ -107,9 +107,16 @@ module.exports = async (client, oldState, newState) => {
           let sql = `INSERT INTO room_system_games (roomSystemId, voiceChannelId, textChannelId, roleId)
                      VALUES (?, ?, ?, ?)`;
           await dbExecute(sql, [roomSystemStartGame.id, channels[0].id, channels[1].id, role.id]);
-          // FIXME: Possible unhandled error: Target user is not connected to voice
-          await newState.member.voice.setChannel(channels[0]);
-          await newState.member.roles.add(role);
+          try {
+            await newState.member.voice.setChannel(channels[0]);
+            await newState.member.roles.add(role);
+          } catch(e) {
+            // Attempt to catch cases where a user leaves the "Create Game" channel before the bot can move them
+            // to the newly created dynamic channel. In this case, delete the newly created channels
+            await channels[0].delete();
+            await channels[1].delete();
+          }
+
           client.tempData.voiceRooms.get(newState.guild.id).set(channelName, 1);
         }).catch((error) => generalErrorHandler(error));
       });
