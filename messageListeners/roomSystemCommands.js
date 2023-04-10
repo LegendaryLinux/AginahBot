@@ -163,7 +163,11 @@ module.exports = async (client, message) => {
          LIMIT 1`;
       const eventData = await dbQueryOne(sql, [message.guild.id, command[1].toUpperCase()]);
 
-      // FIXME: Possible unhandled error: Cannot read properties of null (reading 'channelId')
+      if (!eventData) {
+        // No event matching the provided code was found
+        return message.channel.send('No event with that code exists!');
+      }
+
       message.guild.channels.resolve(eventData.channelId)
         .send(`${message.channel.name.replace(/\b\w/g, c => c.toUpperCase())} is now closed.`);
       return voiceChannel.edit({ name: `${voiceChannel.name.toString()} (Closed)` });
