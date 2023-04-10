@@ -182,10 +182,18 @@ module.exports = async (client, oldState, newState) => {
           client.tempData.voiceRooms.get(oldState.guild.id).delete(oldState.channel.name);
         }
 
-        // FIXME: Possible unhandled error: Unknown Role
-        await role.delete();
-        await oldState.guild.channels.resolve(channelData.textChannelId).delete();
-        await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
+        // Catch instances where multiple successive channel disconnects cause this function to run multiple times
+        // asynchronously. This can occur when several people leave a dynamic room when an event ends.
+        try{
+          await role.delete();
+          await oldState.guild.channels.resolve(channelData.textChannelId).delete();
+          await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
+        } catch (e) {
+          // Only report errors which do not look like a Discord API 404 error for a missing role or channel
+          if (!e.status || e.status !== 404) {
+            return generalErrorHandler(e);
+          }
+        }
 
         // Delete the database entry for for this channel
         await dbExecute('DELETE FROM room_system_games WHERE id=?', [channelData.id]);
