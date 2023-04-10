@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
 const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole} = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
@@ -411,7 +411,7 @@ module.exports = {
         .setName('schedule-board-post')
         .setDescription('Post a schedule board in this channel.')
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         try {
           // This function may make a few requests, which could take a few seconds
@@ -464,7 +464,7 @@ module.exports = {
         .setName('schedule-board-delete')
         .setDescription('Delete a schedule board if it exists in this channel.')
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         // Check for existing schedule board in this channel
         let sql = `SELECT sb.id, sb.messageId

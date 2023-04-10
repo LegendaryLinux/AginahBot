@@ -1,5 +1,5 @@
 const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
   category: 'Message Tags',
@@ -20,7 +20,7 @@ module.exports = {
           .setDescription('The text which will be displayed when a tag is found in a message')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const tagName = interaction.options.getString('tag-name');
         const content = interaction.options.getString('content');
@@ -64,7 +64,7 @@ module.exports = {
           .setDescription('Name of the tag to be removed.')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const tagName = interaction.options.getString('tag-name');
 

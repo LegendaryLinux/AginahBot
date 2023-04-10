@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
-  category: 'Message Tags',
+  category: 'Polling',
   commands: [
     {
       commandBuilder: new SlashCommandBuilder()

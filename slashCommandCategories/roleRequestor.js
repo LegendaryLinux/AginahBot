@@ -1,5 +1,5 @@
 const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { ChannelType, PermissionsBitField, SlashCommandBuilder } = require('discord.js');
+const { ChannelType, PermissionsBitField, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
@@ -153,7 +153,7 @@ module.exports = {
           .setDescription('Name of the new category')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
 
@@ -214,7 +214,7 @@ module.exports = {
           .setDescription('New name of the category')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction){
         const oldName = interaction.options.getString('old-name');
         const newName = interaction.options.getString('new-name');
@@ -253,7 +253,7 @@ module.exports = {
           .setDescription('Name of the category you wish to delete')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
 
@@ -315,7 +315,7 @@ module.exports = {
           .setDescription('An optional description to associate with the role')
           .setRequired(false))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
         const roleName = interaction.options.getString('role-name');
@@ -405,7 +405,7 @@ module.exports = {
           .setDescription('The new name of the role')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction){
         const categoryName = interaction.options.getString('category-name');
         const oldName = interaction.options.getString('old-name');
@@ -463,7 +463,7 @@ module.exports = {
           .setDescription('New reaction to associate with the role')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
         const roleName = interaction.options.getString('role-name');
@@ -538,7 +538,7 @@ module.exports = {
           .setDescription('New description for the role')
           .setRequired(false))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
         const roleName = interaction.options.getString('role-name');
@@ -585,7 +585,7 @@ module.exports = {
           .setDescription('Name of the role you wish to delete')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
         const roleName = interaction.options.getString('role-name');

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const tmp = require('tmp');
 const fs = require('fs');
 
@@ -14,7 +14,7 @@ module.exports = {
           .setDescription('Number of messages to save. Min 1, max 1000, default 100')
           .setRequired(false))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const limit = interaction.options.getInteger('limit') ?? 100;
 

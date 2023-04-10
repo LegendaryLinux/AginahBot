@@ -1,5 +1,5 @@
 const { dbQueryOne, dbExecute } = require('../lib');
-const { ChannelType, SlashCommandBuilder } = require('discord.js');
+const { ChannelType, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const VOICE_CHANNEL_NAME = 'Create Room';
 
@@ -17,7 +17,7 @@ module.exports = {
           .setDescription('Category name for the new room system')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
       async execute(interaction) {
         // Create the system
         const categoryName = interaction.options.getString('category-name');
@@ -56,7 +56,7 @@ module.exports = {
           .setDescription('Category name of the room system you wish to destroy')
           .setRequired(true))
         .setDMPermission(false)
-        .setDefaultMemberPermissions(0),
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
 
