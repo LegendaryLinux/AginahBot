@@ -19,6 +19,7 @@ client.devMode = process.argv[2] && process.argv[2] === 'dev';
 client.commands = new Collection();
 client.slashCommandCategories = [];
 client.messageListeners = [];
+client.messageDeletedListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
 client.voiceStateListeners = [];
@@ -37,6 +38,12 @@ fs.readdirSync('./slashCommandCategories').filter((file) => file.endsWith('.js')
 fs.readdirSync('./messageListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
   const listener = require(`./messageListeners/${listenerFile}`);
   client.messageListeners.push(listener);
+});
+
+// Load message delete listener files
+fs.readdirSync('./messageDeletedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
+  const listener = require(`./messageDeletedListeners/${listenerFile}`);
+  client.messageDeletedListeners.push(listener);
 });
 
 // Load reaction listener files
@@ -69,6 +76,17 @@ client.on(Events.MessageCreate, async (msg) => {
 
   // Run the message through the message listeners
   return client.messageListeners.forEach((listener) => listener(client, message));
+});
+
+client.on(Events.MessageDelete, async (msg) => {
+  // Fetch message if partial
+  const message = await cachePartial(msg);
+  if (message.member) { message.member = await cachePartial(message.member); }
+  if (message.author) { message.author = await cachePartial(message.author); }
+  if (message.channel) { message.channel = await cachePartial(message.channel); }
+
+  // Run the message through the message delete listeners
+  return client.messageDeletedListeners.forEach((listener) => listener(client, message));
 });
 
 // Run the voice states through the listeners

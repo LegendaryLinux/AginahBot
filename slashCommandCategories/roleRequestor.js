@@ -1,5 +1,6 @@
 const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { ChannelType, PermissionsBitField, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { ChannelType, PermissionsBitField, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder,
+  ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
@@ -628,6 +629,59 @@ module.exports = {
           return interaction.followUp('Something went wrong and the role could not be deleted.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('role-message-create')
+        .setDescription('Create a message in this channel which includes a button to grant a role')
+        .addStringOption((opt) => opt
+          .setName('role-name')
+          .setDescription('Name of the role you wish to create')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('message')
+          .setDescription('Message to display to the user')
+          .setRequired(true))
+        .addStringOption((opt) => opt
+          .setName('button-text')
+          .setDescription('Text displayed on the button')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+      async execute(interaction) {
+        const roleName = interaction.options.getString('role-name');
+        const message = interaction.options.getString('message');
+        const buttonText = interaction.options.getString('button-text');
+        await interaction.deferReply({ ephemeral: true });
+
+        // Create the role
+        const role = await interaction.guild.roles.create({
+          name: roleName,
+          reason: `Created by role-message-create by ${interaction.user.username}#${interaction.user.discriminator}`,
+        });
+
+        // Send the role message
+        const roleMessage = await interaction.channel.send({
+          content: message,
+          components: [
+            new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId('role-message-request')
+                .setLabel(buttonText)
+                .setStyle(ButtonStyle.Primary)
+            )
+          ],
+        });
+
+        // Fetch guild data
+        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
+
+        // Save role message data
+        let sql = 'INSERT INTO role_messages (guildDataId, channelId, messageId, roleId) VALUES (?, ?, ?, ?)';
+        await dbExecute(sql, [guildData.id, interaction.channel.id, roleMessage.id, role.id]);
+
+        return interaction.followUp(`Role message created. Clicking the button will grant ${role}.`);
       }
     },
   ],

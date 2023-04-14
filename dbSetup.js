@@ -29,6 +29,14 @@ const roles = `CREATE TABLE IF NOT EXISTS roles (
     description VARCHAR(128)
 )`;
 
+const roleMessages = `CREATE TABLE IF NOT EXISTS role_messages (
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId BIGINT NOT NULL,
+    channelId VARCHAR(128) NOT NULL,
+    messageId VARCHAR(128) NOT NULL,
+    roleId VARCHAR(128) NOT NULL
+)`;
+
 const roomSystems = `CREATE TABLE IF NOT EXISTS room_systems (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildDataId BIGINT NOT NULL,
@@ -107,6 +115,7 @@ db.query(guildData, handler);
 db.query(roleSystems, handler);
 db.query(roleCategories, handler);
 db.query(roles, handler);
+db.query(roleMessages, handler);
 db.query(roomSystems, handler);
 db.query(roomSystemGames, handler);
 db.query(roomSystemReadyChecks, handler);
