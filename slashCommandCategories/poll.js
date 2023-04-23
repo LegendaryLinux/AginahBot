@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
 
 module.exports = {
   category: 'Polling',
@@ -39,6 +39,17 @@ module.exports = {
           .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
+        const permissions = interaction.channel.permissionsFor(interaction.client.user);
+        if (
+          !permissions.has(PermissionsBitField.Flags.SendMessages) ||
+          !permissions.has(PermissionsBitField.Flags.AddReactions)
+        ) {
+          return interaction.reply({
+            content: 'Required permissions are missing for this command. (Send Messages, Add Reactions)',
+            ephemeral: true,
+          });
+        }
+
         const prompt = interaction.options.getString('prompt');
         const optionOne = interaction.options.getString('option-one');
         const optionTwo = interaction.options.getString('option-two');

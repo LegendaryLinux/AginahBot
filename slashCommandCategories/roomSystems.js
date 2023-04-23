@@ -19,6 +19,17 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
       async execute(interaction) {
+        const permissions = interaction.channel.permissionsFor(interaction.client.user);
+        if (
+          !permissions.has(PermissionFlagsBits.Flags.ManageChannels) ||
+          !permissions.has(PermissionFlagsBits.Flags.ManageRoles)
+        ) {
+          return interaction.reply({
+            content: 'Required permissions are missing for this command. (Manage Channels, Manage Roles)',
+            ephemeral: true,
+          });
+        }
+
         // Create the system
         const categoryName = interaction.options.getString('category-name');
 
@@ -58,6 +69,17 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
       async execute(interaction) {
+        const permissions = interaction.channel.permissionsFor(interaction.client.user);
+        if (
+          !permissions.has(PermissionFlagsBits.Flags.ManageChannels) ||
+          !permissions.has(PermissionFlagsBits.Flags.ManageRoles)
+        ) {
+          return interaction.reply({
+            content: 'Required permissions are missing for this command. (Manage Channels, Manage Roles)',
+            ephemeral: true,
+          });
+        }
+
         const categoryName = interaction.options.getString('category-name');
 
         try {

@@ -14,6 +14,7 @@
         "no-prototype-builtins": "off",
         "no-case-declarations": "off",
         "no-async-promise-executor": "off",
+        "no-irregular-whitespace": "off",
         "indent": [
             "error",
             2,

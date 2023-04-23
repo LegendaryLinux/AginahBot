@@ -164,9 +164,18 @@ module.exports = async (client, oldState, newState) => {
       // If the voice channel the user left was not a game channel, do nothing
       if (!channelData) { return; }
 
-      // Remove channel role from this user
-      const role = oldState.guild.roles.resolve(channelData.roleId);
-      await oldState.member.roles.remove(role);
+      try{
+        // Remove channel role from this user
+        const role = await oldState.guild.roles.fetch(channelData.roleId);
+        await oldState.member.roles.remove(role);
+      } catch (err) {
+        // If the role no longer exists, there is no need to remove it from the user. This can be caused by
+        // multiple users leaving a dynamic voice room in quick succession, as Discord sometimes sends events
+        // out of order
+        if (err.status && err.status !== 404) {
+          return generalErrorHandler(err);
+        }
+      }
 
       // Remove user from ready_checks table
       sql = 'SELECT id FROM room_system_games WHERE voiceChannelId=? AND roomSystemId=?';
@@ -185,7 +194,9 @@ module.exports = async (client, oldState, newState) => {
         // Catch instances where multiple successive channel disconnects cause this function to run multiple times
         // asynchronously. This can occur when several people leave a dynamic room when an event ends.
         try{
+          const role = await oldState.guild.roles.fetch(channelData.roleId);
           await role.delete();
+
           await oldState.guild.channels.resolve(channelData.textChannelId).delete();
           await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
         } catch (e) {

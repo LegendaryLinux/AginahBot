@@ -77,8 +77,9 @@ module.exports = {
   handleGuildDelete: async (client, guild) => {
     const guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
     if (!guildData) {
-      throw new Error('No guild data could be found when trying to delete data for guild:' +
-        `${guild.name} (${guild.id}).`);
+      console.warn('No guild_data entry could be found when trying to handleGuildDelete for ' +
+        `guild: ${guild.name} (${guild.id}).`);
+      return;
     }
 
     // Delete dynamic game system data
