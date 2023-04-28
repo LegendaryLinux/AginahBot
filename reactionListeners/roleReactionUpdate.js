@@ -1,4 +1,5 @@
 const { parseEmoji, dbQueryOne } = require('../lib');
+const {generalErrorHandler} = require('../errorHandlers');
 
 module.exports = async (client, messageReaction, user, added) => {
   // Do nothing if the user is a bot or the message is a DM
@@ -25,10 +26,17 @@ module.exports = async (client, messageReaction, user, added) => {
     messageReaction.message.id, emoji.toString()]);
   if (!role) { return; }
 
-  // Get the matching role from the guild
-  const roleObj = guild.roles.resolve(role.roleId);
-  if (!roleObj) { throw new Error(`Guild ${guild.name} (${guild.id}) does not have a role ${role.roleName} ` +
-    `(${role.roleId})`); }
+  let roleObj = null;
+  try {
+    // Get the matching role from the guild
+    roleObj = await guild.roles.fetch(role.roleId);
+  } catch (err) {
+    if (err.status === 404) {
+      throw new Error(`Unable to fetch object for role [${role.roleName} / ${role.roleId}] during a ` +
+        `roleReactionUpdate because the role does not exist in the guild [${guild.name} / ${guild.id}].`);
+    }
+    return generalErrorHandler(err);
+  }
 
   // Identify the user associated with this reaction
   let guildMember = guild.members.resolve(user.id);
