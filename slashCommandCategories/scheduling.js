@@ -380,16 +380,22 @@ module.exports = {
             });
           }
 
-          // The event is to be cancelled. Replace the schedule message with a cancellation notice
-          const scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
-          const scheduleMsg = await scheduleChannel.messages.fetch(eventData.messageId);
-          await scheduleMsg.edit({
-            content: `This event has been cancelled by ${interaction.user}.`,
-            embeds: [],
-          });
+          try{
+            // The event is to be cancelled. Replace the schedule message with a cancellation notice
+            const scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
+            const scheduleMsg = await scheduleChannel.messages.fetch(eventData.messageId);
+            await scheduleMsg.edit({
+              content: `This event has been cancelled by ${interaction.user}.`,
+              embeds: [],
+            });
 
-          // Remove all reactions from the message
-          await scheduleMsg.reactions.removeAll();
+            // Remove all reactions from the message
+            await scheduleMsg.reactions.removeAll();
+          } catch(err) {
+            // Handle non-404 errors normally. If the error was a 404, it means the message was manually deleted
+            // and no action is necessary
+            if (err.status !== 404) { generalErrorHandler(err); }
+          }
 
           // Remove the event's entry from the database
           await dbExecute('DELETE FROM scheduled_events WHERE id=?', [eventData.id]);
