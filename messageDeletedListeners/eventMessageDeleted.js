@@ -4,7 +4,7 @@ const { dbQueryOne, dbExecute } = require('../lib');
 module.exports = async (client, message) => {
   let sql = `SELECT se.id
              FROM scheduled_events se
-             JOIN guild_data gd ON se.guildDataId = gd.guildId
+             JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
                 AND se.messageId=?`;
   const eventMessage = await dbQueryOne(sql, [message.guild.id, message.id]);

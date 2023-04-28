@@ -10,7 +10,7 @@ process.on('uncaughtException', (err) => generalErrorHandler(err));
 process.on('unhandledRejection', (err) => generalErrorHandler(err));
 
 const client = new Client({
-  partials: [ Partials.GuildMember, Partials.Message, Partials.Reaction ],
+  partials: [ Partials.GuildMember, Partials.Channel, Partials.Message, Partials.Reaction ],
   intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent],

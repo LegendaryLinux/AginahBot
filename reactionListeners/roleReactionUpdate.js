@@ -52,7 +52,15 @@ module.exports = async (client, messageReaction, user, added) => {
     guildMember = await guildMember.fetch();
   }
 
-  return added ?
-    guildMember.roles.add(roleObj) :
-    guildMember.roles.remove(roleObj);
+  try {
+    return added ?
+      guildMember.roles.add(roleObj) :
+      guildMember.roles.remove(roleObj);
+  } catch (err) {
+    if (err.status === 403) {
+      await user.send('I couldn\'t assign you that role because I don\'t have permission to do so. ' +
+        'You should tell an admin or moderator about this.');
+    }
+    generalErrorHandler(err);
+  }
 };
