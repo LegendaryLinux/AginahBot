@@ -19,7 +19,7 @@ const generateEventCode = () => {
   return code;
 };
 
-const sendScheduleMessage = async (interaction, targetDate, title = null) => {
+const sendScheduleMessage = async (interaction, targetDate, title = null, pingRole = null) => {
   // Fetch guild data
   const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
   if (!guildData) {
@@ -41,7 +41,7 @@ const sendScheduleMessage = async (interaction, targetDate, title = null) => {
     .addFields({ name: 'Event Code', value: eventCode });
 
   // Send schedule message
-  const scheduleMessage = await interaction.channel.send({ embeds: [embed] });
+  const scheduleMessage = await interaction.channel.send({ content: `${pingRole}`, embeds: [embed] });
 
   // Start a thread on the schedule message if the option is enabled for this guild
   let threadChannel = null;
@@ -214,9 +214,14 @@ module.exports = {
           .setDescription('Optional title for this event')
           .setMaxLength(100)
           .setRequired(false))
+        .addRoleOption((opt) => opt
+          .setName('ping-role')
+          .setDescription('Optional role to ping for this event')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
+        const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const dateString = interaction.options.getString('date');
         const timeString = interaction.options.getString('time');
         const utcOffset = interaction.options.getInteger('timezone');
@@ -258,7 +263,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate, title);
+          await sendScheduleMessage(interaction, targetDate, title, pingRole);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -280,9 +285,14 @@ module.exports = {
           .setDescription('Optional title for this event')
           .setMaxLength(100)
           .setRequired(false))
+        .addRoleOption((opt) => opt
+          .setName('ping-role')
+          .setDescription('Optional role to ping for this event')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
+        const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
 
         try{
@@ -297,7 +307,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate, title);
+          await sendScheduleMessage(interaction, targetDate, title, pingRole);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -323,9 +333,14 @@ module.exports = {
           .setDescription('Optional title for this event')
           .setMaxLength(100)
           .setRequired(false))
+        .addRoleOption((opt) => opt
+          .setName('ping-role')
+          .setDescription('Optional role to ping for this event')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
+        const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const hours = interaction.options.getInteger('hours');
         const minutes = interaction.options.getInteger('minutes');
 
@@ -341,7 +356,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate, title);
+          await sendScheduleMessage(interaction, targetDate, title, pingRole);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
