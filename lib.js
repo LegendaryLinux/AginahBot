@@ -70,8 +70,13 @@ module.exports = {
       }).catch((err) => generalErrorHandler(err));
     }
 
+    // Create guild data
     let sql = 'INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)';
     await module.exports.dbExecute(sql, [guild.id, moderatorRole.id]);
+
+    // Create guild options
+    const guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
+    await module.exports.dbExecute('INSERT INTO guild_options (guildDataId) VALUES (?)', [guildData.id]);
   },
 
   handleGuildDelete: async (client, guild) => {
@@ -103,7 +108,8 @@ module.exports = {
       await module.exports.dbExecute('DELETE FROM role_systems WHERE id=?', [roleSystem.id]);
     }
 
-    // Delete guild data
+    // Delete guild data and options
+    await module.exports.dbExecute('DELETE FROM guild_options WHERE guildDataId=?', [guildData.id]);
     await module.exports.dbExecute('DELETE FROM guild_data WHERE id=?', [guildData.id]);
   },
 

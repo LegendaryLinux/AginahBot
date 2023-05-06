@@ -100,6 +100,13 @@ const messageTags = `CREATE TABLE IF NOT EXISTS message_tags (
     UNIQUE KEY guildDataId (guildDataId, tagName)
 )`;
 
+const guildOptions = `CREATE TABLE IF NOT EXISTS guild_options (
+  id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  guildDataId BIGINT UNSIGNED NOT NULL,
+  eventThreads TINYINT(1) NOT NULL DEFAULT 0,
+  UNIQUE KEY guildDataId (guildDataId)
+)`;
+
 const db = mysql.createConnection({
   host: config.dbHost,
   user: config.dbUser,
@@ -123,4 +130,5 @@ db.query(scheduledEvents, handler);
 db.query(modContact, handler);
 db.query(modContactChannels, handler);
 db.query(messageTags, handler);
+db.query(guildOptions, handler);
 db.end();
