@@ -20,6 +20,15 @@ const generateEventCode = () => {
 };
 
 const sendScheduleMessage = async (interaction, targetDate, title = null) => {
+  // Fetch guild data
+  const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
+  if (!guildData) {
+    throw new Error(`Unable to find guild ${interaction.guild.name} (${interaction.guildId}) in guild_data table.`);
+  }
+
+  // Fetch options
+  const options = await dbQueryOne('SELECT * FROM guild_options WHERE guildDataId=?', [guildData.id]);
+
   const eventCode = generateEventCode();
 
   const embedTimestamp = Math.floor(targetDate.getTime()/1000);
@@ -31,25 +40,31 @@ const sendScheduleMessage = async (interaction, targetDate, title = null) => {
       '\nReact with 🤔 if you don\'t know yet.')
     .addFields({ name: 'Event Code', value: eventCode });
 
-  interaction.channel.send({ embeds: [embed] }).then(async (scheduleMessage) => {
-    // Save scheduled event to database
-    const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
-    if (!guildData) {
-      throw new Error(`Unable to find guild ${interaction.guild.name} (${interaction.guildId}) in guild_data table.`);
-    }
-    const sql = `INSERT INTO scheduled_events
-             (guildDataId, timestamp, channelId, messageId, schedulingUserId, schedulingUserTag, eventCode, title)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-    await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-      interaction.user.id, interaction.user.tag, eventCode, title]);
+  // Send schedule message
+  const scheduleMessage = await interaction.channel.send({ embeds: [embed] });
 
-    // Put appropriate reactions onto the message
-    await scheduleMessage.react('👍');
-    await scheduleMessage.react('🤔');
+  // Start a thread on the schedule message if the option is enabled for this guild
+  let threadChannel = null;
+  if (options.eventThreads) {
+    threadChannel = await scheduleMessage.startThread({
+      name: title || `${interaction.user.username}'s Event`,
+    });
+  }
 
-    // Update schedule messages
-    await updateScheduleBoard(interaction.client, interaction.guild);
-  }).catch((error) => generalErrorHandler(error));
+  // Save scheduled event to database
+  const sql = `INSERT INTO scheduled_events
+             (guildDataId, timestamp, channelId, messageId, threadId, schedulingUserId, schedulingUserTag,
+              eventCode, title)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
+    threadChannel ? threadChannel.id : null, interaction.user.id, interaction.user.tag, eventCode, title]);
+
+  // Put appropriate reactions onto the message
+  await scheduleMessage.react('👍');
+  await scheduleMessage.react('🤔');
+
+  // Update schedule messages
+  await updateScheduleBoard(interaction.client, interaction.guild);
 };
 
 module.exports = {
@@ -349,7 +364,7 @@ module.exports = {
       async execute(interaction) {
         const eventCode = interaction.options.getString('event-code');
 
-        let sql = `SELECT se.id, se.channelId, se.messageId, se.schedulingUserId, se.schedulingUserTag
+        let sql = `SELECT se.id, se.channelId, se.messageId, se.threadId, se.schedulingUserId, se.schedulingUserTag
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                    WHERE gd.guildId=?
@@ -391,6 +406,13 @@ module.exports = {
 
             // Remove all reactions from the message
             await scheduleMsg.reactions.removeAll();
+
+            // Close and lock the thread if one exists
+            if (eventData.threadId) {
+              const thread = await interaction.guild.channels.fetch(eventData.threadId);
+              await thread.setLocked(true);
+              await thread.setArchived(true);
+            }
           } catch(err) {
             // Handle non-404 errors normally. If the error was a 404, it means the message was manually deleted
             // and no action is necessary
@@ -501,6 +523,31 @@ module.exports = {
           return interaction.followUp('Something went wrong and the schedule board could not be deleted.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('schedule-option-threads')
+        .setDescription('Enable or disable automatic thread creation for scheduled events.')
+        .addBooleanOption((opt) => opt
+          .setName('toggle' )
+          .setDescription('True to enable, False to disable')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        await interaction.deferReply({ ephemeral: true });
+        const toggle = interaction.options.getBoolean('toggle', true);
+
+        // Fetch guild data
+        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
+        if (!guildData) {
+          await interaction.followUp('Unable to complete request. An error was logged.');
+          throw new Error(`Unable to find guildData entry for guild with id ${interaction.guild.id}`);
+        }
+
+        await dbExecute('UPDATE guild_options SET eventThreads=? WHERE guildDataId=?', [toggle ? 1 : 0, guildData.id]);
+        return interaction.followUp(toggle ? 'Event threads enabled.' : 'Event threads disabled.');
       }
     },
   ],

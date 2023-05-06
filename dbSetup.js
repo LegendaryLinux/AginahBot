@@ -66,6 +66,7 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     timestamp BIGINT NOT NULL,
     channelId VARCHAR(64) NOT NULL,
     messageId VARCHAR(64) NOT NULL,
+    threadId VARCHAR(64),
     schedulingUserId VARCHAR(64) NOT NULL,
     schedulingUserTag VARCHAR(256) NOT NULL,
     eventCode VARCHAR(6) NOT NULL,
