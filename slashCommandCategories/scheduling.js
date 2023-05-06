@@ -41,7 +41,9 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
     .addFields({ name: 'Event Code', value: eventCode });
 
   // Send schedule message
-  const scheduleMessage = await interaction.channel.send({ content: `${pingRole}`, embeds: [embed] });
+  const messageObject = { embeds: [embed] };
+  if (pingRole) { messageObject.content = `${pingRole}`; }
+  const scheduleMessage = await interaction.channel.send(messageObject);
 
   // Start a thread on the schedule message if the option is enabled for this guild
   let threadChannel = null;
