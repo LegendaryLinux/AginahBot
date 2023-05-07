@@ -410,7 +410,7 @@ module.exports = {
 
         // If no event is found, notify the user
         if (!eventData) {
-          return interaction.reply({
+          return interaction.followUp({
             content: 'There is no upcoming event with that code.',
             ephemeral: true,
           });
