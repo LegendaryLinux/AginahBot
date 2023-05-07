@@ -51,6 +51,7 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
     threadChannel = await scheduleMessage.startThread({
       name: title || `${interaction.user.username}'s Event`,
     });
+    await threadChannel.members.add(interaction.user.id);
   }
 
   // Save scheduled event to database
@@ -365,6 +366,97 @@ module.exports = {
           return interaction.followUp('Something went wrong and the event could not be created.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('schedule-adjust')
+        .setDescription('Alter the start time of a scheduled event.')
+        .addStringOption((opt) => opt
+          .setName('event-code')
+          .setDescription('Six character code of the upcoming event you wish to cancel.')
+          .setRequired(true))
+        .addIntegerOption((opt) => opt
+          .setName('days')
+          .setDescription('Days to adjust the event')
+          .setRequired(false))
+        .addIntegerOption((opt) => opt
+          .setName('hours')
+          .setDescription('Hours to adjust the event')
+          .setRequired(false))
+        .addIntegerOption((opt) => opt
+          .setName('minutes')
+          .setDescription('Minutes to adjust the event')
+          .setRequired(false))
+        .setDMPermission(false),
+      async execute(interaction) {
+        await interaction.deferReply();
+
+        const eventCode = interaction.options.getString('event-code');
+        const days = interaction.options.getInteger('days', false) || 0;
+        const hours = interaction.options.getInteger('hours', false) || 0;
+        const minutes = interaction.options.getInteger('minutes', false) || 0;
+
+        let sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.schedulingUserTag, se.channelId,
+                        se.messageId, se.title
+                   FROM scheduled_events se
+                   JOIN guild_data gd ON se.guildDataId = gd.id
+                   WHERE gd.guildId=?
+                     AND se.eventCode=?
+                     AND timestamp > ?`;
+        const eventData = await dbQueryOne(sql, [
+          interaction.guildId, eventCode.toUpperCase(), new Date().getTime(),
+        ]);
+
+        // If no event is found, notify the user
+        if (!eventData) {
+          return interaction.reply({
+            content: 'There is no upcoming event with that code.',
+            ephemeral: true,
+          });
+        }
+
+        // If the user is not a moderator and not the scheduling user, deny the cancellation
+        if ((interaction.user.id !== eventData.schedulingUserId) && !await verifyModeratorRole(interaction.member)) {
+          return interaction.followUp({
+            content: 'This event can only be cancelled by the user who scheduled it ' +
+              `(${eventData.schedulingUserTag}), or by an administrator.`,
+            ephemeral: true,
+          });
+        }
+
+        const newTimestamp = Number(eventData.timestamp) + (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) +
+          (minutes * 60 * 1000);
+
+        if (new Date(newTimestamp).getTime() < new Date().getTime()) {
+          return interaction.followUp('You cannot schedule a game in the past!');
+        }
+
+        // Update database
+        await dbExecute('UPDATE scheduled_events SET timestamp=? WHERE id=?', [newTimestamp, eventData.id]);
+
+        // Update schedule message
+        const channel = await interaction.guild.channels.fetch(eventData.channelId);
+        const message = await channel.messages.fetch(eventData.messageId);
+
+        const embedTimestamp = Math.floor(newTimestamp/1000);
+        const embed = new Discord.EmbedBuilder()
+          .setTitle(`${eventData.title || 'New Event'}\n<t:${embedTimestamp}:F>`)
+          .setColor('#6081cb')
+          .setDescription(`**${interaction.user.username}** has scheduled a new event!` +
+            '\nReact with 👍 if you intend to join this event.' +
+            '\nReact with 🤔 if you don\'t know yet.')
+          .addFields({ name: 'Event Code', value: eventCode });
+
+        // Update schedule message
+        const payload = { embeds: [embed] };
+        if (message.content) { payload.content = message.content; }
+        await message.edit(payload);
+
+        await updateScheduleBoard(interaction.client, interaction.guild);
+        return interaction.followUp(
+          `Event **${eventData.title || eventCode}** updated to <t:${Math.floor(newTimestamp/1000)}:F>`
+        );
       }
     },
     {

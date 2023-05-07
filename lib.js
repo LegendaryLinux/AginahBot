@@ -270,7 +270,7 @@ module.exports = {
         continue;
       }
 
-      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode, se.title
+      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.threadId, se.eventCode, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -299,6 +299,7 @@ module.exports = {
       for (let event of events) {
         const eventChannel = await guild.channels.fetch(event.channelId);
         const eventMessage = await eventChannel.messages.fetch(event.messageId);
+        const eventThread = event.threadId ? await guild.channels.fetch(event.threadId) : null;
 
         // Determine RSVP count
         const rsvps = new Map();
@@ -319,6 +320,7 @@ module.exports = {
           .addFields(
             { name: 'Scheduled by', value: `${event.schedulingUserTag}` },
             { name: 'Planning Channel', value: `#${eventChannel.name}` },
+            { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
             { name: 'Event Code', value: event.eventCode },
             { name: 'Current RSVPs', value: rsvps.size.toString() },
           );
@@ -380,7 +382,7 @@ module.exports = {
         continue;
       }
 
-      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode, se.title
+      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.threadId, se.eventCode, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -410,6 +412,7 @@ module.exports = {
       for (let event of events) {
         const eventChannel = await guild.channels.fetch(event.channelId);
         const eventMessage = await eventChannel.messages.fetch(event.messageId);
+        const eventThread = event.threadId ? await guild.channels.fetch(event.threadId) : null;
 
         // Determine RSVP count
         const rsvps = new Map();
@@ -430,6 +433,7 @@ module.exports = {
           .addFields(
             { name: 'Scheduled by', value: `${event.schedulingUserTag}` },
             { name: 'Planning Channel', value: `#${eventChannel.name}` },
+            { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
             { name: 'Event Code', value: event.eventCode },
             { name: 'Current RSVPs', value: rsvps.size.toString() },
           );
