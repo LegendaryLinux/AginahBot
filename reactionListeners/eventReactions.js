@@ -16,5 +16,5 @@ module.exports = async (client, messageReaction, user, added) => {
   if (!eventData || !eventData.threadId) { return; }
 
   const thread = await messageReaction.message.guild.channels.fetch(eventData.threadId);
-  thread.members.add(user.id);
+  return thread.members.add(user.id);
 };
