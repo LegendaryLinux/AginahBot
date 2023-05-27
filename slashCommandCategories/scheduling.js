@@ -5,6 +5,9 @@ const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorR
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
 const isRolePingable = async (guildId, role) => {
+  // Prevent pinging the @everyone role in all cases
+  if (role.name === '@everyone') { return false; }
+
   // Determine if whitelist is enabled for the specified guild
   let sql = `SELECT 1
              FROM guild_options go
