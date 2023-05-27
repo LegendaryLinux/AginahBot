@@ -105,7 +105,15 @@ const guildOptions = `CREATE TABLE IF NOT EXISTS guild_options (
   id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
   guildDataId BIGINT UNSIGNED NOT NULL,
   eventThreads TINYINT(1) NOT NULL DEFAULT 0,
+  roleWhitelist TINYINT(1) NOT NULL DEFAULT 0,
   UNIQUE KEY guildDataId (guildDataId)
+)`;
+
+const pingableRoles = `CREATE TABLE IF NOT EXISTS pingable_roles (
+  id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  guildDataId BIGINT NOT NULL,
+  roleId VARCHAR(64) NOT NULL,
+  UNIQUE KEY guildDataId (guildDataId, roleId)
 )`;
 
 const db = mysql.createConnection({
@@ -132,4 +140,5 @@ db.query(modContact, handler);
 db.query(modContactChannels, handler);
 db.query(messageTags, handler);
 db.query(guildOptions, handler);
+db.query(pingableRoles, handler);
 db.end();

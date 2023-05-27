@@ -4,6 +4,32 @@ const { generalErrorHandler } = require('../errorHandlers');
 const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole} = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
+const isRolePingable = async (guildId, role) => {
+  // Determine if whitelist is enabled for the specified guild
+  let sql = `SELECT 1
+             FROM guild_options go
+             JOIN guild_data gd ON go.guildDataId = gd.id
+             WHERE gd.guildId=?
+                AND roleWhitelist=1`;
+  const guildOptions = await dbQueryOne(sql, [guildId]);
+
+  // If whitelist is not enabled, all roles are pingable
+  if (!guildOptions) { return true; }
+
+  // Determine if role exists in whitelist
+  sql = `SELECT 1
+               FROM pingable_roles pr
+               JOIN guild_data gd ON pr.guildDataId = gd.id
+               JOIN guild_options go ON gd.id = go.guildDataId 
+               WHERE gd.guildId=?
+                    AND pr.roleId=?
+                    AND go.roleWhitelist=1`;
+  const pingableRole = await dbQueryOne(sql, [guildId, role.id]);
+
+  // If role exists in whitelist, it is pingable
+  return !!pingableRole;
+};
+
 const generateEventCode = () => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let code = '';
@@ -229,6 +255,13 @@ module.exports = {
         const timeString = interaction.options.getString('time');
         const utcOffset = interaction.options.getInteger('timezone');
 
+        if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
+          return interaction.reply({
+            content: 'Permission to ping that role has not been granted.',
+            ephemeral: true,
+          });
+        }
+
         if (!(new RegExp(/\d{4}-\d{2}-\d{2}/).test(dateString))) {
           return interaction.reply({
             content: 'Invalid date format provided. Must be of format: YYYY-MM-DD.',
@@ -298,6 +331,13 @@ module.exports = {
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
 
+        if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
+          return interaction.reply({
+            content: 'Permission to ping that role has not been granted.',
+            ephemeral: true,
+          });
+        }
+
         try{
           const currentDate = new Date();
           const targetDate = new Date(timestamp);
@@ -346,6 +386,13 @@ module.exports = {
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const hours = interaction.options.getInteger('hours');
         const minutes = interaction.options.getInteger('minutes');
+
+        if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
+          return interaction.reply({
+            content: 'Permission to ping that role has not been granted.',
+            ephemeral: true,
+          });
+        }
 
         try{
           const currentDate = new Date();
