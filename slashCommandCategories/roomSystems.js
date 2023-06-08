@@ -21,8 +21,8 @@ module.exports = {
       async execute(interaction) {
         const permissions = interaction.channel.permissionsFor(interaction.client.user);
         if (
-          !permissions.has(PermissionFlagsBits.Flags.ManageChannels) ||
-          !permissions.has(PermissionFlagsBits.Flags.ManageRoles)
+          !permissions.has(PermissionFlagsBits.ManageChannels) ||
+          !permissions.has(PermissionFlagsBits.ManageRoles)
         ) {
           return interaction.reply({
             content: 'Required permissions are missing for this command. (Manage Channels, Manage Roles)',
@@ -71,8 +71,8 @@ module.exports = {
       async execute(interaction) {
         const permissions = interaction.channel.permissionsFor(interaction.client.user);
         if (
-          !permissions.has(PermissionFlagsBits.Flags.ManageChannels) ||
-          !permissions.has(PermissionFlagsBits.Flags.ManageRoles)
+          !permissions.has(PermissionFlagsBits.ManageChannels) ||
+          !permissions.has(PermissionFlagsBits.ManageRoles)
         ) {
           return interaction.reply({
             content: 'Required permissions are missing for this command. (Manage Channels, Manage Roles)',
