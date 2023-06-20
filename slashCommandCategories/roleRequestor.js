@@ -658,7 +658,7 @@ module.exports = {
         // Create the role
         const role = await interaction.guild.roles.create({
           name: roleName,
-          reason: `Created by role-message-create by ${interaction.user.username}#${interaction.user.discriminator}`,
+          reason: `Created by role-message-create by ${interaction.user.username}`,
         });
 
         // Send the role message

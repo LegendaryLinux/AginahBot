@@ -31,7 +31,7 @@ module.exports = async (client, interaction) => {
     name: interaction.user.username,
     type: ChannelType.GuildText,
     parent: interaction.message.channel.parent.id,
-    topic: `This channel was created by ${interaction.user.username}#${interaction.user.discriminator}.`,
+    topic: `This channel was created by ${interaction.user.username}.`,
     permissionOverwrites: [
       {
         // @everyone may not view this channel
