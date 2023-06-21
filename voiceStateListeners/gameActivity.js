@@ -141,8 +141,8 @@ module.exports = async (client, oldState, newState) => {
       newState.member.roles.add(role);
 
       // Add the user to the ready checks table
-      sql = 'REPLACE INTO room_system_ready_checks (gameId, playerId, playerTag) VALUES (?,?,?)';
-      await dbExecute(sql, [gameData.id, newState.member.id, newState.member.user.tag]);
+      sql = 'REPLACE INTO room_system_ready_checks (gameId, playerId, playerName) VALUES (?,?,?)';
+      await dbExecute(sql, [gameData.id, newState.member.id, newState.member.displayName]);
     }
   }
 

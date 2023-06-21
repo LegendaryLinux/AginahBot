@@ -85,11 +85,10 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
 
   // Save scheduled event to database
   const sql = `INSERT INTO scheduled_events
-             (guildDataId, timestamp, channelId, messageId, threadId, schedulingUserId, schedulingUserTag,
-              eventCode, title)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+             (guildDataId, timestamp, channelId, messageId, threadId, schedulingUserId, eventCode, title)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
   await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-    threadChannel ? threadChannel.id : null, interaction.user.id, interaction.user.tag, eventCode, title]);
+    threadChannel ? threadChannel.id : null, interaction.user.id, eventCode, title]);
 
   // Put appropriate reactions onto the message
   await scheduleMessage.react('👍');
@@ -146,7 +145,7 @@ module.exports = {
         }
 
         // Send individual messages for each upcoming event
-        sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.eventCode, se.title
+        sql = `SELECT se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.eventCode, se.title
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                    WHERE gd.guildId=?
@@ -178,13 +177,15 @@ module.exports = {
               });
             }
 
+            const schedulingUser = await interaction.guild.members.fetch(event.schedulingUserId);
+
             const embed = new Discord.EmbedBuilder()
               .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
               .setColor('#6081cb')
               .setDescription('**Click the title of this message to jump to the original.**')
               .setURL(scheduleMessage.url)
               .addFields(
-                { name: 'Scheduled By', value: `${event.schedulingUserTag}` },
+                { name: 'Scheduled By', value: `${schedulingUser.displayName}` },
                 { name: 'Planning Channel', value: `#${channel.name}` },
                 { name: 'Event Code', value: event.eventCode },
                 { name: 'Current RSVPs', value: rsvps.size.toString() },
@@ -447,8 +448,7 @@ module.exports = {
         const hours = interaction.options.getInteger('hours', false) || 0;
         const minutes = interaction.options.getInteger('minutes', false) || 0;
 
-        let sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.schedulingUserTag, se.channelId,
-                        se.messageId, se.title
+        let sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.title
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                    WHERE gd.guildId=?
@@ -468,9 +468,10 @@ module.exports = {
 
         // If the user is not a moderator and not the scheduling user, deny the cancellation
         if ((interaction.user.id !== eventData.schedulingUserId) && !await verifyModeratorRole(interaction.member)) {
+          const schedulingUser = await interaction.guild.members.fetch(eventData.schedulingUserId);
           return interaction.followUp({
             content: 'This event can only be cancelled by the user who scheduled it ' +
-              `(${eventData.schedulingUserTag}), or by an administrator.`,
+              `(${schedulingUser.displayName}), or by an administrator.`,
             ephemeral: true,
           });
         }
@@ -523,7 +524,7 @@ module.exports = {
       async execute(interaction) {
         const eventCode = interaction.options.getString('event-code');
 
-        let sql = `SELECT se.id, se.channelId, se.messageId, se.threadId, se.schedulingUserId, se.schedulingUserTag
+        let sql = `SELECT se.id, se.channelId, se.messageId, se.threadId, se.schedulingUserId
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                    WHERE gd.guildId=?
@@ -547,9 +548,10 @@ module.exports = {
 
           // If the user is not a moderator and not the scheduling user, deny the cancellation
           if ((interaction.user.id !== eventData.schedulingUserId) && !await verifyModeratorRole(interaction.member)) {
+            const schedulingUser = await interaction.guild.members.fetch(eventData.schedulingUserId);
             return interaction.followUp({
               content: 'This event can only be cancelled by the user who scheduled it ' +
-                `(${eventData.schedulingUserTag}), or by an administrator.`,
+                `(${schedulingUser.displayName}), or by an administrator.`,
               ephemeral: true,
             });
           }

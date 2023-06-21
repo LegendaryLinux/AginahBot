@@ -56,7 +56,7 @@ const roomSystemReadyChecks = `CREATE TABLE IF NOT EXISTS room_system_ready_chec
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     gameId BIGINT NOT NULL,
     playerId VARCHAR(64) NOT NULL,
-    playerTag VARCHAR(256) NOT NULL,
+    playerName VARCHAR(256) NOT NULL,
     readyState TINYINT NOT NULL DEFAULT 0
 )`;
 
@@ -68,7 +68,6 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     messageId VARCHAR(64) NOT NULL,
     threadId VARCHAR(64),
     schedulingUserId VARCHAR(64) NOT NULL,
-    schedulingUserTag VARCHAR(256) NOT NULL,
     eventCode VARCHAR(6) NOT NULL,
     title VARCHAR(100)
 )`;

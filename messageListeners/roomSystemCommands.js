@@ -27,7 +27,7 @@ module.exports = async (client, message) => {
     case '.ping':
       if (!command[1]) { return message.channel.send('You must provide a room code to ping players.'); }
 
-      sql = `SELECT se.messageId, se.channelId, se.schedulingUserTag, se.title
+      sql = `SELECT se.messageId, se.channelId, se.schedulingUserId, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE se.eventCode=?
@@ -62,6 +62,8 @@ module.exports = async (client, message) => {
         attendeeString += `${attendee} `;
       }
 
+      const schedulingUser = await message.guild.members.fetch(schedule.schedulingUserId);
+
       // Build the reminder message
       const embed = new EmbedBuilder()
         .setTitle(`${schedule.title || 'An event'} is about to begin in #${message.channel.name}!`)
@@ -69,8 +71,8 @@ module.exports = async (client, message) => {
         .addFields([
           { name: 'Original Post', value: `[Jump to Schedule Message](${scheduleMessage.url})` },
           { name: 'Join now!', value: `[Join Voice Channel](${voiceChannel.url})` },
-          { name: 'Organizer', value: schedule.schedulingUserTag },
-          { name: 'Who sent this ping?', value: message.author.tag },
+          { name: 'Organizer', value: schedulingUser.displayName },
+          { name: 'Who sent this ping?', value: message.author.displayName },
         ]);
 
       // Send the reminder to the channel the event was originally scheduled in
@@ -97,13 +99,13 @@ module.exports = async (client, message) => {
       const notReady = [];
 
       // Find each player's ready state
-      sql = 'SELECT playerTag, readyState FROM room_system_ready_checks WHERE gameId=?';
+      sql = 'SELECT playerName, readyState FROM room_system_ready_checks WHERE gameId=?';
       const players = await dbQueryAll(sql, [roomSystem.gameId]);
       players.forEach((player) => {
         if (parseInt(player.readyState, 10) === 1) {
-          ready.push(player.playerTag);
+          ready.push(player.playerName);
         } else {
-          notReady.push(player.playerTag);
+          notReady.push(player.playerName);
         }
       });
 

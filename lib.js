@@ -270,7 +270,7 @@ module.exports = {
         continue;
       }
 
-      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.threadId, se.eventCode, se.title
+      sql = `SELECT se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.threadId, se.eventCode, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -312,13 +312,14 @@ module.exports = {
           });
         }
 
+        const schedulingUser = await guild.members.fetch(event.schedulingUserId);
         const embed = new Discord.EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
           .setColor('#6081cb')
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
           .addFields(
-            { name: 'Scheduled by', value: `${event.schedulingUserTag}` },
+            { name: 'Scheduled by', value: `${schedulingUser.displayName}` },
             { name: 'Planning Channel', value: `#${eventChannel.name}` },
             { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
             { name: 'Event Code', value: event.eventCode },
@@ -382,7 +383,7 @@ module.exports = {
         continue;
       }
 
-      sql = `SELECT se.timestamp, se.schedulingUserTag, se.channelId, se.messageId, se.threadId, se.eventCode, se.title
+      sql = `SELECT se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.threadId, se.eventCode, se.title
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -413,6 +414,7 @@ module.exports = {
         const eventChannel = await guild.channels.fetch(event.channelId);
         const eventMessage = await eventChannel.messages.fetch(event.messageId);
         const eventThread = event.threadId ? await guild.channels.fetch(event.threadId) : null;
+        const schedulingUser = await guild.members.fetch(event.schedulingUserId);
 
         // Determine RSVP count
         const rsvps = new Map();
@@ -431,7 +433,7 @@ module.exports = {
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
           .addFields(
-            { name: 'Scheduled by', value: `${event.schedulingUserTag}` },
+            { name: 'Scheduled by', value: `${schedulingUser.displayName}` },
             { name: 'Planning Channel', value: `#${eventChannel.name}` },
             { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
             { name: 'Event Code', value: event.eventCode },
