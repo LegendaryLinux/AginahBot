@@ -63,6 +63,7 @@ module.exports = async (client, message) => {
       }
 
       const schedulingUser = await message.guild.members.fetch(schedule.schedulingUserId);
+      const messageAuthor = await message.guild.members.fetch(message.author.id);
 
       // Build the reminder message
       const embed = new EmbedBuilder()
@@ -72,7 +73,7 @@ module.exports = async (client, message) => {
           { name: 'Original Post', value: `[Jump to Schedule Message](${scheduleMessage.url})` },
           { name: 'Join now!', value: `[Join Voice Channel](${voiceChannel.url})` },
           { name: 'Organizer', value: schedulingUser.displayName },
-          { name: 'Who sent this ping?', value: message.author.displayName },
+          { name: 'Who sent this ping?', value: `${messageAuthor.displayName}` },
         ]);
 
       // Send the reminder to the channel the event was originally scheduled in

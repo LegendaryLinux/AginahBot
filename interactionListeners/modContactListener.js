@@ -28,10 +28,10 @@ module.exports = async (client, interaction) => {
 
   // Create the channel for discussion
   const channel = await interaction.message.guild.channels.create({
-    name: interaction.user.username,
+    name: interaction.member.displayName,
     type: ChannelType.GuildText,
     parent: interaction.message.channel.parent.id,
-    topic: `This channel was created by ${interaction.user.username}.`,
+    topic: `This channel was created by ${interaction.member.displayName}.`,
     permissionOverwrites: [
       {
         // @everyone may not view this channel

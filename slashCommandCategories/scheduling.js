@@ -64,7 +64,7 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
   const embed = new Discord.EmbedBuilder()
     .setTitle(`${title || 'New Event'}\n<t:${embedTimestamp}:F>`)
     .setColor('#6081cb')
-    .setDescription(`**${interaction.user.username}** has scheduled a new event!` +
+    .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
       '\nReact with 👍 if you intend to join this event.' +
       '\nReact with 🤔 if you don\'t know yet.')
     .addFields({ name: 'Event Code', value: eventCode });
@@ -78,7 +78,7 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
   let threadChannel = null;
   if (options.eventThreads) {
     threadChannel = await scheduleMessage.startThread({
-      name: title || `${interaction.user.username}'s Event`,
+      name: title || `${interaction.member.displayName}'s Event`,
     });
     await threadChannel.members.add(interaction.user.id);
   }
@@ -494,7 +494,7 @@ module.exports = {
         const embed = new Discord.EmbedBuilder()
           .setTitle(`${eventData.title || 'New Event'}\n<t:${embedTimestamp}:F>`)
           .setColor('#6081cb')
-          .setDescription(`**${interaction.user.username}** has scheduled a new event!` +
+          .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
             '\nReact with 👍 if you intend to join this event.' +
             '\nReact with 🤔 if you don\'t know yet.')
           .addFields({ name: 'Event Code', value: eventCode });

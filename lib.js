@@ -449,4 +449,16 @@ module.exports = {
       });
     }
   },
+
+  getDisplayName: (userLikeObject) => {
+    if (
+      userLikeObject.username && userLikeObject.displayName &&
+      (userLikeObject.displayName === userLikeObject.displayName) &&
+      userLikeObject.globalName
+    ) {
+      return userLikeObject.globalName;
+    }
+
+    return userLikeObject.displayName || userLikeObject.globalName || userLikeObject.username;
+  },
 };
