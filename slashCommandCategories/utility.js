@@ -48,7 +48,7 @@ module.exports = {
             messages.each((msg) => {
               logs.push({
                 id: msg.id,
-                user: `${msg.author.displayName}`,
+                user: `${msg?.member?.displayName || msg.author.username}`,
                 timestamp: msg.createdTimestamp,
                 content: msg.content,
               });
