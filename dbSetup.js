@@ -115,6 +115,14 @@ const pingableRoles = `CREATE TABLE IF NOT EXISTS pingable_roles (
   UNIQUE KEY guildDataId (guildDataId, roleId)
 )`;
 
+const pinPermissions = `CREATE TABLE IF NOT EXISTS pin_permissions (
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId BIGINT UNSIGNED NOT NULL,
+    channelId VARCHAR(64) NOT NULL,
+    userId VARCHAR(64) NOT NULL,
+    UNIQUE KEY guildChannelUser (guildDataId, channelId, userId)
+)`;
+
 const db = mysql.createConnection({
   host: config.dbHost,
   user: config.dbUser,
@@ -140,4 +148,5 @@ db.query(modContactChannels, handler);
 db.query(messageTags, handler);
 db.query(guildOptions, handler);
 db.query(pingableRoles, handler);
+db.query(pinPermissions, handler);
 db.end();
