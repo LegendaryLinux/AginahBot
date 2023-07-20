@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const tmp = require('tmp');
 const fs = require('fs');
+const {dbExecute} = require('../lib');
 
 module.exports = {
   category: 'Utility Commands',
@@ -91,6 +92,25 @@ module.exports = {
           return interaction.followUp('Something went wrong and the channel logs could not be saved. ' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('set-moderator-role')
+        .setDescription('Assign a new role to use as the Moderator role when determining moderator actions.')
+        .addRoleOption((opt) => opt
+          .setName('role')
+          .setDescription('New moderator role')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        const role = interaction.options.getRole('role', true);
+        await dbExecute('UPDATE guild_data SET moderatorRoleId=? WHERE guildId=?', [role.id, interaction.guildId]);
+        return interaction.reply({
+          content: `Moderator role updated to ${role}`,
+          ephemeral: true,
+        });
       }
     },
   ],

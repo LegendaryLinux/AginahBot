@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits } = require('discord.js');
-const { dbExecute, dbQueryOne, verifyModeratorRole } = require('../lib');
+const { dbExecute, dbQueryOne, verifyModeratorRole, dbQueryAll} = require('../lib');
 
 module.exports = {
   category: 'Pin Permissions',
@@ -81,9 +81,9 @@ module.exports = {
         .setName('pin')
         .setDescription('Pin a message in this channel.')
         .addStringOption((opt) => opt
-          .setName('message-id')
-          .setDescription('The ID of the message to pin.')
-          .setMaxLength(64)
+          .setName('message')
+          .setDescription('The ID of or link to the message to pin.')
+          .setMaxLength(512)
           .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
@@ -95,7 +95,11 @@ module.exports = {
           });
         }
 
-        const messageId = interaction.options.getString('message-id');
+        let messageId = interaction.options.getString('message');
+        if (/.*discord.*\/\d+$/.test(messageId)) {
+          const output = messageId.match(/.*discord.*\/(\d+)$/);
+          messageId = output[1];
+        }
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {
@@ -145,9 +149,9 @@ module.exports = {
         .setName('unpin')
         .setDescription('Unpin a message in this channel.')
         .addStringOption((opt) => opt
-          .setName('message-id')
-          .setDescription('The ID of the message to unpin.')
-          .setMaxLength(64)
+          .setName('message')
+          .setDescription('The ID of or link to the message to unpin.')
+          .setMaxLength(512)
           .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
@@ -159,7 +163,11 @@ module.exports = {
           });
         }
 
-        const messageId = interaction.options.getString('message-id');
+        let messageId = interaction.options.getString('message');
+        if (/.*discord.*\/\d+$/.test(messageId)) {
+          const output = messageId.match(/.*discord.*\/(\d+)$/);
+          messageId = output[1];
+        }
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {
@@ -202,6 +210,52 @@ module.exports = {
 
           throw err;
         }
+      },
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('pin-list')
+        .setDescription('List all users with pin permissions')
+        .addChannelOption((opt) => opt
+          .setName('channel')
+          .setDescription('Channel to filter pin list')
+          .setRequired(false))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+      async execute(interaction) {
+        const channel = interaction.options.getChannel('channel') ?? null;
+
+        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
+        if (!guildData) {
+          return interaction.reply({
+            content: 'Unable to process request. No guild data exists for this guild. Please submit a bug report.',
+            ephemeral: true,
+          });
+        }
+
+        let sql = '';
+        let results = [];
+        if (channel) {
+          sql = 'SELECT channelId, userId FROM pin_permissions WHERE guildDataId=? AND channelId=?';
+          results = await dbQueryAll(sql, [guildData.id, channel.id]);
+        } else {
+          sql = 'SELECT channelId, userId FROM pin_permissions WHERE guildDataId=?';
+          results = await dbQueryAll(sql, [guildData.id]);
+        }
+
+        if (results.length === 0) {
+          return interaction.reply({
+            content: `No users are authorized to pin${channel ? ' in that channel.' : '.'}`,
+            ephemeral: true,
+          });
+        }
+
+        let content = '';
+        for (let row of results) {
+          content += `<@${row.userId}> is authorized to pin messages in <#${row.channelId}>.\n`;
+        }
+
+        return interaction.reply({ content, ephemeral: true });
       },
     },
   ],
