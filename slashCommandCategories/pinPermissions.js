@@ -22,6 +22,13 @@ module.exports = {
         const channel = interaction.options.getChannel('channel', true);
         const user = interaction.options.getUser('user', true);
 
+        if (!channel.isTextBased() || channel.isVoiceBased()) {
+          return interaction.reply({
+            content: 'The given channel must be a text channel.',
+            ephemeral: true,
+          });
+        }
+
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {
           return interaction.reply({
