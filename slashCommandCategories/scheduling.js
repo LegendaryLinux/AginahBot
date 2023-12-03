@@ -48,7 +48,7 @@ const generateEventCode = () => {
   return code;
 };
 
-const sendScheduleMessage = async (interaction, targetDate, title = null, pingRole = null) => {
+const sendScheduleMessage = async (interaction, targetDate, title = null, pingRole = null, duration = null) => {
   // Fetch guild data
   const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
   if (!guildData) {
@@ -67,7 +67,10 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
     .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
       '\nReact with 👍 if you intend to join this event.' +
       '\nReact with 🤔 if you don\'t know yet.')
-    .addFields({ name: 'Event Code', value: eventCode });
+    .addFields(
+      { name: 'Event Code', value: eventCode.toUpperCase() },
+      { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
+    );
 
   // Send schedule message
   const messageObject = { embeds: [embed] };
@@ -95,10 +98,10 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
 
   // Save scheduled event to database
   const sql = `INSERT INTO scheduled_events
-             (guildDataId, timestamp, channelId, messageId, threadId, schedulingUserId, eventCode, title)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+             (guildDataId, timestamp, channelId, messageId, threadId, schedulingUserId, eventCode, title, duration)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-    threadChannel ? threadChannel.id : null, interaction.user.id, eventCode, title]);
+    threadChannel ? threadChannel.id : null, interaction.user.id, eventCode, title, duration || null]);
 
   // Put appropriate reactions onto the message
   await scheduleMessage.react('👍');
@@ -261,6 +264,10 @@ module.exports = {
           .setName('ping-role')
           .setDescription('Optional role to ping for this event')
           .setRequired(false))
+        .addIntegerOption((opt) => opt
+          .setName('duration')
+          .setDescription('Optional number of hours you intend this event to run')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
@@ -268,6 +275,7 @@ module.exports = {
         const dateString = interaction.options.getString('date');
         const timeString = interaction.options.getString('time');
         const utcOffset = interaction.options.getInteger('timezone');
+        const duration = interaction.options.getInteger('duration', false) ?? null;
 
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
@@ -313,7 +321,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate, title, pingRole);
+          await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -339,11 +347,16 @@ module.exports = {
           .setName('ping-role')
           .setDescription('Optional role to ping for this event')
           .setRequired(false))
+        .addIntegerOption((opt) => opt
+          .setName('duration')
+          .setDescription('Optional number of hours you intend this event to run')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
+        const duration = interaction.options.getInteger('duration', false) ?? null;
 
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
@@ -364,7 +377,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate, title, pingRole);
+          await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -394,12 +407,17 @@ module.exports = {
           .setName('ping-role')
           .setDescription('Optional role to ping for this event')
           .setRequired(false))
+        .addIntegerOption((opt) => opt
+          .setName('duration')
+          .setDescription('Optional number of hours you intend this event to run')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const hours = interaction.options.getInteger('hours');
         const minutes = interaction.options.getInteger('minutes');
+        const duration = interaction.options.getInteger('duration', false) ?? null;
 
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
@@ -420,7 +438,7 @@ module.exports = {
           }
 
           await interaction.deferReply({ ephemeral: true });
-          await sendScheduleMessage(interaction, targetDate, title, pingRole);
+          await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
           console.error(e);
@@ -449,6 +467,10 @@ module.exports = {
           .setName('minutes')
           .setDescription('Minutes to adjust the event')
           .setRequired(false))
+        .addIntegerOption((opt) => opt
+          .setName('duration')
+          .setDescription('Optional number of hours you intend this event to run')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
         await interaction.deferReply();
@@ -457,6 +479,7 @@ module.exports = {
         const days = interaction.options.getInteger('days', false) || 0;
         const hours = interaction.options.getInteger('hours', false) || 0;
         const minutes = interaction.options.getInteger('minutes', false) || 0;
+        const duration = interaction.options.getInteger('duration', false) ?? null;
 
         let sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.title
                    FROM scheduled_events se
@@ -494,7 +517,10 @@ module.exports = {
         }
 
         // Update database
-        await dbExecute('UPDATE scheduled_events SET timestamp=? WHERE id=?', [newTimestamp, eventData.id]);
+        await dbExecute(
+          'UPDATE scheduled_events SET timestamp=?, duration=? WHERE id=?',
+          [newTimestamp, duration || null, eventData.id]
+        );
 
         // Update schedule message
         const channel = await interaction.guild.channels.fetch(eventData.channelId);
@@ -507,7 +533,10 @@ module.exports = {
           .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
             '\nReact with 👍 if you intend to join this event.' +
             '\nReact with 🤔 if you don\'t know yet.')
-          .addFields({ name: 'Event Code', value: eventCode });
+          .addFields(
+            { name: 'Event Code', value: eventCode.toUpperCase() },
+            { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
+          );
 
         // Update schedule message
         const payload = { embeds: [embed] };

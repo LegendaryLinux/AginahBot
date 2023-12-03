@@ -270,7 +270,8 @@ module.exports = {
         continue;
       }
 
-      sql = `SELECT se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.threadId, se.eventCode, se.title
+      sql = `SELECT se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.threadId, se.eventCode,
+                se.title, se.duration
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -322,7 +323,8 @@ module.exports = {
             { name: 'Scheduled by', value: `${schedulingUser.displayName}` },
             { name: 'Planning Channel', value: `#${eventChannel.name}` },
             { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
-            { name: 'Event Code', value: event.eventCode },
+            { name: 'Event Code', value: event.eventCode.toUpperCase() },
+            { name: 'Duration', value: event.duration ? `${event.duration} hours` : 'Undisclosed' },
             { name: 'Current RSVPs', value: rsvps.size.toString() },
           );
         embeds.push(embed);
