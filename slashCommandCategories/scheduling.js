@@ -81,6 +81,12 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
       name: title || `${interaction.member.displayName}'s Event`,
     });
     await threadChannel.members.add(interaction.user.id);
+    await dbExecute('REPLACE INTO pin_permissions (guildDataId, channelId, userId) VALUES (?, ?, ?)', [
+      guildData.id, threadChannel.id, interaction.user.id
+    ]);
+    await threadChannel.send(
+      `${interaction.user} has been granted pin permissions in this channel. Use \`/pin\` and \`/unpin\`.`
+    );
   }
 
   // Save scheduled event to database

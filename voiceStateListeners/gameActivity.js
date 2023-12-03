@@ -195,7 +195,12 @@ module.exports = async (client, oldState, newState) => {
         // asynchronously. This can occur when several people leave a dynamic room when an event ends.
         try{
           const role = await oldState.guild.roles.fetch(channelData.roleId);
-          await role.delete();
+          // Due to the asynchronous nature of this function and the possibility for multiple successive disconnects,
+          // it is possible for the role to be deleted by a separate request while this function is fetching its data.
+          // Only attempt to delete the role if the resulting object both succeeds and has a .delete property
+          if (role.hasOwnProperty('delete')) {
+            await role.delete();
+          }
 
           await oldState.guild.channels.resolve(channelData.textChannelId).delete();
           await oldState.guild.channels.resolve(channelData.voiceChannelId).delete();
