@@ -77,10 +77,14 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
   // Start a thread on the schedule message if the option is enabled for this guild
   let threadChannel = null;
   if (options.eventThreads) {
+    // Create thread channel
     threadChannel = await scheduleMessage.startThread({
       name: title || `${interaction.member.displayName}'s Event`,
     });
+    // Add creating user to the thread
     await threadChannel.members.add(interaction.user.id);
+
+    // Grant pin permissions for the thread to the creating user
     await dbExecute('REPLACE INTO pin_permissions (guildDataId, channelId, userId) VALUES (?, ?, ?)', [
       guildData.id, threadChannel.id, interaction.user.id
     ]);
