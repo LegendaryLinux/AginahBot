@@ -198,7 +198,7 @@ module.exports = async (client, oldState, newState) => {
           // Due to the asynchronous nature of this function and the possibility for multiple successive disconnects,
           // it is possible for the role to be deleted by a separate request while this function is fetching its data.
           // Only attempt to delete the role if the resulting object both succeeds and has a .delete property
-          if (role.hasOwnProperty('delete')) {
+          if (role.delete) {
             await role.delete();
           }
 
