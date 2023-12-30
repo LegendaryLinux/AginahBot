@@ -8,18 +8,18 @@ module.exports = {
       commandBuilder: new SlashCommandBuilder()
         .setName('pin-grant')
         .setDescription('Grant a user permission to pin messages in a specified channel')
-        .addChannelOption((opt) => opt
-          .setName('channel')
-          .setDescription('Channel to grant pin permissions in')
-          .setRequired(true))
         .addUserOption((opt) => opt
           .setName('user')
           .setDescription('User to grant pin permission for')
           .setRequired(true))
+        .addChannelOption((opt) => opt
+          .setName('channel')
+          .setDescription('Channel to grant pin permissions in. Defaults to the current channel')
+          .setRequired(false))
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
-        const channel = interaction.options.getChannel('channel', true);
+        const channel = interaction.options.getChannel('channel', false) ?? interaction.channel;
         const user = interaction.options.getUser('user', true);
 
         if (!channel.isTextBased() || channel.isVoiceBased()) {
@@ -51,18 +51,18 @@ module.exports = {
       commandBuilder: new SlashCommandBuilder()
         .setName('pin-revoke')
         .setDescription('Revoke permission for a user to pin messages in a specified channel')
-        .addChannelOption((opt) => opt
-          .setName('channel')
-          .setDescription('Channel to revoke pin permissions in')
-          .setRequired(true))
         .addUserOption((opt) => opt
           .setName('user')
           .setDescription('User to revoke pin permission for')
           .setRequired(true))
+        .addChannelOption((opt) => opt
+          .setName('channel')
+          .setDescription('Channel to revoke pin permissions in. Defaults to the current channel')
+          .setRequired(false))
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
-        const channel = interaction.options.getChannel('channel', true);
+        const channel = interaction.options.getChannel('channel', false) ?? interaction.channel;
         const user = interaction.options.getUser('user', true);
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
@@ -204,7 +204,7 @@ module.exports = {
           }
 
           return interaction.reply({
-            content: 'That message not pinned.',
+            content: 'That message is not pinned.',
             ephemeral: true,
           });
         } catch (err) {
