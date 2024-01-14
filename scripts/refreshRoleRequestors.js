@@ -18,11 +18,19 @@ client.login(config.token).then(async () => {
                JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE gd.guildId=?`;
   for (let guild of Array.from(client.guilds.cache.values())){
-    console.log(`\nWorking on guild: ${guild.name}`);
-    let categories = await dbQueryAll(sql, [guild.id]);
-    for (let category of categories) {
-      console.log(`Updating category: ${category.categoryName}`);
-      await updateCategoryMessage(client, guild, category.messageId);
+    try {
+      console.log(`\nWorking on guild: ${guild.name}`);
+      let categories = await dbQueryAll(sql, [guild.id]);
+      for (let category of categories) {
+        try {
+          console.log(`Updating category: ${category.categoryName}`);
+          await updateCategoryMessage(client, guild, category.messageId);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
   client.destroy();
