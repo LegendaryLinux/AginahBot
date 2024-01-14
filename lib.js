@@ -136,7 +136,7 @@ module.exports = {
     }
 
     const nodeEmoji = require('node-emoji');
-    return nodeEmoji.hasEmoji(emoji) ? emoji : null;
+    return nodeEmoji.has(emoji) ? emoji : null;
   },
 
   cachePartial: (partial) => new Promise((resolve, reject) => {

@@ -1,10 +1,11 @@
 const { parseEmoji, dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { ChannelType, PermissionsBitField, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder,
-  ButtonBuilder, ButtonStyle } = require('discord.js');
+const { ChannelType, PermissionsBitField, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder,
+  ButtonStyle } = require('discord.js');
 
 const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch the target message
-  let sql = `SELECT rc.id, rc.categoryName, rs.roleRequestChannelId FROM role_categories rc
+  let sql = `SELECT rc.id, rc.categoryName, rs.roleRequestChannelId
+             FROM role_categories rc
              JOIN role_systems rs ON rc.roleSystemId = rs.id
              JOIN guild_data gd ON rs.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -16,14 +17,39 @@ const updateCategoryMessage = async (client, guild, messageId) => {
     title: roleCategory.categoryName,
     fields: [],
   };
-  sql = 'SELECT r.roleId, r.reaction, r.description FROM roles r WHERE r.categoryId=?';
+  sql = 'SELECT r.roleId, r.reaction, r.reactionString, r.description FROM roles r WHERE r.categoryId=?';
   const roles = await dbQueryAll(sql, [roleCategory.id]);
+
+  const actionRows = [];
+  let buttons = [];
+
   roles.forEach((role) => {
+    const roleName = guild.roles.resolve(role.roleId).name;
+
+    // Add an embed field for this role
     roleInfoEmbed.fields.push({
-      name: `${role.reaction} ${guild.roles.resolve(role.roleId).name}`,
+      name: `${role.reactionString} ${roleName}`,
       value: role.description || 'No description provided.',
     });
+
+    // A maximum of five buttons are allowed per row
+    if (buttons.length === 5) {
+      actionRows.push(new ActionRowBuilder().addComponents(...buttons));
+      buttons = [];
+    }
+
+    // Create the button for this role
+    buttons.push(new ButtonBuilder()
+      .setCustomId(`role-request||${role.roleId}`)
+      .setLabel(' ')
+      .setEmoji(role.reaction)
+      .setStyle(ButtonStyle.Secondary));
   });
+
+  // Add any remaining buttons to the embed
+  if (buttons.length > 0) {
+    actionRows.push(new ActionRowBuilder().addComponents(...buttons));
+  }
 
   // If there are no roles in this category, mention that there are none
   if (roles.length === 0) {
@@ -33,7 +59,13 @@ const updateCategoryMessage = async (client, guild, messageId) => {
   // Fetch and edit the category message
   const roleRequestChannel = guild.channels.resolve(roleCategory.roleRequestChannelId);
   const categoryMessage = await roleRequestChannel.messages.fetch(messageId);
-  await categoryMessage.edit({ content: null, embeds: [roleInfoEmbed] });
+
+  const messageData = { content: null, embeds: [roleInfoEmbed] };
+  if (actionRows.length > 0) {
+    messageData.components = actionRows;
+  }
+
+  await categoryMessage.edit(messageData);
 };
 
 module.exports = {
@@ -71,7 +103,7 @@ module.exports = {
           permissionOverwrites: [
             {
               id: interaction.client.user.id,
-              allow: [ PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.AddReactions ],
+              allow: [ PermissionsBitField.Flags.SendMessages ],
             },
             {
               id: interaction.guild.roles.everyone.id,
@@ -352,6 +384,7 @@ module.exports = {
             });
           }
 
+          // Verify the requested category exists
           sql = `SELECT rc.id, rc.messageId, rs.roleRequestChannelId FROM role_categories rc
                  JOIN role_systems rs ON rc.roleSystemId = rs.id
                  JOIN guild_data gd ON rs.guildDataId = gd.id
@@ -363,6 +396,22 @@ module.exports = {
             return interaction.followUp('That category doesn\'t exist!');
           }
 
+          // Prevent adding more than twelve roles in a single category
+          sql = `SELECT COUNT(*) AS count
+                 FROM roles r
+                 JOIN role_categories rc ON r.categoryId = rc.id
+                 JOIN role_systems rs ON rc.roleSystemId = rs.id
+                 JOIN guild_data gd ON rs.guildDataId = gd.id
+                 WHERE gd.guildId=?
+                   AND rc.categoryName=?`;
+          let roleCount = await dbQueryOne(sql, [interaction.guildId, categoryName]);
+          if (roleCount.count >= 12) {
+            return interaction.followUp({
+              content: 'A role category may not exceed twelve (12) roles.',
+              ephemeral: true,
+            });
+          }
+
           // Create the role on the server
           const role = await interaction.guild.roles.create({
             name: roleName,
@@ -372,15 +421,10 @@ module.exports = {
 
           // Add the role to the database
           await dbExecute(
-            'INSERT INTO roles (categoryId, roleId, roleName, reaction, description) VALUES (?, ?, ?, ?, ?)',
-            [roleCategory.id, role.id, roleName, emoji.toString(), description]
+            'INSERT INTO roles (categoryId, roleId, roleName, reaction, reactionString, description) VALUES (?, ?, ?, ?, ?, ?)',
+            [roleCategory.id, role.id, roleName, (emoji.id || emoji), emoji.toString(), description]
           );
           await updateCategoryMessage(interaction.client, interaction.guild, roleCategory.messageId);
-
-          // Add the reaction to the category message
-          const roleRequestChannel = interaction.guild.channels.resolve(roleCategory.roleRequestChannelId);
-          const categoryMessage = await roleRequestChannel.messages.fetch(roleCategory.messageId);
-          await categoryMessage.react(emoji);
           return interaction.followUp(`Created role ${roleName} in the ${categoryName} category.`);
         } catch (e) {
           console.error(e);
@@ -629,59 +673,6 @@ module.exports = {
           return interaction.followUp('Something went wrong and the role could not be deleted.\n' +
             'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
-      }
-    },
-    {
-      commandBuilder: new SlashCommandBuilder()
-        .setName('role-message-create')
-        .setDescription('Create a message in this channel which includes a button to grant a role')
-        .addStringOption((opt) => opt
-          .setName('role-name')
-          .setDescription('Name of the role you wish to create')
-          .setRequired(true))
-        .addStringOption((opt) => opt
-          .setName('message')
-          .setDescription('Message to display to the user')
-          .setRequired(true))
-        .addStringOption((opt) => opt
-          .setName('button-text')
-          .setDescription('Text displayed on the button')
-          .setRequired(true))
-        .setDMPermission(false)
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
-      async execute(interaction) {
-        const roleName = interaction.options.getString('role-name');
-        const message = interaction.options.getString('message');
-        const buttonText = interaction.options.getString('button-text');
-        await interaction.deferReply({ ephemeral: true });
-
-        // Create the role
-        const role = await interaction.guild.roles.create({
-          name: roleName,
-          reason: `Created using role-message-create by ${interaction.member.displayName} (${interaction.user.username})`,
-        });
-
-        // Send the role message
-        const roleMessage = await interaction.channel.send({
-          content: message,
-          components: [
-            new ActionRowBuilder().addComponents(
-              new ButtonBuilder()
-                .setCustomId('role-message-request')
-                .setLabel(buttonText)
-                .setStyle(ButtonStyle.Primary)
-            )
-          ],
-        });
-
-        // Fetch guild data
-        const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
-
-        // Save role message data
-        let sql = 'INSERT INTO role_messages (guildDataId, channelId, messageId, roleId) VALUES (?, ?, ?, ?)';
-        await dbExecute(sql, [guildData.id, interaction.channel.id, roleMessage.id, role.id]);
-
-        return interaction.followUp(`Role message created. Clicking the button will grant ${role}.`);
       }
     },
   ],

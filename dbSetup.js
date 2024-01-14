@@ -26,6 +26,7 @@ const roles = `CREATE TABLE IF NOT EXISTS roles (
     roleId VARCHAR(64) NOT NULL,
     roleName VARCHAR(128) NOT NULL,
     reaction VARCHAR(128) NOT NULL,
+    reactionString VARCHAR(128) NOT NULL,
     description VARCHAR(128)
 )`;
 
