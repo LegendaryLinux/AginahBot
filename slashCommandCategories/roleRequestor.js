@@ -541,18 +541,6 @@ module.exports = {
             return interaction.followUp('That emoji is not available on this server!');
           }
 
-          // Remove reactions from the role category message
-          const roleRequestChannel = interaction.guild.channels.resolve(role.roleRequestChannelId);
-          const categoryMessage = await roleRequestChannel.messages.fetch(role.messageId);
-          await categoryMessage.reactions.cache.each(async (reaction) => {
-            if (reaction.emoji.toString() === role.reaction) {
-              await reaction.remove();
-            }
-          });
-
-          // Add new reaction to message
-          await categoryMessage.react(emoji);
-
           await dbExecute('UPDATE roles SET reaction=? WHERE id=?', [emoji.toString(), role.id]);
           await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
           return interaction.followUp({
@@ -653,13 +641,6 @@ module.exports = {
 
         try {
           await interaction.deferReply({ ephemeral: true });
-
-          // Remove reactions from the role category message
-          const roleRequestChannel = interaction.guild.channels.resolve(role.roleRequestChannelId);
-          const categoryMessage = await roleRequestChannel.messages.fetch(role.messageId);
-          await categoryMessage.reactions.cache.each(async (r) => {
-            if (r.emoji.toString() === role.reaction) { await r.remove(); }
-          });
 
           // Remove the role from the guild
           await interaction.guild.roles.resolve(role.roleId).delete();
