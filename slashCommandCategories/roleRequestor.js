@@ -441,9 +441,9 @@ module.exports = {
           .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
-        .addStringOption((opt) => opt
-          .setName('old-name')
-          .setDescription('Current name of the role you wish to rename')
+        .addRoleOption((opt) => opt
+          .setName('role')
+          .setDescription('Current role you wish to rename')
           .setRequired(true))
         .addStringOption((opt) => opt
           .setName('new-name')
@@ -453,7 +453,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction){
         const categoryName = interaction.options.getString('category-name');
-        const oldName = interaction.options.getString('old-name');
+        const role = interaction.options.getRole('role');
         const newName = interaction.options.getString('new-name');
 
         let sql = `SELECT r.id, r.roleId, rc.messageId
@@ -463,11 +463,11 @@ module.exports = {
                    JOIN roles r ON r.categoryId = rc.id
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
-                     AND r.roleName=?`;
-        const roleData = await dbQueryOne(sql, [interaction.guildId, categoryName, oldName]);
+                     AND r.roleId=?`;
+        const roleData = await dbQueryOne(sql, [interaction.guildId, categoryName, role.id]);
         if (!roleData) {
           return interaction.reply({
-            content: 'That role does not exist!',
+            content: 'That role does not exist in the specified guild/category!',
             ephemeral: true,
           });
         }
@@ -479,7 +479,8 @@ module.exports = {
           await dbExecute('UPDATE roles SET roleName=? WHERE id=?', [newName, roleData.id]);
 
           // Update role on Discord
-          await interaction.guild.roles.edit(roleData.roleId.toString(), { name: newName });
+          const oldName = role.name;
+          await interaction.guild.roles.edit(role.id.toString(), { name: newName });
 
           // Update the category message to display the new role name
           await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
@@ -499,9 +500,9 @@ module.exports = {
           .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
-        .addStringOption((opt) => opt
-          .setName('role-name')
-          .setDescription('Name of the role you wish to change the reaction for')
+        .addRoleOption((opt) => opt
+          .setName('role')
+          .setDescription('Role you wish to change the reaction for')
           .setRequired(true))
         .addStringOption((opt) => opt
           .setName('reaction')
@@ -511,7 +512,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
-        const roleName = interaction.options.getString('role-name');
+        const role = interaction.options.getRole('role');
         const reaction = interaction.options.getString('reaction');
 
         // Check for existing role
@@ -521,11 +522,11 @@ module.exports = {
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
-                     AND r.roleName=?`;
-        const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
+                     AND r.roleId=?`;
+        const roleData = await dbQueryOne(sql, [interaction.guildId, categoryName, role.id]);
 
         // If the role does not exist, inform the user
-        if (!role) {
+        if (!roleData) {
           return interaction.reply({
             content: 'That role does not exist!',
             ephemeral: true,
@@ -541,10 +542,10 @@ module.exports = {
             return interaction.followUp('That emoji is not available on this server!');
           }
 
-          await dbExecute('UPDATE roles SET reaction=? WHERE id=?', [emoji.toString(), role.id]);
-          await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
+          await dbExecute('UPDATE roles SET reaction=? WHERE id=?', [emoji.toString(), roleData.id]);
+          await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
           return interaction.followUp({
-            content: `Role \`${roleName}\` reaction updated to ${reaction} in category \`${categoryName}\`.`,
+            content: `Role \`${role.name}\` reaction updated to ${reaction} in category \`${categoryName}\`.`,
             ephemeral: true,
           });
         } catch (e) {
@@ -562,9 +563,9 @@ module.exports = {
           .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
-        .addStringOption((opt) => opt
-          .setName('role-name')
-          .setDescription('Name of the role you wish to change the description of')
+        .addRoleOption((opt) => opt
+          .setName('role')
+          .setDescription('Role you wish to change the description of')
           .setRequired(true))
         .addStringOption((opt) => opt
           .setName('description')
@@ -574,7 +575,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
-        const roleName = interaction.options.getString('role-name');
+        const role = interaction.options.getRole('role');
         const description = interaction.options.getString('description', false) ?? null;
 
         // Check for existing role
@@ -584,20 +585,20 @@ module.exports = {
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
-                     AND r.roleName=?`;
-        const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
-        if (!role) {
+                     AND r.roleId=?`;
+        const roleData = await dbQueryOne(sql, [interaction.guildId, categoryName, role.id]);
+        if (!roleData) {
           return interaction.reply({
-            content: 'That role does not exist!',
+            content: 'That role does not exist in this guild/category!',
             ephemeral: true,
           });
         }
 
         try {
           await interaction.deferReply({ ephemeral: true });
-          await dbExecute('UPDATE roles SET description=? WHERE id=?', [description, role.id]);
-          await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
-          return interaction.followUp(`Updated description for role ${roleName} in category ${categoryName}.`);
+          await dbExecute('UPDATE roles SET description=? WHERE id=?', [description, roleData.id]);
+          await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
+          return interaction.followUp(`Updated description for role ${role.name} in category ${categoryName}.`);
         } catch (e) {
           console.error(e);
           return interaction.followUp('Something went wrong and the role description could not be changed.\n' +
@@ -613,15 +614,15 @@ module.exports = {
           .setName('category-name')
           .setDescription('Name of the category containing the target role')
           .setRequired(true))
-        .addStringOption((opt) => opt
-          .setName('role-name')
+        .addRoleOption((opt) => opt
+          .setName('role')
           .setDescription('Name of the role you wish to delete')
           .setRequired(true))
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const categoryName = interaction.options.getString('category-name');
-        const roleName = interaction.options.getString('role-name');
+        const role = interaction.options.getRole('role');
 
         let sql = `SELECT r.id, rc.id AS categoryId, rc.messageId, r.reaction, r.roleId, rs.roleRequestChannelId
                    FROM roles r
@@ -630,11 +631,11 @@ module.exports = {
                    JOIN guild_data gd ON rs.guildDataId = gd.id
                    WHERE gd.guildId=?
                      AND rc.categoryName=?
-                     AND r.roleName=?`;
-        const role = await dbQueryOne(sql, [interaction.guildId, categoryName, roleName]);
-        if (!role) {
+                     AND r.roleId=?`;
+        const roleData = await dbQueryOne(sql, [interaction.guildId, categoryName, role.id]);
+        if (!roleData) {
           return interaction.reply({
-            content: 'That role does not exist!',
+            content: 'That role does not exist in this guild/category!',
             ephemeral: true,
           });
         }
@@ -643,12 +644,12 @@ module.exports = {
           await interaction.deferReply({ ephemeral: true });
 
           // Remove the role from the guild
-          await interaction.guild.roles.resolve(role.roleId).delete();
+          await interaction.guild.roles.resolve(roleData.roleId).delete();
 
           // Delete rows from the roles table and update role category message
-          await dbExecute('DELETE FROM roles WHERE id=? AND categoryId=?', [role.id, role.categoryId]);
-          await updateCategoryMessage(interaction.client, interaction.guild, role.messageId);
-          return interaction.followUp(`Deleted role ${roleName} from category ${categoryName}.`);
+          await dbExecute('DELETE FROM roles WHERE id=? AND categoryId=?', [roleData.id, roleData.categoryId]);
+          await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
+          return interaction.followUp(`Deleted role ${role.name} from category ${categoryName}.`);
         } catch (e) {
           console.error(e);
           return interaction.followUp('Something went wrong and the role could not be deleted.\n' +
