@@ -329,6 +329,48 @@ module.exports = {
     },
     {
       commandBuilder: new SlashCommandBuilder()
+        .setName('role-category-refresh')
+        .setDescription('Refresh a role category. Useful if you have manually changed a role\'s name')
+        .addStringOption((opt) => opt
+          .setName('category-name')
+          .setDescription('Name of the category you wish to delete')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+      async execute(interaction) {
+        const categoryName = interaction.options.getString('category-name');
+
+        try {
+          // Get the role category data
+          let sql = `SELECT rc.messageId
+                     FROM role_categories rc
+                     JOIN role_systems rs ON rc.roleSystemId = rs.id
+                     JOIN guild_data gd ON rs.guildDataId = gd.id
+                     WHERE gd.guildId=?
+                       AND rc.categoryName=?`;
+          const roleCategory = await dbQueryOne(sql, [interaction.guildId, categoryName]);
+          if (!roleCategory) {
+            return interaction.reply({
+              content: 'That category does not exist!',
+              ephemeral: true,
+            });
+          }
+
+          await interaction.deferReply({ ephemeral: true });
+          await updateCategoryMessage(interaction.client, interaction.guild, roleCategory.messageId);
+          await interaction.followUp({
+            content: `Category ${categoryName} has been refreshed.`,
+            ephemeral: true,
+          });
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the role category could not be deleted.\n' +
+            'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
+      }
+    },
+    {
+      commandBuilder: new SlashCommandBuilder()
         .setName('role-create')
         .setDescription('Create a pingable role.')
         .addStringOption((opt) => opt
