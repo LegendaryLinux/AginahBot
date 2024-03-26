@@ -558,7 +558,8 @@ module.exports = {
         const reaction = interaction.options.getString('reaction');
 
         // Check for existing role
-        let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId, r.reaction FROM roles r
+        let sql = `SELECT r.id, rc.messageId, rs.roleRequestChannelId, r.reaction
+                   FROM roles r
                    JOIN role_categories rc ON r.categoryId = rc.id
                    JOIN role_systems rs ON rc.roleSystemId = rs.id
                    JOIN guild_data gd ON rs.guildDataId = gd.id
@@ -584,7 +585,8 @@ module.exports = {
             return interaction.followUp('That emoji is not available on this server!');
           }
 
-          await dbExecute('UPDATE roles SET reaction=? WHERE id=?', [emoji.toString(), roleData.id]);
+          await dbExecute('UPDATE roles SET reaction=?, reactionString=? WHERE id=?',
+            [(emoji.id || emoji), emoji.toString(), roleData.id]);
           await updateCategoryMessage(interaction.client, interaction.guild, roleData.messageId);
           return interaction.followUp({
             content: `Role \`${role.name}\` reaction updated to ${reaction} in category \`${categoryName}\`.`,
