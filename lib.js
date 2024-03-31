@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+const { Client, Guild, PermissionFlagsBits, PermissionsBitField, EmbedBuilder } = require('discord.js');
 const mysql = require('mysql2');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
@@ -13,7 +13,7 @@ module.exports = {
 
   verifyIsAdmin: (guildMember) => {
     if (!guildMember) { return false; }
-    return guildMember.permissions.has(Discord.PermissionFlagsBits.Administrator);
+    return guildMember.permissions.has(PermissionFlagsBits.Administrator);
   },
 
   getModeratorRole: (guild) => new Promise(async (resolve) => {
@@ -243,8 +243,8 @@ module.exports = {
 
   /**
    *
-   * @param client {Discord.Client}
-   * @param guild {Discord.Guild}
+   * @param client {Client}
+   * @param guild {Guild}
    * @returns {Promise<void>}
    */
   updateScheduleBoard: async (client, guild) => {
@@ -349,7 +349,7 @@ module.exports = {
           });
         }
 
-        const embed = new Discord.EmbedBuilder()
+        const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
           .setColor('#6081cb')
           .setDescription('**Click the title of this message to jump to the original.**')
@@ -375,7 +375,7 @@ module.exports = {
 
   /**
    * Update all schedule boards across all guilds
-   * @param client {Discord.Client}
+   * @param client {Client}
    */
   updateScheduleBoards: async (client) => {
     // Find all schedule boards
@@ -500,7 +500,7 @@ module.exports = {
           });
         }
 
-        const embed = new Discord.EmbedBuilder()
+        const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
           .setColor('#6081cb')
           .setDescription('**Click the title of this message to jump to the original.**')

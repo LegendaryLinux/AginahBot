@@ -1,6 +1,6 @@
-const { dbQueryOne, dbExecute } = require('../lib');
+const { dbQueryOne, dbExecute, getModeratorRole } = require('../lib');
 const { ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField, ActionRowBuilder,
-  SlashCommandBuilder } = require('discord.js');
+  SlashCommandBuilder, PermissionFlagsBits, Client, Guild, GuildMember, TextChannel } = require('discord.js');
 
 module.exports = {
   category: 'Mod Contact',
@@ -109,7 +109,7 @@ module.exports = {
                    WHERE gd.guildId = ?`;
         const modContact = await dbQueryOne(sql, [ interaction.guildId ]);
 
-        // If the feature isn not enabled, alert the user
+        // If the feature is not enabled, alert the user
         if (!modContact) {
           return interaction.reply({
             content: 'The Mod Contact feature is not enabled for this server.',
@@ -137,6 +137,151 @@ module.exports = {
             'on this server. Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       },
+    },
+    {
+      longDescription: 'Open a mod contact with a specified user.',
+      commandBuilder: new SlashCommandBuilder()
+        .setName('mod-contact-open')
+        .setDescription('Open a mod contact with a specified user.')
+        .addUserOption((opt) => opt
+          .setName('user')
+          .setDescription('User to open a mod-contact with')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+      async execute(interaction) {
+        const user = interaction.options.getUser('user', true);
+
+        try{
+          // This might take a few seconds
+          await interaction.deferReply({ ephemeral: true });
+
+          if (!await module.exports.modContactEnabled(interaction.guild)) {
+            return interaction.followUp({
+              content: 'The mod-contact feature is not enabled in this guild.',
+              ephemeral: true,
+            });
+          }
+
+          // Inform the user if a mod-contact already exists for the specified user
+          const existingChannelId = await module.exports.modContactExists(interaction.guild, user);
+          if (existingChannelId) {
+            const existingChannel = await interaction.guild.channels.fetch(existingChannelId);
+            return interaction.followUp({
+              content: `A mod-contact is already open for this user: ${existingChannel}`,
+              ephemeral: true,
+            });
+          }
+
+          // Create the mod-contact channel
+          const modContact = await module.exports.createModContact(interaction, user);
+          return interaction.followUp({
+            content: `Mod-contact created: ${modContact}`,
+            ephemeral: true,
+          });
+
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the Mod Contact feature could not be enabled ' +
+            'on this server. Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
+      },
     }
   ],
+
+  /**
+   * Checks if the mod contact is enabled for a guild.
+   * @param guild {Guild} The interaction object.
+   * @returns {Promise<boolean>} A Promise that resolves to true if mod contact is enabled, otherwise false.
+   */
+  modContactEnabled: async (guild) => {
+    let sql = `SELECT 1
+               FROM mod_contact mc
+               JOIN guild_data gd ON mc.guildDataId = gd.id
+               WHERE gd.guildId=?`;
+    return !!await dbQueryOne(sql, [guild.id]);
+  },
+
+  /**
+   * Check if a mod-contact exists for a specified user. Resolves to the channelId in the specified guild if
+   * a mod contact already exists
+   * @param guild {Guild}
+   * @param guildMember {GuildMember}
+   * @returns {Promise<TextChannel|null>}
+   */
+  modContactExists: async (guild, guildMember) => {
+    // If a channel already exists for this user, inform them
+    let sql = `SELECT mcc.reportChannelId
+               FROM mod_contact_channels mcc
+               JOIN mod_contact mc ON mcc.modContactId = mc.id
+               JOIN guild_data gd ON mc.guildDataId = gd.id
+               WHERE gd.guildId=?
+                  AND mcc.userId=?
+                  AND mcc.resolved=0`;
+    const existing = await dbQueryOne(sql, [ guild.id, guildMember.id ]);
+    return existing?.reportChannelId || null;
+  },
+
+  /**
+   * Open a mod-contact channel for a specified user and return the channel
+   * @param interaction
+   * @param guildMember {GuildMember}
+   * @returns {Promise<TextChannel>}
+   */
+  createModContact: async (interaction, guildMember) => {
+    // Fetch the moderator role
+    let moderatorRole = await getModeratorRole(interaction.guild);
+    if (!moderatorRole) { throw new Error(`Unable to find moderator role for guild: ${interaction.guild.id}`); }
+
+    // Find the id of the "Mod Contact" category in this guild
+    let sql = `SELECT mc.id, mc.categoryId
+               FROM mod_contact mc
+               JOIN guild_data gd ON mc.guildDataId = gd.id
+               WHERE gd.guildId=?`;
+    const modContact = await dbQueryOne(sql, [interaction.guild.id]);
+
+    // Create the channel for discussion
+    const channel = await interaction.guild.channels.create({
+      name: guildMember.displayName,
+      type: ChannelType.GuildText,
+      parent: modContact.categoryId,
+      topic: `This mod-contact channel was created by ${interaction.member.displayName}.`,
+      permissionOverwrites: [
+        {
+          // @everyone may not view this channel
+          id: interaction.guild.id,
+          deny: [ PermissionsBitField.Flags.ViewChannel ],
+        },
+        {
+          // Moderators may view this channel
+          id: moderatorRole.id,
+          allow: [ PermissionsBitField.Flags.ViewChannel ],
+        },
+        {
+          // The target user may view this channel
+          id: guildMember.id,
+          allow: [ PermissionsBitField.Flags.ViewChannel ],
+        },
+        {
+          // @AginahBot may view this channel
+          id: interaction.client.user.id,
+          allow: [ PermissionsBitField.Flags.ViewChannel ],
+        }
+      ],
+    });
+
+    // Send an introductory message to the channel
+    const modRole = await getModeratorRole(interaction.guild);
+    await channel.send(`This channel was created automatically to facilitate communication between the ${modRole} ` +
+      `team and ${guildMember}.\nWhen the issue has been resolved, a moderator may use \`.resolve\` to ` +
+      'remove this channel.');
+
+    // Update the mod_contact_channels table with the new channel info
+    sql = 'INSERT INTO mod_contact_channels (modContactId, userId, reportChannelId) VALUES (?, ?, ?)';
+    await dbExecute(sql, [ modContact.id, guildMember.id, channel.id ]);
+
+    // Return the newly created channel
+    return channel;
+  },
 };
+
