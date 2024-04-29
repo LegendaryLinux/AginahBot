@@ -125,7 +125,7 @@ const pinPermissions = `CREATE TABLE IF NOT EXISTS pin_permissions (
     UNIQUE KEY guildChannelUser (guildDataId, channelId, userId)
 )`;
 
-const scheduleBoards = `CREATE TABLE schedule_boards (
+const scheduleBoards = `CREATE TABLE IF NOT EXISTS schedule_boards (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildDataId BIGINT NOT NULL,
     channelId VARCHAR(64) NOT NULL,
