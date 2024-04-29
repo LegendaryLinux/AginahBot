@@ -125,6 +125,13 @@ const pinPermissions = `CREATE TABLE IF NOT EXISTS pin_permissions (
     UNIQUE KEY guildChannelUser (guildDataId, channelId, userId)
 )`;
 
+const scheduleBoards = `CREATE TABLE schedule_boards (
+    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    guildDataId BIGINT NOT NULL,
+    channelId VARCHAR(64) NOT NULL,
+    messageId VARCHAR(64) NOT NULL
+)`;
+
 const db = mysql.createConnection({
   host: config.dbHost,
   user: config.dbUser,
@@ -151,4 +158,5 @@ db.query(messageTags, handler);
 db.query(guildOptions, handler);
 db.query(pingableRoles, handler);
 db.query(pinPermissions, handler);
+db.query(scheduleBoards, handler);
 db.end();
