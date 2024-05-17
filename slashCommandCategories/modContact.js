@@ -198,7 +198,51 @@ module.exports = {
             'on this server. Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
         }
       },
-    }
+    },
+    {
+      longDescription: 'Resolve a mod-contact channel',
+      commandBuilder: new SlashCommandBuilder()
+        .setName('mod-contact-resolve')
+        .setDescription('Resolve a mod-contact channel.')
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+      async execute(interaction) {
+        try {
+          if (!await module.exports.modContactEnabled(interaction.guild)) {
+            return interaction.reply({
+              content: 'The mod-contact system is not enabled on this server.',
+              ephemeral: true,
+            });
+          }
+
+          let sql = `SELECT mcc.id
+                     FROM guild_data gd
+                     JOIN mod_contact mc ON gd.id = mc.guildDataId
+                     JOIN mod_contact_channels mcc ON mc.id = mcc.modContactId
+                     WHERE gd.guildId=?
+                       AND mcc.reportChannelId=?`;
+          const modContactExists = await dbQueryOne(sql, [interaction.guild.id, interaction.channel.id]);
+
+          // This does not appear to be a mod-contact channel
+          if (!modContactExists) {
+            return interaction.reply({
+              content: 'This does not appear to be a mod-contact channel.',
+              ephemeral: true,
+            });
+          }
+
+          // Update database to set mod-contact as resolved
+          sql = 'UPDATE mod_contact_channels SET resolved=1, resolutionTime=UNIX_TIMESTAMP() WHERE id=?';
+          await dbExecute(sql, [modContactExists.id]);
+
+          return interaction.channel.delete();
+        } catch (e) {
+          console.error(e);
+          return interaction.followUp('Something went wrong and the Mod Contact feature could not be enabled ' +
+            'on this server. Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)');
+        }
+      },
+    },
   ],
 
   /**
@@ -285,7 +329,7 @@ module.exports = {
     // Send an introductory message to the channel
     const modRole = await getModeratorRole(interaction.guild);
     await channel.send(`This channel was created automatically to facilitate communication between the ${modRole} ` +
-      `team and ${guildMember}.\nWhen the issue has been resolved, a moderator may use \`.resolve\` to ` +
+      `team and ${guildMember}.\nWhen the issue has been resolved, a moderator may use \`/mod-contact-resolve\` to ` +
       'remove this channel.');
 
     // Update the mod_contact_channels table with the new channel info

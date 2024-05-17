@@ -20,6 +20,7 @@ client.commands = new Collection();
 client.slashCommandCategories = [];
 client.messageListeners = [];
 client.messageDeletedListeners = [];
+client.channelDeletedListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
 client.voiceStateListeners = [];
@@ -44,6 +45,12 @@ fs.readdirSync('./messageListeners').filter((file) => file.endsWith('.js')).forE
 fs.readdirSync('./messageDeletedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
   const listener = require(`./messageDeletedListeners/${listenerFile}`);
   client.messageDeletedListeners.push(listener);
+});
+
+// Load channel deleted listener files
+fs.readdirSync('./channelDeletedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
+  const listener = require(`./channelDeletedListeners/${listenerFile}`);
+  client.channelDeletedListeners.push(listener);
 });
 
 // Load reaction listener files
@@ -87,6 +94,11 @@ client.on(Events.MessageDelete, async (msg) => {
 
   // Run the message through the message delete listeners
   return client.messageDeletedListeners.forEach((listener) => listener(client, message));
+});
+
+// Run channel deleted events through the channel deleted listeners
+client.on(Events.ChannelDelete, async (channel) => {
+  return client.channelDeletedListeners.forEach((listener) => listener(client, channel));
 });
 
 // Run the voice states through the listeners
