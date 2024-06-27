@@ -79,7 +79,7 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
 
   // Start a thread on the schedule message if the option is enabled for this guild
   let threadChannel = null;
-  if (options.eventThreads) {
+  if (options?.eventThreads) {
     // Create thread channel
     threadChannel = await scheduleMessage.startThread({
       name: title || `${interaction.member.displayName}'s Event`,
