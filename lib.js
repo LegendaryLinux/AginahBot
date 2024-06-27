@@ -58,6 +58,8 @@ module.exports = {
   },
 
   handleGuildCreate: async (client, guild) => {
+    console.info(`Creating db structure after joining guild ${guild.id}`);
+
     // Find this guild's moderator role id
     let moderatorRole = await module.exports.getModeratorRole(guild);
     if (!moderatorRole) {
@@ -80,6 +82,8 @@ module.exports = {
   },
 
   handleGuildDelete: async (client, guild) => {
+    console.info(`Cleaning up guild data after leaving guild ${guild.id}`);
+
     const guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
     if (!guildData) {
       console.warn('No guild_data entry could be found when trying to handleGuildDelete for ' +
