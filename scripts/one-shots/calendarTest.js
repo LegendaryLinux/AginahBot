@@ -1,4 +1,6 @@
 const GoogleCalendar = require('../../GoogleCalendar');
 
-const calendar = new GoogleCalendar();
-console.log(calendar);
+(async () => {
+  const calendar = new GoogleCalendar();
+  await calendar.createCalendar('Foo');
+})();
