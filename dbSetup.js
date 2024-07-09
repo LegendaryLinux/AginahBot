@@ -5,7 +5,7 @@ const guildData = `CREATE TABLE IF NOT EXISTS guild_data (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildId VARCHAR(64) NOT NULL UNIQUE,
     moderatorRoleId VARCHAR(64) NOT NULL,
-    gCalendarId VARCHAR(128)
+    googleCalendarId VARCHAR(128)
 )`;
 
 const roleSystems = `CREATE TABLE IF NOT EXISTS role_systems (
@@ -73,7 +73,7 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     eventCode VARCHAR(6) NOT NULL,
     title VARCHAR(100),
     duration BIGINT UNSIGNED,
-    gEventId VARCHAR(128)
+    googleEventId VARCHAR(128)
 )`;
 
 const modContact = `CREATE TABLE IF NOT EXISTS mod_contact (

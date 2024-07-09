@@ -3,7 +3,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
 const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole} = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
-const calendarStuff = require('../calendarStuff.js');
+const calendarStuff = require('../GoogleCalendar.js');
 
 const isRolePingable = async (guildId, role) => {
   // Prevent pinging the @everyone role in all cases
