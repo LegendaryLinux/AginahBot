@@ -22,12 +22,12 @@ const isRolePingable = async (guildId, role) => {
 
   // Determine if role exists in whitelist
   sql = `SELECT 1
-               FROM pingable_roles pr
-               JOIN guild_data gd ON pr.guildDataId = gd.id
-               JOIN guild_options go ON gd.id = go.guildDataId 
-               WHERE gd.guildId=?
-                    AND pr.roleId=?
-                    AND go.roleWhitelist=1`;
+         FROM pingable_roles pr
+         JOIN guild_data gd ON pr.guildDataId = gd.id
+         JOIN guild_options go ON gd.id = go.guildDataId 
+         WHERE gd.guildId=?
+           AND pr.roleId=?
+           AND go.roleWhitelist=1`;
   const pingableRole = await dbQueryOne(sql, [guildId, role.id]);
 
   // If role exists in whitelist, it is pingable
@@ -168,11 +168,11 @@ module.exports = {
 
         // Send individual messages for each upcoming event
         sql = `SELECT se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.eventCode, se.title
-                   FROM scheduled_events se
-                   JOIN guild_data gd ON se.guildDataId = gd.id
-                   WHERE gd.guildId=?
-                     AND se.timestamp > ?
-                   ORDER BY se.timestamp`;
+               FROM scheduled_events se
+               JOIN guild_data gd ON se.guildDataId = gd.id
+               WHERE gd.guildId=?
+                 AND se.timestamp > ?
+               ORDER BY se.timestamp`;
         const events = await dbQueryAll(sql, [interaction.guildId, new Date().getTime()]);
 
         if (events.length === 0) {
@@ -673,10 +673,10 @@ module.exports = {
 
           // Check for existing schedule board in this channel
           let sql = `SELECT sb.id, sb.messageId
-                   FROM schedule_boards sb
-                   JOIN guild_data gd ON sb.guildDataId = gd.id
-                   WHERE gd.guildId=?
-                        AND sb.channelId=?`;
+                     FROM schedule_boards sb
+                     JOIN guild_data gd ON sb.guildDataId = gd.id
+                     WHERE gd.guildId=?
+                       AND sb.channelId=?`;
           const existingBoard = await dbQueryOne(sql, [interaction.guildId, interaction.channel.id]);
           if (existingBoard) {
             // Fetch message object for existing schedule board
@@ -725,7 +725,7 @@ module.exports = {
                    FROM schedule_boards sb
                    JOIN guild_data gd ON sb.guildDataId = gd.id
                    WHERE gd.guildId=?
-                        AND sb.channelId=?`;
+                     AND sb.channelId=?`;
         const existingBoard = await dbQueryOne(sql, [interaction.guildId, interaction.channel.id]);
         if (!existingBoard) {
           return interaction.reply({
