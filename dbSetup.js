@@ -5,7 +5,7 @@ const guildData = `CREATE TABLE IF NOT EXISTS guild_data (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildId VARCHAR(64) NOT NULL UNIQUE,
     moderatorRoleId VARCHAR(64) NOT NULL,
-    googleCalendarId VARCHAR(128)
+    googleCalendarId VARCHAR(255)
 )`;
 
 const roleSystems = `CREATE TABLE IF NOT EXISTS role_systems (
