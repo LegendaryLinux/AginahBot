@@ -20,7 +20,7 @@ module.exports = class GoogleCalendar {
 
   constructor() {
     if (!config.googleApiClientEmail || !config.googleApiPrivateKey) {
-      throw new Error('This instance of AginahBot is not configured to support Google Calendar integration.')
+      throw new Error('This instance of AginahBot is not configured to support Google Calendar integration.');
     }
 
     this.jwtClient = new google.auth.JWT(
@@ -31,12 +31,12 @@ module.exports = class GoogleCalendar {
       null,
     );
 
-    this.calendarApi = google.calendar({ version: "v3", auth: this.jwtClient })
+    this.calendarApi = google.calendar({ version: 'v3', auth: this.jwtClient });
   }
 
   /**
    * Produces a formatted URL for a calendar
-   * @param {Number} id
+   * @param {String} id
    * @returns {String}
    */
   static createUrlFromCalendarId(id) {
@@ -82,18 +82,18 @@ module.exports = class GoogleCalendar {
   /**
    * Add en event to a calendar
    * @param {String} calendarId
-   * @param {String} name
-   * @param {String} host
-   * @param {String} role
    * @param {Date} eventDate
+   * @param {String} host
+   * @param {String} eventTitle
+   * @param {String} role
    * @param {Number} duration Duration of the event in hours
    * @returns {Promise<String>}
    */
-  createEvent = async (calendarId, name, host, role, eventDate, duration=2) => {
+  createEvent = async (calendarId, eventDate, host, eventTitle, role=null, duration=2) => {
     const event = await this.calendarApi.events.insert({
       calendarId: calendarId,
       resource: {
-        summary: name,
+        summary: eventTitle,
         location: `${role ? `Type: ${role}\n` : ''}`,
         description: `Host: ${host}`,
         start: {
@@ -167,4 +167,4 @@ module.exports = class GoogleCalendar {
     });
     return response.data.items;
   };
-}
+};

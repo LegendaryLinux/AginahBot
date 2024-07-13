@@ -2,6 +2,7 @@ const { Client, Guild, PermissionFlagsBits, PermissionsBitField, EmbedBuilder } 
 const mysql = require('mysql2');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
+const GoogleCalendar = require('GoogleCalendar');
 
 module.exports = {
   // Function which returns a promise which will resolve to true or false
@@ -253,7 +254,7 @@ module.exports = {
    */
   updateScheduleBoard: async (client, guild) => {
     // Find all schedule boards
-    let sql = `SELECT sb.id, gd.id AS guildId, sb.channelId, sb.messageId
+    let sql = `SELECT sb.id, gd.id AS guildId, sb.channelId, sb.messageId, gd.googleCalendarId
                FROM schedule_boards sb
                JOIN guild_data gd ON sb.guildDataId = gd.id
                WHERE gd.guildId=?`;
@@ -353,19 +354,26 @@ module.exports = {
           });
         }
 
+        const embedFields = [
+          { name: 'Scheduled by', value: `${schedulingUser ? schedulingUser.displayName : 'Unknown user'}` },
+          { name: 'Planning Channel', value: `#${eventChannel.name}` },
+          { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
+          { name: 'Event Code', value: event.eventCode.toUpperCase() },
+          { name: 'Duration', value: event.duration ? `${event.duration} hours` : 'Undisclosed' },
+          { name: 'Current RSVPs', value: rsvps.size.toString() },
+        ];
+        if (board?.googleCalendarId) {
+          embedFields.push({
+            name: 'Google Calendar Link',
+            value: GoogleCalendar.createUrlFromCalendarId(boards.googleCalendarId),
+          });
+        }
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
           .setColor('#6081cb')
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
-          .addFields(
-            { name: 'Scheduled by', value: `${schedulingUser ? schedulingUser.displayName : 'Unknown user'}` },
-            { name: 'Planning Channel', value: `#${eventChannel.name}` },
-            { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
-            { name: 'Event Code', value: event.eventCode.toUpperCase() },
-            { name: 'Duration', value: event.duration ? `${event.duration} hours` : 'Undisclosed' },
-            { name: 'Current RSVPs', value: rsvps.size.toString() },
-          );
+          .addFields(...embedFields);
         embeds.push(embed);
       }
 
@@ -383,7 +391,7 @@ module.exports = {
    */
   updateScheduleBoards: async (client) => {
     // Find all schedule boards
-    let sql = `SELECT sb.id, gd.guildId AS guildId, sb.channelId, sb.messageId
+    let sql = `SELECT sb.id, gd.guildId AS guildId, sb.channelId, sb.messageId, gd.googleCalendarId
                FROM schedule_boards sb
                JOIN guild_data gd ON sb.guildDataId = gd.id`;
     const boards = await module.exports.dbQueryAll(sql);
@@ -504,18 +512,25 @@ module.exports = {
           });
         }
 
+        const embedFields = [
+          { name: 'Scheduled by', value: `${schedulingUser ? schedulingUser.displayName : 'Unknown user'}` },
+          { name: 'Planning Channel', value: `#${eventChannel.name}` },
+          { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
+          { name: 'Event Code', value: event.eventCode },
+          { name: 'Current RSVPs', value: rsvps.size.toString() },
+        ];
+        if (board?.googleCalendarId) {
+          embedFields.push({
+            name: 'Google Calendar Link',
+            value: GoogleCalendar.createUrlFromCalendarId(board.googleCalendarId),
+          });
+        }
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
           .setColor('#6081cb')
           .setDescription('**Click the title of this message to jump to the original.**')
           .setURL(eventMessage.url)
-          .addFields(
-            { name: 'Scheduled by', value: `${schedulingUser ? schedulingUser.displayName : 'Unknown user'}` },
-            { name: 'Planning Channel', value: `#${eventChannel.name}` },
-            { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
-            { name: 'Event Code', value: event.eventCode },
-            { name: 'Current RSVPs', value: rsvps.size.toString() },
-          );
+          .addFields(...embedFields);
         embeds.push(embed);
       }
 

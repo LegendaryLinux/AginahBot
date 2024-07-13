@@ -1,11 +1,9 @@
 START TRANSACTION;
 
 /* Update statements here */
-ALTER TABLE guild_data
-ADD googleCalendarId VARCHAR(128);
+ALTER TABLE guild_data ADD COLUMN googleCalendarId VARCHAR(256);
 
-ALTER TABLE scheduled_events
-ADD googleEventId VARCHAR(128);
+ALTER TABLE scheduled_events ADD COLUMN googleEventId VARCHAR(256);
 
 /* Testing queries here */
 
