@@ -2,7 +2,7 @@ const { Client, Guild, PermissionFlagsBits, PermissionsBitField, EmbedBuilder } 
 const mysql = require('mysql2');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
-const GoogleCalendar = require('GoogleCalendar');
+const GoogleCalendar = require('./GoogleCalendar');
 
 module.exports = {
   // Function which returns a promise which will resolve to true or false
