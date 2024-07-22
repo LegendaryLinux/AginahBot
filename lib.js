@@ -365,7 +365,7 @@ module.exports = {
         if (board?.googleCalendarId) {
           embedFields.push({
             name: 'Google Calendar Link',
-            value: GoogleCalendar.createUrlFromCalendarId(boards.googleCalendarId),
+            value: GoogleCalendar.createUrlFromCalendarId(board.googleCalendarId),
           });
         }
         const embed = new EmbedBuilder()
