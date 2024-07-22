@@ -94,7 +94,7 @@ module.exports = class GoogleCalendar {
       calendarId: calendarId,
       resource: {
         summary: eventTitle,
-        location: `${role ? `Type: ${role}\n` : ''}`,
+        location: `${role ? `Type: ${role.name}\n` : ''}`,
         description: `Host: ${host}`,
         start: {
           dateTime: eventDate.toISOString(),
