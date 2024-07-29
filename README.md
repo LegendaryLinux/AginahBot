@@ -32,7 +32,9 @@ Example config:
   "dbUser": "database-username",
   "dbPass": "database-password",
   "dbName": "database-name",
-  "moderatorRole": "Moderator"
+  "moderatorRole": "Moderator",
+  "googleApiClientEmail": "foo@bar.com",
+  "googleApiPrivateKey": "google-api-private-key"
 }
 ```
 
