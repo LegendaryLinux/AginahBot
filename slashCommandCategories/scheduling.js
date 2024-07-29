@@ -3,6 +3,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
 const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole} = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
+const GoogleCalendar = require('../GoogleCalendar.js');
 
 const isRolePingable = async (guildId, role) => {
   // Prevent pinging the @everyone role in all cases
@@ -21,12 +22,12 @@ const isRolePingable = async (guildId, role) => {
 
   // Determine if role exists in whitelist
   sql = `SELECT 1
-               FROM pingable_roles pr
-               JOIN guild_data gd ON pr.guildDataId = gd.id
-               JOIN guild_options go ON gd.id = go.guildDataId 
-               WHERE gd.guildId=?
-                    AND pr.roleId=?
-                    AND go.roleWhitelist=1`;
+         FROM pingable_roles pr
+         JOIN guild_data gd ON pr.guildDataId = gd.id
+         JOIN guild_options go ON gd.id = go.guildDataId 
+         WHERE gd.guildId=?
+           AND pr.roleId=?
+           AND go.roleWhitelist=1`;
   const pingableRole = await dbQueryOne(sql, [guildId, role.id]);
 
   // If role exists in whitelist, it is pingable
@@ -50,7 +51,10 @@ const generateEventCode = () => {
 
 const sendScheduleMessage = async (interaction, targetDate, title = null, pingRole = null, duration = null) => {
   // Fetch guild data
-  const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
+  const guildData = await dbQueryOne(
+    'SELECT id, googleCalendarId FROM guild_data WHERE guildId=?',
+    [interaction.guild.id],
+  );
   if (!guildData) {
     throw new Error(`Unable to find guild ${interaction.guild.name} (${interaction.guildId}) in guild_data table.`);
   }
@@ -58,19 +62,41 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
   // Fetch options
   const options = await dbQueryOne('SELECT * FROM guild_options WHERE guildDataId=?', [guildData.id]);
 
+  // Generate event code
   const eventCode = generateEventCode();
 
+  // Create Google calendar event if a calendar exists for this guild
+  let calendarEventId = null;
+  if (guildData?.googleCalendarId) {
+    const googleCalendar = new GoogleCalendar();
+    calendarEventId = await googleCalendar.createEvent(
+      guildData.googleCalendarId,
+      targetDate,
+      interaction.member.displayName,
+      title,
+      pingRole,
+      duration,
+    );
+  }
+
   const embedTimestamp = Math.floor(targetDate.getTime()/1000);
+  const embedFields = [
+    { name: 'Event Code', value: eventCode.toUpperCase() },
+    { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
+  ];
+  if (calendarEventId) {
+    embedFields.push({
+      name: 'Google Calendar Link:',
+      value: GoogleCalendar.createUrlFromCalendarId(guildData.googleCalendarId),
+    });
+  }
   const embed = new Discord.EmbedBuilder()
     .setTitle(`${title || 'New Event'}\n<t:${embedTimestamp}:F>`)
     .setColor('#6081cb')
     .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
       '\nReact with 👍 if you intend to join this event.' +
       '\nReact with 🤔 if you don\'t know yet.')
-    .addFields(
-      { name: 'Event Code', value: eventCode.toUpperCase() },
-      { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
-    );
+    .addFields(...embedFields);
 
   // Send schedule message
   const messageObject = { embeds: [embed] };
@@ -98,10 +124,11 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
 
   // Save scheduled event to database
   const sql = `INSERT INTO scheduled_events
-             (guildDataId, timestamp, channelId, messageId, threadId, schedulingUserId, eventCode, title, duration)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+               (guildDataId, timestamp, channelId, messageId, threadId, schedulingUserId, eventCode, title,
+                duration, googleEventId)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
-    threadChannel ? threadChannel.id : null, interaction.user.id, eventCode, title, duration || null]);
+    threadChannel ? threadChannel.id : null, interaction.user.id, eventCode, title, duration, calendarEventId]);
 
   // Put appropriate reactions onto the message
   await scheduleMessage.react('👍');
@@ -159,11 +186,11 @@ module.exports = {
 
         // Send individual messages for each upcoming event
         sql = `SELECT se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.eventCode, se.title
-                   FROM scheduled_events se
-                   JOIN guild_data gd ON se.guildDataId = gd.id
-                   WHERE gd.guildId=?
-                     AND se.timestamp > ?
-                   ORDER BY se.timestamp`;
+               FROM scheduled_events se
+               JOIN guild_data gd ON se.guildDataId = gd.id
+               WHERE gd.guildId=?
+                 AND se.timestamp > ?
+               ORDER BY se.timestamp`;
         const events = await dbQueryAll(sql, [interaction.guildId, new Date().getTime()]);
 
         if (events.length === 0) {
@@ -481,7 +508,8 @@ module.exports = {
         const minutes = interaction.options.getInteger('minutes', false) || 0;
         const duration = interaction.options.getInteger('duration', false) ?? null;
 
-        let sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.title
+        let sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.title, se.duration,
+                    gd.googleCalendarId, se.googleEventId
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                    WHERE gd.guildId=?
@@ -499,11 +527,11 @@ module.exports = {
           });
         }
 
-        // If the user is not a moderator and not the scheduling user, deny the cancellation
+        // If the user is not a moderator and not the scheduling user, deny the adjustment
         if ((interaction.user.id !== eventData.schedulingUserId) && !await verifyModeratorRole(interaction.member)) {
           const schedulingUser = await interaction.guild.members.fetch(eventData.schedulingUserId);
           return interaction.followUp({
-            content: 'This event can only be cancelled by the user who scheduled it ' +
+            content: 'This event can only be modified by the user who scheduled it ' +
               `(${schedulingUser.displayName}), or by an administrator.`,
             ephemeral: true,
           });
@@ -527,16 +555,26 @@ module.exports = {
         const message = await channel.messages.fetch(eventData.messageId);
 
         const embedTimestamp = Math.floor(newTimestamp/1000);
+        const embedFields = [
+          { name: 'Event Code', value: eventCode.toUpperCase() },
+          { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
+        ];
+        if (eventData?.googleCalendarId && eventData?.googleEventId) {
+          embedFields.push({
+            name: 'Google Calendar Link',
+            value: GoogleCalendar.createUrlFromCalendarId(eventData.googleCalendarId),
+          });
+          // Reschedule Google calendar event
+          await (new GoogleCalendar())
+            .rescheduleEvent(eventData.googleCalendarId, eventData.googleEventId, new Date(newTimestamp), duration);
+        }
         const embed = new Discord.EmbedBuilder()
           .setTitle(`${eventData.title || 'New Event'}\n<t:${embedTimestamp}:F>`)
           .setColor('#6081cb')
           .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
             '\nReact with 👍 if you intend to join this event.' +
             '\nReact with 🤔 if you don\'t know yet.')
-          .addFields(
-            { name: 'Event Code', value: eventCode.toUpperCase() },
-            { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
-          );
+          .addFields(...embedFields);
 
         // Update schedule message
         const payload = { embeds: [embed] };
@@ -544,7 +582,7 @@ module.exports = {
         await message.edit(payload);
 
         await updateScheduleBoard(interaction.client, interaction.guild);
-        return interaction.followUp(
+        interaction.followUp(
           `Event **${eventData.title || eventCode}** updated to <t:${Math.floor(newTimestamp/1000)}:F>`
         );
       }
@@ -563,7 +601,8 @@ module.exports = {
       async execute(interaction) {
         const eventCode = interaction.options.getString('event-code');
 
-        let sql = `SELECT se.id, se.channelId, se.messageId, se.threadId, se.schedulingUserId
+        let sql = `SELECT se.id, se.channelId, se.messageId, se.threadId, se.schedulingUserId,
+                    gd.googleCalendarId, se.googleEventId
                    FROM scheduled_events se
                    JOIN guild_data gd ON se.guildDataId = gd.id
                    WHERE gd.guildId=?
@@ -613,6 +652,11 @@ module.exports = {
               await thread.setLocked(true);
               await thread.setArchived(true);
             }
+
+            // Cancel Google calendar event if present
+            if (eventData?.googleCalendarId || eventData?.googleEventId) {
+              await (new GoogleCalendar()).cancelEvent(eventData.googleCalendarId, eventData.googleEventId);
+            }
           } catch(err) {
             // Handle non-404 errors normally. If the error was a 404, it means the message was manually deleted
             // and no action is necessary
@@ -623,7 +667,7 @@ module.exports = {
           await dbExecute('DELETE FROM scheduled_events WHERE id=?', [eventData.id]);
 
           await updateScheduleBoard(interaction.client, interaction.guild);
-          return interaction.followUp(`Event with code ${eventCode.toUpperCase()} has been cancelled.`);
+          interaction.followUp(`Event with code ${eventCode.toUpperCase()} has been cancelled.`);
         } catch(e) {
           console.error(e);
           return interaction.followUp('Something went wrong and the event could not be cancelled.\n' +
@@ -647,10 +691,10 @@ module.exports = {
 
           // Check for existing schedule board in this channel
           let sql = `SELECT sb.id, sb.messageId
-                   FROM schedule_boards sb
-                   JOIN guild_data gd ON sb.guildDataId = gd.id
-                   WHERE gd.guildId=?
-                        AND sb.channelId=?`;
+                     FROM schedule_boards sb
+                     JOIN guild_data gd ON sb.guildDataId = gd.id
+                     WHERE gd.guildId=?
+                       AND sb.channelId=?`;
           const existingBoard = await dbQueryOne(sql, [interaction.guildId, interaction.channel.id]);
           if (existingBoard) {
             // Fetch message object for existing schedule board
@@ -699,7 +743,7 @@ module.exports = {
                    FROM schedule_boards sb
                    JOIN guild_data gd ON sb.guildDataId = gd.id
                    WHERE gd.guildId=?
-                        AND sb.channelId=?`;
+                     AND sb.channelId=?`;
         const existingBoard = await dbQueryOne(sql, [interaction.guildId, interaction.channel.id]);
         if (!existingBoard) {
           return interaction.reply({
@@ -750,5 +794,61 @@ module.exports = {
         return interaction.followUp(toggle ? 'Event threads enabled.' : 'Event threads disabled.');
       }
     },
+    {
+      commandBuilder: new SlashCommandBuilder()
+        .setName('schedule-option-calendar')
+        .setDescription('Enable or disable Google Calendar integration for scheduled events.')
+        .addBooleanOption((opt) => opt
+          .setName('toggle' )
+          .setDescription('True to enable, False to disable')
+          .setRequired(true))
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(0),
+      async execute(interaction) {
+        await interaction.deferReply({ ephemeral: true });
+        const toggle = interaction.options.getBoolean('toggle', true);
+
+        // Fetch guild data
+        const guildData = await dbQueryOne(
+          'SELECT id, googleCalendarId FROM guild_data WHERE guildId=?',
+          [interaction.guild.id],
+        );
+        if (!guildData) {
+          await interaction.followUp('Unable to complete request. An error was logged.');
+          throw new Error(`Unable to find guildData entry for guild with id ${interaction.guild.id}`);
+        }
+
+        const googleCalendar = new GoogleCalendar();
+
+        // Calendar exists
+        if (guildData?.googleCalendarId) {
+          if (toggle) {
+            // Already enabled
+            return interaction.followUp('Google Calendar integration is already enabled for events in this guild.');
+          }
+
+          // Enable calendar
+          await googleCalendar.deleteCalendar(guildData.googleCalendarId);
+          await updateScheduleBoard(interaction.client, interaction.guild);
+          return interaction.followUp('Google Calendar integration has been disabled.');
+        }
+
+        // Calendar does not exist
+        if (toggle) {
+          // Create calendar, update guild_data, provide calendar link to user
+          const calendarId = await googleCalendar.createCalendar(interaction.guild.name);
+          await dbExecute(
+            'UPDATE guild_data SET googleCalendarId=? WHERE guildId=?',
+            [calendarId, interaction.guild.id]
+          );
+          await updateScheduleBoard(interaction.client, interaction.guild);
+          return interaction.followUp(
+            `Google Calendar integration has been enabled.\n${GoogleCalendar.createUrlFromCalendarId(calendarId)}`,
+          );
+        }
+
+        return interaction.followUp('Google Calendar integration is not enabled for events in this guild.');
+      }
+    }
   ],
 };
