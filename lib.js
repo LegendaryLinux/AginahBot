@@ -390,7 +390,7 @@ module.exports = {
 
       // Update the schedule board
       await boardMessage.edit({
-        content: (countResult.count > 10) ? '**Next 10 Upcoming Events**' : '**Upcoming Events:**',
+        content: (countResult.count > 10) ? '# Next 10 Upcoming Events' : '# Upcoming Events',
         embeds
       });
     }
@@ -560,7 +560,7 @@ module.exports = {
 
       // Update the schedule board
       await boardMessage.edit({
-        content: (countResult.count > 10) ? '**Next 10 Upcoming Events**' : '**Upcoming Events:**',
+        content: (countResult.count > 10) ? '# Next 10 Upcoming Events' : '# Upcoming Events',
         embeds
       });
     }
