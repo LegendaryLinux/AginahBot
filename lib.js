@@ -368,6 +368,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
+          .setDescription(event.duration ? `About ${event.duration} hours` : 'Duration Undisclosed')
           .setColor(`#${embedColors.pop()}`)
           .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
@@ -383,7 +384,6 @@ module.exports = {
             { name: 'Event Code', value: event.eventCode, inline: true },
             { name: ' ', value: ' ', inline: true },
             { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
-
           );
         embeds.push(embed);
       }
@@ -444,7 +444,7 @@ module.exports = {
       }
 
       sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.threadId,
-                    se.eventCode, se.title
+                    se.eventCode, se.title, se.duration
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -538,6 +538,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
+          .setDescription(event.duration ? `About ${event.duration} hours` : 'Duration Undisclosed')
           .setColor(`#${embedColors.pop()}`)
           .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
@@ -553,7 +554,6 @@ module.exports = {
             { name: 'Event Code', value: event.eventCode, inline: true },
             { name: ' ', value: ' ', inline: true },
             { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
-
           );
         embeds.push(embed);
       }

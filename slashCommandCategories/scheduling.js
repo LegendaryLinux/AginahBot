@@ -62,14 +62,17 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
 
   const embedTimestamp = Math.floor(targetDate.getTime()/1000);
   const embed = new Discord.EmbedBuilder()
-    .setTitle(`${title || 'New Event'}\n<t:${embedTimestamp}:F>`)
-    .setColor('#6081cb')
-    .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
-      '\nReact with 👍 if you intend to join this event.' +
+    .setTitle(`${title || 'New Event'}`)
+    .setDescription('\nReact with 👍 if you intend to join this event.' +
       '\nReact with 🤔 if you don\'t know yet.')
+    .setColor('#6081cb')
+    .setAuthor({ name: interaction.member.displayName })
+    .setThumbnail(interaction.user.displayAvatarURL())
     .addFields(
-      { name: 'Event Code', value: eventCode.toUpperCase() },
-      { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
+      { name: 'Date/Time', value: `<t:${embedTimestamp}:F>`, inline: true },
+      { name: ' ', value: ' ', inline: true },
+      { name: 'Duration', value: duration ? `About ${duration} hours` : 'Undisclosed', inline: true },
+      { name: 'Event Code', value: eventCode.toUpperCase(), inline: true },
     );
 
   // Send schedule message
