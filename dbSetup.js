@@ -4,8 +4,7 @@ const config = require('./config.json');
 const guildData = `CREATE TABLE IF NOT EXISTS guild_data (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildId VARCHAR(64) NOT NULL UNIQUE,
-    moderatorRoleId VARCHAR(64) NOT NULL,
-    googleCalendarId VARCHAR(256)
+    moderatorRoleId VARCHAR(64) NOT NULL
 )`;
 
 const roleSystems = `CREATE TABLE IF NOT EXISTS role_systems (
@@ -72,8 +71,7 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     schedulingUserId VARCHAR(64) NOT NULL,
     eventCode VARCHAR(6) NOT NULL,
     title VARCHAR(100),
-    duration BIGINT UNSIGNED,
-    googleEventId VARCHAR(256)
+    duration BIGINT UNSIGNED
 )`;
 
 const modContact = `CREATE TABLE IF NOT EXISTS mod_contact (
