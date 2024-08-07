@@ -354,17 +354,20 @@ module.exports = {
         }
 
         const embed = new EmbedBuilder()
-          .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
+          .setTitle(`${event.title || 'Upcoming Event'}`)
           .setColor('#6081cb')
-          .setDescription('**Click the title of this message to jump to the original.**')
+          .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
+          .setThumbnail(schedulingUser.displayAvatarURL())
           .addFields(
-            { name: 'Scheduled by', value: `${schedulingUser ? schedulingUser.displayName : 'Unknown user'}` },
-            { name: 'Planning Channel', value: `#${eventChannel.name}` },
-            { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
-            { name: 'Event Code', value: event.eventCode.toUpperCase() },
-            { name: 'Duration', value: event.duration ? `${event.duration} hours` : 'Undisclosed' },
-            { name: 'Current RSVPs', value: rsvps.size.toString() },
+            { name: 'Date/Time', value: `<t:${Math.floor(event.timestamp / 1000)}:F>` },
+            {
+              name: 'Planning Channel',
+              value: eventThread ? `[#${eventChannel.name}](${eventThread.url})` : `#${eventChannel.name}`,
+              inline: true,
+            },
+            { name: 'Event Code', value: event.eventCode, inline: true },
+            { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
           );
         embeds.push(embed);
       }
@@ -505,16 +508,20 @@ module.exports = {
         }
 
         const embed = new EmbedBuilder()
-          .setTitle(`${event.title || 'Upcoming Event'}\n<t:${Math.floor(event.timestamp / 1000)}:F>`)
+          .setTitle(`${event.title || 'Upcoming Event'}`)
           .setColor('#6081cb')
-          .setDescription('**Click the title of this message to jump to the original.**')
+          .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
+          .setThumbnail(schedulingUser.displayAvatarURL())
           .addFields(
-            { name: 'Scheduled by', value: `${schedulingUser ? schedulingUser.displayName : 'Unknown user'}` },
-            { name: 'Planning Channel', value: `#${eventChannel.name}` },
-            { name: 'Thread', value:  eventThread ? `[Event Thread](${eventThread.url})` : 'None' },
-            { name: 'Event Code', value: event.eventCode },
-            { name: 'Current RSVPs', value: rsvps.size.toString() },
+            { name: 'Date/Time', value: `<t:${Math.floor(event.timestamp / 1000)}:F>` },
+            {
+              name: 'Planning Channel',
+              value: eventThread ? `[#${eventChannel.name}](${eventThread.url})` : `#${eventChannel.name}`,
+              inline: true,
+            },
+            { name: 'Event Code', value: event.eventCode, inline: true },
+            { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
           );
         embeds.push(embed);
       }
