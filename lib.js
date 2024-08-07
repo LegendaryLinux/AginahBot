@@ -301,6 +301,19 @@ module.exports = {
       // Embeds which will be PUT to the schedule board message
       const embeds = [];
 
+      const embedColors = [
+        '3498DB',  // Light Blue
+        '2ECC71',  // Green
+        'E67E22',  // Orange
+        'E74C3C',  // Light Red (Rose)
+        '34495E',  // Navy
+        '8B0000',  // Dark Red (Maroon)
+        '8A2BE2',  // Purple
+        '008080',  // Teal
+        'DDA0DD',  // Plum
+        '808000'   // Olive
+      ];
+
       for (let event of events) {
         let eventChannel = null;
         let eventMessage = null;
@@ -355,19 +368,22 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
-          .setColor('#6081cb')
+          .setColor(`#${embedColors.pop()}`)
           .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
           .setThumbnail(schedulingUser.displayAvatarURL())
           .addFields(
-            { name: 'Date/Time', value: `<t:${Math.floor(event.timestamp / 1000)}:F>` },
+            { name: 'Date/Time', value: `<t:${Math.floor(event.timestamp / 1000)}:F>`, inline: true },
+            { name: ' ', value: ' ', inline: true },
             {
               name: 'Planning Channel',
               value: eventThread ? `[#${eventChannel.name}](${eventThread.url})` : `#${eventChannel.name}`,
               inline: true,
             },
             { name: 'Event Code', value: event.eventCode, inline: true },
+            { name: ' ', value: ' ', inline: true },
             { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
+
           );
         embeds.push(embed);
       }
@@ -455,6 +471,19 @@ module.exports = {
       // Embeds which will be PUT to the schedule board message
       const embeds = [];
 
+      const embedColors = [
+        '3498DB',  // Light Blue
+        '2ECC71',  // Green
+        'E67E22',  // Orange
+        'E74C3C',  // Light Red (Rose)
+        '34495E',  // Navy
+        '8B0000',  // Dark Red (Maroon)
+        '8A2BE2',  // Purple
+        '008080',  // Teal
+        'DDA0DD',  // Plum
+        '808000'   // Olive
+      ];
+
       for (let event of events) {
         let eventChannel = null;
         let eventMessage = null;
@@ -509,19 +538,22 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
-          .setColor('#6081cb')
+          .setColor(`#${embedColors.pop()}`)
           .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
           .setThumbnail(schedulingUser.displayAvatarURL())
           .addFields(
-            { name: 'Date/Time', value: `<t:${Math.floor(event.timestamp / 1000)}:F>` },
+            { name: 'Date/Time', value: `<t:${Math.floor(event.timestamp / 1000)}:F>`, inline: true },
+            { name: ' ', value: ' ', inline: true },
             {
               name: 'Planning Channel',
               value: eventThread ? `[#${eventChannel.name}](${eventThread.url})` : `#${eventChannel.name}`,
               inline: true,
             },
             { name: 'Event Code', value: event.eventCode, inline: true },
+            { name: ' ', value: ' ', inline: true },
             { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
+
           );
         embeds.push(embed);
       }
