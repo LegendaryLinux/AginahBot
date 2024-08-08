@@ -72,11 +72,19 @@ module.exports = async (client, message) => {
         .setThumbnail(schedulingUser.displayAvatarURL())
         .addFields([
           { name: 'Original Post', value: `[Jump to Schedule Message](${scheduleMessage.url})`, inline: true },
-          { name: '', value: '', inline: true},
-          { name: 'Organizer', value: schedulingUser.displayName, inline: true },
+          { name: ' ', value: ' ', inline: true},
+          {
+            name: 'Organizer',
+            value: `${schedulingUser.displayName} (${schedulingUser.user.username})`,
+            inline: true,
+          },
           { name: 'Join now!', value: `[Join Voice Channel](${voiceChannel.url})`, inline: true },
-          { name: '', value: '', inline: true },
-          { name: 'Who sent this ping?', value: `${messageAuthor.displayName}`, inline: true },
+          { name: ' ', value: ' ', inline: true },
+          {
+            name: 'Who sent this ping?',
+            value: `${messageAuthor.displayName} (${message.author.username})`,
+            inline: true,
+          },
         ]);
 
       // Send the reminder to the channel the event was originally scheduled in
