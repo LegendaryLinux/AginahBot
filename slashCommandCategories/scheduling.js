@@ -83,9 +83,16 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
   if (pingRole) { messageObject.content = `${pingRole}`; }
   const scheduleMessage = await interaction.channel.send(messageObject);
 
-  // Start a thread on the schedule message if the option is enabled for this guild
+  // Put appropriate reactions onto the message
+  await scheduleMessage.react('👍');
+  await scheduleMessage.react('🤔');
+
+  // Start a thread on the schedule message if appropriate
   let threadChannel = null;
-  if (options?.eventThreads) {
+  if (
+    interaction.channel.type === Discord.ChannelType.GuildText &&  // Channel is a guild text channel
+    options?.eventThreads                                          // Guild has event threads option enabled
+  ) {
     // Create thread channel
     threadChannel = await scheduleMessage.startThread({
       name: title || `${interaction.member.displayName}'s Event`,
@@ -108,10 +115,6 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   await dbExecute(sql, [guildData.id, targetDate.getTime(), scheduleMessage.channel.id, scheduleMessage.id,
     threadChannel ? threadChannel.id : null, interaction.user.id, eventCode, title, duration || null]);
-
-  // Put appropriate reactions onto the message
-  await scheduleMessage.react('👍');
-  await scheduleMessage.react('🤔');
 
   // Update schedule messages
   await updateScheduleBoard(interaction.client, interaction.guild);
