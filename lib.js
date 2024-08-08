@@ -368,7 +368,10 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
-          .setDescription(event.duration ? `About ${event.duration} hours` : 'Duration Undisclosed')
+          .setDescription(
+            `Starts <t:${Math.floor(event.timestamp / 1000)}:R> and should last` +
+            `${event.duration ? ` about ${event.duration} hours` : ' an undisclosed amount of time'}`
+          )
           .setColor(`#${embedColors.pop()}`)
           .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
@@ -538,7 +541,10 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
-          .setDescription(event.duration ? `About ${event.duration} hours` : 'Duration Undisclosed')
+          .setDescription(
+            `Starts <t:${Math.floor(event.timestamp / 1000)}:R> and should last` +
+            `${event.duration ? ` about ${event.duration} hours` : ' an undisclosed amount of time'}`
+          )
           .setColor(`#${embedColors.pop()}`)
           .setAuthor({ name: schedulingUser.displayName })
           .setURL(eventMessage.url)
