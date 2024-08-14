@@ -268,18 +268,18 @@ module.exports = {
           .setName('title')
           .setDescription('Optional title for this event')
           .setMaxLength(100)
-          .setRequired(false))
-        .addRoleOption((opt) => opt
-          .setName('ping-role')
-          .setDescription('Optional role to ping for this event')
-          .setRequired(false))
+          .setRequired(true))
         .addIntegerOption((opt) => opt
           .setName('duration')
           .setDescription('Number of hours you intend this event to run')
           .setRequired(true))
+        .addRoleOption((opt) => opt
+          .setName('ping-role')
+          .setDescription('Optional role to ping for this event')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
-        const title = interaction.options.getString('title', false) ?? null;
+        const title = interaction.options.getString('title');
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const dateString = interaction.options.getString('date');
         const timeString = interaction.options.getString('time');
@@ -351,18 +351,18 @@ module.exports = {
           .setName('title')
           .setDescription('Optional title for this event')
           .setMaxLength(100)
-          .setRequired(false))
-        .addRoleOption((opt) => opt
-          .setName('ping-role')
-          .setDescription('Optional role to ping for this event')
-          .setRequired(false))
+          .setRequired(true))
         .addIntegerOption((opt) => opt
           .setName('duration')
           .setDescription('Number of hours you intend this event to run')
           .setRequired(true))
+        .addRoleOption((opt) => opt
+          .setName('ping-role')
+          .setDescription('Optional role to ping for this event')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
-        const title = interaction.options.getString('title', false) ?? null;
+        const title = interaction.options.getString('title');
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
         const duration = interaction.options.getInteger('duration');
@@ -411,18 +411,18 @@ module.exports = {
           .setName('title')
           .setDescription('Optional title for this event')
           .setMaxLength(100)
-          .setRequired(false))
-        .addRoleOption((opt) => opt
-          .setName('ping-role')
-          .setDescription('Optional role to ping for this event')
-          .setRequired(false))
+          .setRequired(true))
         .addIntegerOption((opt) => opt
           .setName('duration')
           .setDescription('Number of hours you intend this event to run')
           .setRequired(true))
+        .addRoleOption((opt) => opt
+          .setName('ping-role')
+          .setDescription('Optional role to ping for this event')
+          .setRequired(false))
         .setDMPermission(false),
       async execute(interaction) {
-        const title = interaction.options.getString('title', false) ?? null;
+        const title = interaction.options.getString('title');
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const hours = interaction.options.getInteger('hours');
         const minutes = interaction.options.getInteger('minutes');
@@ -465,6 +465,10 @@ module.exports = {
           .setDescription('Six character code of the upcoming event you wish to cancel.')
           .setRequired(true))
         .addIntegerOption((opt) => opt
+          .setName('duration')
+          .setDescription('Number of hours you intend this event to run')
+          .setRequired(true))
+        .addIntegerOption((opt) => opt
           .setName('days')
           .setDescription('Days to adjust the event')
           .setRequired(false))
@@ -476,10 +480,6 @@ module.exports = {
           .setName('minutes')
           .setDescription('Minutes to adjust the event')
           .setRequired(false))
-        .addIntegerOption((opt) => opt
-          .setName('duration')
-          .setDescription('Number of hours you intend this event to run')
-          .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
         await interaction.deferReply();
