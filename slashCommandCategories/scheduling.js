@@ -275,8 +275,8 @@ module.exports = {
           .setRequired(false))
         .addIntegerOption((opt) => opt
           .setName('duration')
-          .setDescription('Optional number of hours you intend this event to run')
-          .setRequired(false))
+          .setDescription('Number of hours you intend this event to run')
+          .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
@@ -284,7 +284,7 @@ module.exports = {
         const dateString = interaction.options.getString('date');
         const timeString = interaction.options.getString('time');
         const utcOffset = interaction.options.getInteger('timezone');
-        const duration = interaction.options.getInteger('duration', false) ?? null;
+        const duration = interaction.options.getInteger('duration');
 
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
@@ -358,14 +358,14 @@ module.exports = {
           .setRequired(false))
         .addIntegerOption((opt) => opt
           .setName('duration')
-          .setDescription('Optional number of hours you intend this event to run')
-          .setRequired(false))
+          .setDescription('Number of hours you intend this event to run')
+          .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
-        const duration = interaction.options.getInteger('duration', false) ?? null;
+        const duration = interaction.options.getInteger('duration');
 
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
@@ -418,15 +418,15 @@ module.exports = {
           .setRequired(false))
         .addIntegerOption((opt) => opt
           .setName('duration')
-          .setDescription('Optional number of hours you intend this event to run')
-          .setRequired(false))
+          .setDescription('Number of hours you intend this event to run')
+          .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
         const title = interaction.options.getString('title', false) ?? null;
         const pingRole = interaction.options.getRole('ping-role', false) ?? null;
         const hours = interaction.options.getInteger('hours');
         const minutes = interaction.options.getInteger('minutes');
-        const duration = interaction.options.getInteger('duration', false) ?? null;
+        const duration = interaction.options.getInteger('duration');
 
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
@@ -478,8 +478,8 @@ module.exports = {
           .setRequired(false))
         .addIntegerOption((opt) => opt
           .setName('duration')
-          .setDescription('Optional number of hours you intend this event to run')
-          .setRequired(false))
+          .setDescription('Number of hours you intend this event to run')
+          .setRequired(true))
         .setDMPermission(false),
       async execute(interaction) {
         await interaction.deferReply();
@@ -488,7 +488,7 @@ module.exports = {
         const days = interaction.options.getInteger('days', false) || 0;
         const hours = interaction.options.getInteger('hours', false) || 0;
         const minutes = interaction.options.getInteger('minutes', false) || 0;
-        const duration = interaction.options.getInteger('duration', false) ?? null;
+        const duration = interaction.options.getInteger('duration');
 
         let sql = `SELECT se.id, se.timestamp, se.schedulingUserId, se.channelId, se.messageId, se.title
                    FROM scheduled_events se
