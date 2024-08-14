@@ -225,12 +225,12 @@ module.exports = {
         .setDescription('List all users with pin permissions')
         .addChannelOption((opt) => opt
           .setName('channel')
-          .setDescription('Channel to filter pin list')
+          .setDescription('Channel for which pin grants will be displayed. Defaults to current channel.')
           .setRequired(false))
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
-        const channel = interaction.options.getChannel('channel') ?? null;
+        const channel = interaction.options.getChannel('channel') ?? interaction.channel;
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {
