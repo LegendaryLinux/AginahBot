@@ -1,4 +1,5 @@
-const { Client, Guild, PermissionFlagsBits, PermissionsBitField, EmbedBuilder } = require('discord.js');
+const { Client, Guild, PermissionFlagsBits, PermissionsBitField, EmbedBuilder, ActionRowBuilder,
+  ButtonBuilder, ButtonStyle} = require('discord.js');
 const mysql = require('mysql2');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
@@ -571,4 +572,24 @@ module.exports = {
       });
     }
   },
+
+  buildControlMessagePayload: (member) => ({
+    content: `This voice channel is currently owned by ${member}. The following actions are available:`,
+    components: [
+      new ActionRowBuilder().addComponents(...[
+        new ButtonBuilder()
+          .setCustomId(`eventRoom-rename-${member.id}`)
+          .setLabel('Rename Channel')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`eventRoom-sendPing-${member.id}`)
+          .setLabel('Send Event Ping')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`eventRoom-transfer-${member.id}`)
+          .setLabel('Transfer Ownership')
+          .setStyle(ButtonStyle.Danger),
+      ])
+    ]
+  }),
 };

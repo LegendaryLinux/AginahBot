@@ -24,10 +24,6 @@ client.channelDeletedListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
 client.voiceStateListeners = [];
-client.tempData = {
-  voiceRooms: new Map(),
-};
-
 
 // Load command category files
 fs.readdirSync('./slashCommandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {

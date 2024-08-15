@@ -266,7 +266,7 @@ module.exports = {
           ))
         .addStringOption((opt) => opt
           .setName('title')
-          .setDescription('Optional title for this event')
+          .setDescription('Title for this event')
           .setMaxLength(100)
           .setRequired(true))
         .addIntegerOption((opt) => opt
@@ -349,7 +349,7 @@ module.exports = {
           .setRequired(true))
         .addStringOption((opt) => opt
           .setName('title')
-          .setDescription('Optional title for this event')
+          .setDescription('Title for this event')
           .setMaxLength(100)
           .setRequired(true))
         .addIntegerOption((opt) => opt
@@ -409,7 +409,7 @@ module.exports = {
           .setRequired(true))
         .addStringOption((opt) => opt
           .setName('title')
-          .setDescription('Optional title for this event')
+          .setDescription('Title for this event')
           .setMaxLength(100)
           .setRequired(true))
         .addIntegerOption((opt) => opt
