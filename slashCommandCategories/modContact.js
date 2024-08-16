@@ -284,7 +284,7 @@ module.exports = {
    * @param guildMember {GuildMember}
    * @returns {Promise<TextChannel>}
    */
-  createModContact: async (interaction, guildMember) => {
+  createModContact: async (interaction, guildMember, initialMessage = null) => {
     // Fetch the moderator role
     let moderatorRole = await getModeratorRole(interaction.guild);
     if (!moderatorRole) { throw new Error(`Unable to find moderator role for guild: ${interaction.guild.id}`); }
@@ -331,6 +331,9 @@ module.exports = {
     await channel.send(`This channel was created automatically to facilitate communication between the ${modRole} ` +
       `team and ${guildMember}.\nWhen the issue has been resolved, a moderator may use \`/mod-contact-resolve\` to ` +
       'remove this channel.');
+    if (initialMessage) {
+      await channel.send(`The user provided the following reason for contact:\n\n${initialMessage}`);
+    }
 
     // Update the mod_contact_channels table with the new channel info
     sql = 'INSERT INTO mod_contact_channels (modContactId, userId, reportChannelId) VALUES (?, ?, ?)';

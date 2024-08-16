@@ -1,4 +1,5 @@
-const { modContactEnabled, modContactExists, createModContact } = require('../slashCommandCategories/modContact');
+const { modContactEnabled, modContactExists } = require('../slashCommandCategories/modContact');
+const {ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle} = require('discord.js');
 const { dbExecute } = require('../lib');
 
 module.exports = async (client, interaction) => {
@@ -37,9 +38,20 @@ module.exports = async (client, interaction) => {
     }
   }
 
-  // Create the mod-contact channel
-  await createModContact(interaction, interaction.member);
-
-  // Inform Discord the interaction was handled, but do not change the original message
-  return interaction.update({});
+  // Show the modal prompting for details about the reason for contact
+  return interaction.showModal(
+    new ModalBuilder()
+      .setCustomId('mod-contact-modal')
+      .setTitle('Mod Contact')
+      .addComponents(...[
+        new ActionRowBuilder().addComponents(...[
+          new TextInputBuilder()
+            .setCustomId('details')
+            .setLabel('Reason for Contact')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true)
+            .setMaxLength(1500)
+        ])
+      ])
+  );
 };
