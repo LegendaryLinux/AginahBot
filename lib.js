@@ -357,15 +357,10 @@ module.exports = {
         }
 
         // Determine RSVP count
-        const rsvps = new Map();
-        for (let reaction of eventMessage.reactions.cache) {
-          const reactors = await reaction[1].users.fetch();
-          reactors.each((reactor) => {
-            if (reactor.bot) { return; }
-            if (rsvps.has(reactor.id)) { return; }
-            rsvps.set(reactor.id, reactor);
-          });
-        }
+        const rsvpCount = await module.exports.dbQueryOne(
+          'SELECT COUNT(*) AS count FROM event_rsvp WHERE eventId=?',
+          [event.id]
+        );
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
@@ -387,7 +382,7 @@ module.exports = {
             },
             { name: 'Event Code', value: event.eventCode, inline: true },
             { name: ' ', value: ' ', inline: true },
-            { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
+            { name: 'Current RSVPs', value: rsvpCount.count.toString(), inline: true },
           );
         embeds.push(embed);
       }
@@ -530,15 +525,10 @@ module.exports = {
         }
 
         // Determine RSVP count
-        const rsvps = new Map();
-        for (let reaction of eventMessage.reactions.cache) {
-          const reactors = await reaction[1].users.fetch();
-          reactors.each((reactor) => {
-            if (reactor.bot) { return; }
-            if (rsvps.has(reactor.id)) { return; }
-            rsvps.set(reactor.id, reactor);
-          });
-        }
+        const rsvpCount = await module.exports.dbQueryOne(
+          'SELECT COUNT(*) AS count FROM event_rsvp WHERE eventId=?',
+          [event.id]
+        );
 
         const embed = new EmbedBuilder()
           .setTitle(`${event.title || 'Upcoming Event'}`)
@@ -560,7 +550,7 @@ module.exports = {
             },
             { name: 'Event Code', value: event.eventCode, inline: true },
             { name: ' ', value: ' ', inline: true },
-            { name: 'Current RSVPs', value: rsvps.size.toString(), inline: true },
+            { name: 'Current RSVPs', value: rsvpCount.count.toString(), inline: true },
           );
         embeds.push(embed);
       }
