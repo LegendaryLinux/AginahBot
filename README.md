@@ -73,6 +73,9 @@ vim config.json
 # Initialize the database
 node dbSetup.js
 
+# Register application (slash) commands
+node scripts/registerSlashCommands.js
+
 # Run the bot
 node bot.js
 ```
