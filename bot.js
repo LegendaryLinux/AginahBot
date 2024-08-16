@@ -1,8 +1,8 @@
 const { Client, Collection, Events, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
-const { handleGuildCreate, handleGuildDelete, verifyGuildSetups,
-  cachePartial, updateScheduleBoards } = require('./lib');
+const { handleGuildCreate, handleGuildDelete, verifyGuildSetups, cachePartial,
+  updateScheduleBoards } = require('./lib');
 const fs = require('fs');
 
 // Catch all unhandled errors
@@ -24,6 +24,12 @@ client.channelDeletedListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
 client.voiceStateListeners = [];
+
+// Load routines and run them once per hour
+fs.readdirSync('./routines').filter((file) => file.endsWith('.js')).forEach((routineFile) => {
+  const routine = require(`./routines/${routineFile}`);
+  setInterval(routine, 3600000);
+});
 
 // Load command category files
 fs.readdirSync('./slashCommandCategories').filter((file) => file.endsWith('.js')).forEach((categoryFile) => {

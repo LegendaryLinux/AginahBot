@@ -48,17 +48,7 @@ const roomSystems = `CREATE TABLE IF NOT EXISTS room_systems (
 const roomSystemGames = `CREATE TABLE IF NOT EXISTS room_system_games (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     roomSystemId BIGINT NOT NULL,
-    voiceChannelId VARCHAR(64) NOT NULL,
-    textChannelId VARCHAR(64) NOT NULL,
-    roleId VARCHAR(64) NOT NULL
-)`;
-
-const roomSystemReadyChecks = `CREATE TABLE IF NOT EXISTS room_system_ready_checks (
-    id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    gameId BIGINT NOT NULL,
-    playerId VARCHAR(64) NOT NULL,
-    playerName VARCHAR(256) NOT NULL,
-    readyState TINYINT NOT NULL DEFAULT 0
+    voiceChannelId VARCHAR(64) NOT NULL
 )`;
 
 const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
@@ -150,7 +140,6 @@ db.query(roles, handler);
 db.query(roleMessages, handler);
 db.query(roomSystems, handler);
 db.query(roomSystemGames, handler);
-db.query(roomSystemReadyChecks, handler);
 db.query(scheduledEvents, handler);
 db.query(modContact, handler);
 db.query(modContactChannels, handler);
