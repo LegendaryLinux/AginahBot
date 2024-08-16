@@ -29,7 +29,7 @@ module.exports = async (client, interaction) => {
       const eventCode = interaction.values[0];
 
       return interaction.update({
-        content: `Are you sure you want to ping all RSVPed members for \`[${eventCode}]\`?` +
+        content: `Are you sure you want to ping all RSVPed members for \`[${eventCode}]\`? ` +
           '_Remember, with great power comes great responsibility._',
         components: [
           new ActionRowBuilder()

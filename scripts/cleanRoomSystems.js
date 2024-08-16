@@ -1,6 +1,6 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('../config.json');
-const { dbQueryAll, dbQueryOne, dbExecute } = require('../lib');
+const { dbQueryAll, dbExecute } = require('../lib');
 
 console.debug('Logging into Discord...');
 const client = new Client({
@@ -10,9 +10,8 @@ const client = new Client({
     GatewayIntentBits.MessageContent],
 });
 client.login(config.token).then(async () => {
-  let sql = `SELECT gd.guildId, rs.id AS roomSystemId, rsg.id AS gameId, rsg.voiceChannelId,
-                rsg.textChannelId, rsg.roleId
-             FROM room_system_games rsg
+  let sql = `SELECT gd.guildId, rs.id AS roomSystemId, rsg.id AS gameId, rsg.voiceChannelId
+             FROM room_system_channels rsg
              JOIN room_systems rs ON rsg.roomSystemId = rs.id
              JOIN guild_data gd ON rs.guildDataId = gd.id`;
   const games = await dbQueryAll(sql, []);
@@ -24,7 +23,7 @@ client.login(config.token).then(async () => {
     } catch(e) {
       if (e.status && e.status === 404) {
         console.log(`Bot does not appear to be a member of guild with id ${game.guildId}. Removing DB entries.`);
-        await dbExecute('DELETE FROM room_system_games WHERE id=?', [game.gameId]);
+        await dbExecute('DELETE FROM room_system_channels WHERE id=?', [game.gameId]);
         await dbExecute('DELETE FROM room_systems WHERE id=?', [game.roomSystemId]);
         continue;
       }
@@ -36,12 +35,10 @@ client.login(config.token).then(async () => {
     try {
       const guild = await client.guilds.fetch(game.guildId);
       await guild.channels.fetch(game.voiceChannelId);
-      await guild.channels.fetch(game.textChannelId);
-      await guild.roles.fetch(game.roleId);
     } catch(e) {
       if (e.status && e.status === 404) {
         console.log(`Room system game with id ${game.gameId} appears invalid. Removing DB entries.`);
-        await dbExecute('DELETE FROM room_system_games WHERE id=?', [game.gameId]);
+        await dbExecute('DELETE FROM room_system_channels WHERE id=?', [game.gameId]);
         continue;
       }
       // Print the error to the console

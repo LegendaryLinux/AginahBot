@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder} = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
 const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole} = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
@@ -65,9 +65,7 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
     .setTitle(`${title || 'New Event'}`)
     .setDescription(
       `Starts <t:${embedTimestamp}:R> and should last ` +
-      `${duration ? `about ${duration} hours` : 'an undisclosed amount of time'}.` +
-      '\nReact with 👍 if you intend to join this event.' +
-      '\nReact with 🤔 if you don\'t know yet.'
+      `${duration ? `about ${duration} hours` : 'an undisclosed amount of time'}.`
     )
     .setColor('#6081cb')
     .setAuthor({ name: interaction.member.displayName })
@@ -79,13 +77,24 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
     );
 
   // Send schedule message
-  const messageObject = { embeds: [embed] };
+  const messageObject = {
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder()
+        .addComponents(...[
+          new ButtonBuilder()
+            .setCustomId(`schedule-rsvp-${eventCode}`)
+            .setLabel('Confirm RSVP')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId(`schedule-rsvpCancel-${eventCode}`)
+            .setLabel('Cancel RSVP')
+            .setStyle(ButtonStyle.Danger),
+        ]),
+    ]
+  };
   if (pingRole) { messageObject.content = `${pingRole}`; }
   const scheduleMessage = await interaction.channel.send(messageObject);
-
-  // Put appropriate reactions onto the message
-  await scheduleMessage.react('👍');
-  await scheduleMessage.react('🤔');
 
   // Start a thread on the schedule message if appropriate
   let threadChannel = null;
@@ -537,18 +546,37 @@ module.exports = {
 
         const embedTimestamp = Math.floor(newTimestamp/1000);
         const embed = new Discord.EmbedBuilder()
-          .setTitle(`${eventData.title || 'New Event'}\n<t:${embedTimestamp}:F>`)
+          .setTitle(`${eventData.title || 'New Event'}`)
+          .setDescription(
+            `Starts <t:${embedTimestamp}:R> and should last ` +
+            `${duration ? `about ${duration} hours` : 'an undisclosed amount of time'}.`
+          )
           .setColor('#6081cb')
-          .setDescription(`**${interaction.member.displayName}** has scheduled a new event!` +
-            '\nReact with 👍 if you intend to join this event.' +
-            '\nReact with 🤔 if you don\'t know yet.')
+          .setAuthor({ name: interaction.member.displayName })
+          .setThumbnail(interaction.user.displayAvatarURL())
           .addFields(
-            { name: 'Event Code', value: eventCode.toUpperCase() },
-            { name: 'Duration', value: duration ? `${duration} hours` : 'Undisclosed' },
+            { name: 'Event Code', value: eventCode.toUpperCase(), inline: true },
+            { name: ' ', value: ' ', inline: true },
+            { name: 'Date/Time', value: `<t:${embedTimestamp}:F>`, inline: true },
           );
 
         // Update schedule message
-        const payload = { embeds: [embed] };
+        const payload = {
+          embeds: [embed],
+          components: [
+            new ActionRowBuilder()
+              .addComponents(...[
+                new ButtonBuilder()
+                  .setCustomId(`schedule-rsvp-${eventCode}`)
+                  .setLabel('Confirm RSVP')
+                  .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                  .setCustomId(`schedule-rsvpCancel-${eventCode}`)
+                  .setLabel('Cancel RSVP')
+                  .setStyle(ButtonStyle.Danger),
+              ]),
+          ]
+        };
         if (message.content) { payload.content = message.content; }
         await message.edit(payload);
 
@@ -611,6 +639,7 @@ module.exports = {
             await scheduleMsg.edit({
               content: `This event has been cancelled by ${interaction.user}.`,
               embeds: [],
+              components: [],
             });
 
             // Remove all reactions from the message

@@ -45,7 +45,7 @@ const roomSystems = `CREATE TABLE IF NOT EXISTS room_systems (
     newGameChannelId VARCHAR(64) NOT NULL
 )`;
 
-const roomSystemGames = `CREATE TABLE IF NOT EXISTS room_system_games (
+const roomSystemGames = `CREATE TABLE IF NOT EXISTS room_system_channels (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     roomSystemId BIGINT NOT NULL,
     voiceChannelId VARCHAR(64) NOT NULL

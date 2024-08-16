@@ -1,5 +1,5 @@
-const { Client, Guild, PermissionFlagsBits, PermissionsBitField, EmbedBuilder, ActionRowBuilder,
-  ButtonBuilder, ButtonStyle} = require('discord.js');
+const { Client, Guild, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder,
+  ButtonStyle} = require('discord.js');
 const mysql = require('mysql2');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
@@ -96,7 +96,7 @@ module.exports = {
     const roomSystems = await module.exports.dbQueryAll('SELECT id FROM room_systems WHERE guildDataId=?',
       [guildData.id]);
     roomSystems.forEach((roomSystem) => {
-      module.exports.dbExecute('DELETE FROM room_system_games WHERE roomSystemId=?', [roomSystem.id]);
+      module.exports.dbExecute('DELETE FROM room_system_channels WHERE roomSystemId=?', [roomSystem.id]);
       module.exports.dbExecute('DELETE FROM room_systems WHERE id=?', [roomSystem.id]);
     });
 
@@ -574,7 +574,8 @@ module.exports = {
   },
 
   buildControlMessagePayload: (member) => ({
-    content: `This voice channel is currently owned by ${member}. The following actions are available:`,
+    content: `This voice channel is currently owned by ${member}.\nThe following actions are available:` +
+      '\n-# Discord prohibits changing voice channel names more than twice per ten minutes.',
     components: [
       new ActionRowBuilder().addComponents(...[
         new ButtonBuilder()

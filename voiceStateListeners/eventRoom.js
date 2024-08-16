@@ -1,6 +1,6 @@
 const { generalErrorHandler } = require('../errorHandlers');
 const { getModeratorRole, dbQueryOne, dbExecute, buildControlMessagePayload } = require('../lib');
-const { ChannelType, PermissionsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle} = require('discord.js');
+const { ChannelType } = require('discord.js');
 
 const channelNames = [
   // Fruits and Vegetables
@@ -45,9 +45,7 @@ module.exports = async (client, oldState, newState) => {
       // Send control message
       await voiceChannel.send(buildControlMessagePayload(newState.member));
 
-      // TODO: Write a slash command handler for ready checks
-
-      let sql = 'INSERT INTO room_system_games (roomSystemId, voiceChannelId) VALUES (?, ?)';
+      let sql = 'INSERT INTO room_system_channels (roomSystemId, voiceChannelId) VALUES (?, ?)';
       await dbExecute(sql, [roomSystemStartGame.id, voiceChannel.id]);
 
       try {
@@ -63,7 +61,7 @@ module.exports = async (client, oldState, newState) => {
   if (oldState.channel && oldState.channel.id) {
     // User leaves a game channel
     let sql = `SELECT rs.id, rs.channelCategoryId
-               FROM room_system_games rsg
+               FROM room_system_channels rsg
                JOIN room_systems rs ON rsg.roomSystemId = rs.id
                JOIN guild_data gd ON rs.guildDataId = gd.id
                WHERE rsg.voiceChannelId=?
@@ -71,7 +69,7 @@ module.exports = async (client, oldState, newState) => {
     const roomSystemLeaveGame = await dbQueryOne(sql, [oldState.channel.id, oldState.guild.id]);
     if (roomSystemLeaveGame) {
       sql = `SELECT id
-             FROM room_system_games
+             FROM room_system_channels
              WHERE roomSystemId=?
                AND voiceChannelId=?`;
       const channelData = await dbQueryOne(sql, [roomSystemLeaveGame.id, oldState.channel.id]);
@@ -92,7 +90,7 @@ module.exports = async (client, oldState, newState) => {
         }
 
         // Delete the database entry for this channel
-        await dbExecute('DELETE FROM room_system_games WHERE id=?', [channelData.id]);
+        await dbExecute('DELETE FROM room_system_channels WHERE id=?', [channelData.id]);
       }
     }
   }

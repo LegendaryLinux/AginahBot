@@ -105,7 +105,7 @@ module.exports = {
 
           await category.children.cache.each(async (channel) => await channel.delete());
           await category.delete();
-          await dbExecute('DELETE FROM room_system_games WHERE roomSystemId=?', [row.id]);
+          await dbExecute('DELETE FROM room_system_channels WHERE roomSystemId=?', [row.id]);
           await dbExecute('DELETE FROM room_systems WHERE id=?', [row.id]);
           return interaction.followUp(`Destroyed dynamic room system ${categoryName}.`);
         } catch (e) {

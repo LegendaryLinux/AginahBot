@@ -80,7 +80,7 @@ module.exports = async (client, interaction) => {
 
     case 'sendPingConfirm':
       const eventCode = commandParts[3];
-      sql = `SELECT se.channelId, se.messageId, se.title
+      sql = `SELECT se.id, se.channelId, se.messageId, se.title
                  FROM scheduled_events se
                  JOIN guild_data gd ON se.guildDataId = gd.id
                  WHERE gd.guildId=? 
@@ -93,20 +93,10 @@ module.exports = async (client, interaction) => {
         });
       }
 
-      const channel = await interaction.guild.channels.fetch(event.channelId);
-      const message = await channel.messages.fetch(event.messageId);
-      const userIds = [];
-      message.reactions.cache.each((reaction) => {
-        reaction.users.cache.each((user) => {
-          if (user.id !== client.user.id && !userIds.includes(user.id)) {
-            userIds.push(user.id);
-          }
-        });
-      });
-
+      const users = await dbQueryAll('SELECT userId FROM event_rsvp WHERE eventId=?', [event.id]);
       let reminderMessage = `# ${event.title || 'An event you RSVPed to'} \nAn event you RSVPed to is about to ` +
         'start in this channel!\n';
-      userIds.forEach((userId) => reminderMessage += `<@${userId}> `);
+      users.forEach((user) => reminderMessage += `<@${user.userId}> `);
       await interaction.channel.send(reminderMessage);
 
       return interaction.update({
