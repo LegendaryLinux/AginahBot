@@ -14,15 +14,31 @@ module.exports = async (client, interaction) => {
   const commandParts = interaction.customId.split('-');
   const command = commandParts[1];
 
+  let sql;
+
+  // Identify room owner id
+  sql = `SELECT rs.id, rsc.ownerUserId, rsc.controlMessageId
+         FROM room_system_channels rsc
+         JOIN room_systems rs ON rsc.roomSystemId = rs.id
+         JOIN guild_data gd ON rs.guildDataId = gd.id
+         WHERE gd.guildId=?
+            AND rsc.voiceChannelId=?`;
+  const channelData = await dbQueryOne(sql, [interaction.guild.id, interaction.channel.id]);
+
+  if (!channelData) {
+    return interaction.reply({
+      content: 'Unable to complete interaction.',
+      ephemeral: true,
+    });
+  }
+
   // Only the user who created the room or a moderator user may interact with the room commands
-  if (interaction.member.id !== commandParts[2] && !await verifyModeratorRole(interaction.member)) {
+  if (interaction.member.id !== channelData.ownerUserId && !await verifyModeratorRole(interaction.member)) {
     return interaction.reply({
       content: 'Only the event room owner or a moderator can perform actions.',
       ephemeral: true,
     });
   }
-
-  let sql;
 
   switch (command) {
     case 'rename':
@@ -79,7 +95,7 @@ module.exports = async (client, interaction) => {
       });
 
     case 'sendPingConfirm':
-      const eventCode = commandParts[3];
+      const eventCode = commandParts[2];
       sql = `SELECT se.id, se.channelId, se.messageId, se.title
                  FROM scheduled_events se
                  JOIN guild_data gd ON se.guildDataId = gd.id
@@ -118,8 +134,8 @@ module.exports = async (client, interaction) => {
       });
 
     case 'transferConfirm':
-      const newOwner = await interaction.guild.members.fetch(commandParts[3]);
-      const controlMessage = await interaction.channel.messages.fetch(commandParts[4]);
+      const newOwner = await interaction.guild.members.fetch(commandParts[2]);
+      const controlMessage = await interaction.channel.messages.fetch(channelData.controlMessageId);
       await controlMessage.edit(buildControlMessagePayload(newOwner));
 
       await interaction.channel.send(`${newOwner} is now the channel owner.`);

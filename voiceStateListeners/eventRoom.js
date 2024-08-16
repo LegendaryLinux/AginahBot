@@ -43,10 +43,11 @@ module.exports = async (client, oldState, newState) => {
       });
 
       // Send control message
-      await voiceChannel.send(buildControlMessagePayload(newState.member));
+      const controlMessage = await voiceChannel.send(buildControlMessagePayload(newState.member));
 
-      let sql = 'INSERT INTO room_system_channels (roomSystemId, voiceChannelId) VALUES (?, ?)';
-      await dbExecute(sql, [roomSystemStartGame.id, voiceChannel.id]);
+      let sql = `INSERT INTO room_system_channels (roomSystemId, voiceChannelId, ownerUserId, controlMessageId)
+                 VALUES (?, ?, ?, ?)`;
+      await dbExecute(sql, [roomSystemStartGame.id, voiceChannel.id, newState.member.id, controlMessage.id]);
 
       try {
         await newState.member.voice.setChannel(voiceChannel);

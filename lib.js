@@ -569,15 +569,15 @@ module.exports = {
     components: [
       new ActionRowBuilder().addComponents(...[
         new ButtonBuilder()
-          .setCustomId(`eventRoom-rename-${member.id}`)
+          .setCustomId('eventRoom-rename')
           .setLabel('Rename Channel')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
-          .setCustomId(`eventRoom-sendPing-${member.id}`)
+          .setCustomId('eventRoom-sendPing')
           .setLabel('Send Event Ping')
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
-          .setCustomId(`eventRoom-transfer-${member.id}`)
+          .setCustomId('eventRoom-transfer')
           .setLabel('Transfer Ownership')
           .setStyle(ButtonStyle.Danger),
       ])

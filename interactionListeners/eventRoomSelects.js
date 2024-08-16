@@ -14,7 +14,6 @@ module.exports = async (client, interaction) => {
   // Identify command
   const commandParts = interaction.customId.split('-');
   const command = commandParts[1];
-  const controlMessageId = commandParts[3];
 
   // Only the user who created the room or a moderator user may interact with the room commands
   if (interaction.member.id !== commandParts[2] && !await verifyModeratorRole(interaction.member)) {
@@ -35,7 +34,7 @@ module.exports = async (client, interaction) => {
           new ActionRowBuilder()
             .addComponents(...[
               new ButtonBuilder()
-                .setCustomId(`eventRoom-sendPingConfirm-${interaction.member.id}-${eventCode}`)
+                .setCustomId(`eventRoom-sendPingConfirm-${eventCode}`)
                 .setLabel('Confirm Ping')
                 .setStyle(ButtonStyle.Danger)
             ])
@@ -50,7 +49,7 @@ module.exports = async (client, interaction) => {
           new ActionRowBuilder()
             .addComponents(...[
               new ButtonBuilder()
-                .setCustomId(`eventRoom-transferConfirm-${interaction.member.id}-${newOwner.id}-${controlMessageId}`)
+                .setCustomId(`eventRoom-transferConfirm-${newOwner.id}`)
                 .setLabel('Confirm Transfer')
                 .setStyle(ButtonStyle.Danger)
             ]),

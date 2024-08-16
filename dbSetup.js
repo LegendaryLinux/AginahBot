@@ -64,6 +64,13 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     duration BIGINT UNSIGNED
 )`;
 
+const eventRspv = `CREATE TABLE IF NOT EXISTS aginah_test.event_rsvp (
+    id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    eventId BIGINT UNSIGNED NOT NULL,
+    userId VARCHAR(128) NOT NULL,
+    UNIQUE eventUser(eventId, userId)
+)`;
+
 const modContact = `CREATE TABLE IF NOT EXISTS mod_contact (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     guildDataId BIGINT NOT NULL,
@@ -141,6 +148,7 @@ db.query(roleMessages, handler);
 db.query(roomSystems, handler);
 db.query(roomSystemGames, handler);
 db.query(scheduledEvents, handler);
+db.query(eventRspv, handler);
 db.query(modContact, handler);
 db.query(modContactChannels, handler);
 db.query(messageTags, handler);
