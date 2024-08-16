@@ -45,10 +45,12 @@ const roomSystems = `CREATE TABLE IF NOT EXISTS room_systems (
     newGameChannelId VARCHAR(64) NOT NULL
 )`;
 
-const roomSystemGames = `CREATE TABLE IF NOT EXISTS room_system_channels (
+const roomSystemChannels = `CREATE TABLE IF NOT EXISTS room_system_channels (
     id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     roomSystemId BIGINT NOT NULL,
-    voiceChannelId VARCHAR(64) NOT NULL
+    voiceChannelId VARCHAR(64) NOT NULL,
+    ownerUserId VARCHAR(64) NOT NULL,
+    controlMessageId VARCHAR(64) NOT NULL
 )`;
 
 const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
@@ -67,7 +69,7 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
 const eventRspv = `CREATE TABLE IF NOT EXISTS aginah_test.event_rsvp (
     id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
     eventId BIGINT UNSIGNED NOT NULL,
-    userId VARCHAR(128) NOT NULL,
+    userId VARCHAR(64) NOT NULL,
     UNIQUE eventUser(eventId, userId)
 )`;
 
@@ -146,7 +148,7 @@ db.query(roleCategories, handler);
 db.query(roles, handler);
 db.query(roleMessages, handler);
 db.query(roomSystems, handler);
-db.query(roomSystemGames, handler);
+db.query(roomSystemChannels, handler);
 db.query(scheduledEvents, handler);
 db.query(eventRspv, handler);
 db.query(modContact, handler);
