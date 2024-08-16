@@ -1,4 +1,5 @@
 const { dbQueryOne, dbExecute} = require('../lib');
+const {generalErrorHandler} = require('../errorHandlers');
 
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
@@ -17,7 +18,7 @@ module.exports = async (client, interaction) => {
   switch (command) {
     case 'rsvp':
       // Ensure event exists
-      sql = `SELECT se.id
+      sql = `SELECT se.id, se.threadId
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -30,10 +31,22 @@ module.exports = async (client, interaction) => {
         });
       }
 
+      // Add user to RSVP list
       await dbExecute(
         'REPLACE INTO event_rsvp (eventId, userId) VALUES (?, ?)',
         [existingEvent.id, interaction.user.id]
       );
+
+      // If there is a thread, add the user to it
+      if (existingEvent.threadId) {
+        try{
+          const eventThread = await interaction.guild.channels.fetch(existingEvent.threadId);
+          await eventThread.members.add(interaction.user);
+        } catch (err) {
+          // Ignore failures caused by missing threads (deleted) and users already existing in a thread
+          generalErrorHandler(err);
+        }
+      }
 
       return interaction.reply({
         content: 'RSVP Successful.',
@@ -42,7 +55,7 @@ module.exports = async (client, interaction) => {
 
     case 'rsvpCancel':
       // Ensure event exists
-      sql = `SELECT se.id
+      sql = `SELECT se.id, se.threadId
              FROM scheduled_events se
              JOIN guild_data gd ON se.guildDataId = gd.id
              WHERE gd.guildId=?
@@ -55,10 +68,22 @@ module.exports = async (client, interaction) => {
         });
       }
 
+      // Remove user from RSVP list
       await dbExecute(
         'DELETE FROM event_rsvp WHERE eventId=? AND userId=?',
         [existingEvent.id, interaction.user.id]
       );
+
+      // If there is a thread, remove the user from it
+      if (existingEvent.threadId) {
+        try{
+          const eventThread = await interaction.guild.channels.fetch(existingEvent.threadId);
+          await eventThread.members.remove(interaction.user);
+        } catch (err) {
+          // Ignore failures caused by missing threads (deleted) and by users already having left the thread
+          generalErrorHandler(err);
+        }
+      }
 
       return interaction.reply({
         content: 'RSVP Removed.',
