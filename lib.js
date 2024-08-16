@@ -573,6 +573,10 @@ module.exports = {
           .setLabel('Rename Channel')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
+          .setCustomId('eventRoom-close')
+          .setLabel('Close Room')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
           .setCustomId('eventRoom-sendPing')
           .setLabel('Send Event Ping')
           .setStyle(ButtonStyle.Secondary),

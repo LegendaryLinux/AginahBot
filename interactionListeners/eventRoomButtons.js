@@ -144,5 +144,13 @@ module.exports = async (client, interaction) => {
         components: [],
         ephemeral: true,
       });
+
+    case 'close':
+      await interaction.channel.setName(`${interaction.channel.name} (Closed)`);
+      return interaction.reply({
+        content: `${interaction.user} has closed the room.`,
+        ephemeral: false,
+        allowedMentions: {}
+      });
   }
 };
