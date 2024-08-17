@@ -1,4 +1,4 @@
-const { verifyModeratorRole, buildControlMessagePayload, dbQueryAll, dbQueryOne } = require('../lib');
+const { verifyModeratorRole, buildControlMessagePayload, dbQueryAll, dbQueryOne, dbExecute} = require('../lib');
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder,
   UserSelectMenuBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder
 } = require('discord.js');
@@ -17,7 +17,7 @@ module.exports = async (client, interaction) => {
   let sql;
 
   // Identify room owner id
-  sql = `SELECT rs.id, rsc.ownerUserId, rsc.controlMessageId
+  sql = `SELECT rs.id, rsc.id AS systemChannelId, rsc.ownerUserId, rsc.controlMessageId
          FROM room_system_channels rsc
          JOIN room_systems rs ON rsc.roomSystemId = rs.id
          JOIN guild_data gd ON rs.guildDataId = gd.id
@@ -61,15 +61,27 @@ module.exports = async (client, interaction) => {
       );
 
     case 'sendPing':
+      let onlySelfSql = '';
+      const params = [interaction.guild.id];
+
+      if (!await verifyModeratorRole(interaction.member)) {
+        onlySelfSql = 'AND se.schedulingUserId = ?';
+        params.push(interaction.user.id);
+      }
+
       sql = `SELECT se.eventCode, se.title
                  FROM scheduled_events se
                  JOIN guild_data gd ON se.guildDataId = gd.id
-                 WHERE gd.guildId=? 
+                 WHERE gd.guildId=?
                     AND se.timestamp >= (UNIX_TIMESTAMP() * 1000 - 7200000)
                     AND se.timestamp < (UNIX_TIMESTAMP() * 1000 + 7200000)
+                    ${onlySelfSql}
                  ORDER BY se.timestamp
                  LIMIT 25`;
-      const events = await dbQueryAll(sql, [interaction.guild.id]);
+
+      console.log(sql);
+
+      const events = await dbQueryAll(sql, params);
       if (!events?.length) {
         return interaction.reply({
           content: 'No recently passed or soon upcoming events were found.',
@@ -135,6 +147,14 @@ module.exports = async (client, interaction) => {
 
     case 'transferConfirm':
       const newOwner = await interaction.guild.members.fetch(commandParts[2]);
+      console.log(newOwner.id);
+
+      // Set new room owner in DB
+      await dbExecute(
+        'UPDATE room_system_channels SET ownerUserId=? WHERE id=?',
+        [newOwner.id, channelData.systemChannelId],
+      );
+
       const controlMessage = await interaction.channel.messages.fetch(channelData.controlMessageId);
       await controlMessage.edit(buildControlMessagePayload(newOwner));
 
