@@ -79,8 +79,6 @@ module.exports = async (client, interaction) => {
                  ORDER BY se.timestamp
                  LIMIT 25`;
 
-      console.log(sql);
-
       const events = await dbQueryAll(sql, params);
       if (!events?.length) {
         return interaction.reply({
