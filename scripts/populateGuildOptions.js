@@ -9,6 +9,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent],
 });
+
 client.login(config.token).then(async () => {
   console.debug('Connected.');
   console.debug(`This bot has been installed in ${client.guilds.cache.size} guilds.\n`);

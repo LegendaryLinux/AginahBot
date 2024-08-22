@@ -120,8 +120,18 @@ module.exports = {
 
   verifyGuildSetups: async (client) => {
     client.guilds.cache.each(async (guild) => {
-      const row = await module.exports.dbQueryOne('SELECT 1 FROM guild_data WHERE guildId=?', [guild.id]);
-      if (!row) { await module.exports.handleGuildCreate(client, guild); }
+      // Ensure guild_data exists
+      const guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
+      if (!guildData) { await module.exports.handleGuildCreate(client, guild); }
+
+      // Ensure guild_options exists
+      const guildOptions = await module.exports.dbQueryOne(
+        'SELECT 1 FROM guild_options WHERE guildDataId=?',
+        [guildData.id]
+      );
+      if (!guildOptions) {
+        await module.exports.dbExecute('INSERT INTO guild_options (guildDataId) VALUES (?)', [guildData.id]);
+      }
     });
   },
 
