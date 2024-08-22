@@ -190,7 +190,7 @@ module.exports = {
 
         try{
           // Looping over an unknown number of entries, so this might take a few seconds.
-          interaction.deferReply();
+          await interaction.deferReply();
 
           for (let event of events) {
             const channel = interaction.guild.channels.resolve(event.channelId);
