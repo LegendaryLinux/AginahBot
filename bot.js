@@ -19,6 +19,7 @@ client.devMode = process.argv[2] && process.argv[2] === 'dev';
 client.commands = new Collection();
 client.slashCommandCategories = [];
 client.messageListeners = [];
+client.messageUpdatedListeners = [];
 client.messageDeletedListeners = [];
 client.channelDeletedListeners = [];
 client.reactionListeners = [];
@@ -41,6 +42,12 @@ fs.readdirSync('./slashCommandCategories').filter((file) => file.endsWith('.js')
 fs.readdirSync('./messageListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
   const listener = require(`./messageListeners/${listenerFile}`);
   client.messageListeners.push(listener);
+});
+
+// Load message update listener files
+fs.readdirSync('./messageUpdatedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
+  const listener = require(`./messageUpdatedListeners/${listenerFile}`);
+  client.messageUpdatedListeners.push(listener);
 });
 
 // Load message delete listener files

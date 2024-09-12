@@ -106,6 +106,7 @@ const guildOptions = `CREATE TABLE IF NOT EXISTS guild_options (
   guildDataId BIGINT UNSIGNED NOT NULL,
   eventThreads TINYINT(1) NOT NULL DEFAULT 0,
   roleWhitelist TINYINT(1) NOT NULL DEFAULT 0,
+  messageHistoryChannelId VARCHAR(128),
   UNIQUE KEY guildDataId (guildDataId)
 )`;
 
