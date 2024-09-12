@@ -24,7 +24,7 @@ module.exports = async (client, message) => {
     .setColor('#e60000')
     .setTimestamp(new Date())
     .addFields(
-      { name: 'Channel Name', value: message.channel.name, inline: true },
+      { name: 'Channel Name', value: `${message.channel} (${message.channel.name})`, inline: true },
       { name: ' ', value: ' ', inline: true },
       { name: 'Message ID', value: message.id, inline: true },
 
