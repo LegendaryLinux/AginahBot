@@ -7,7 +7,7 @@ module.exports = {
     {
       commandBuilder: new SlashCommandBuilder()
         .setName('message-history-enable')
-        .setDescription('Create a channel to log deleted messages.')
+        .setDescription('Create a channel to log edited and deleted messages.')
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {

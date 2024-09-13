@@ -84,8 +84,6 @@ fs.readdirSync('./interactionListeners').filter((file) => file.endsWith('.js')).
 client.on(Events.MessageCreate, async (msg) => {
   // Fetch message if partial
   const message = await cachePartial(msg);
-  if (message.member) { message.member = await cachePartial(message.member); }
-  if (message.author) { message.author = await cachePartial(message.author); }
 
   // Ignore all bot messages
   if (message.author.bot) { return; }
@@ -94,12 +92,21 @@ client.on(Events.MessageCreate, async (msg) => {
   return client.messageListeners.forEach((listener) => listener(client, message));
 });
 
+client.on(Events.MessageUpdate, async (oldMsg, newMsg) => {
+  // Fetch messages if partials
+  const oldMessage = await cachePartial(oldMsg);
+  const newMessage = await cachePartial(newMsg);
+
+  // Ignore bot messages
+  if (newMessage.author.bot) { return; }
+
+  // Run the message through the messageUpdated listeners
+  return client.messageUpdatedListeners.forEach((listener) => listener(client, oldMessage, newMessage));
+});
+
 client.on(Events.MessageDelete, async (msg) => {
   // Fetch message if partial
   const message = await cachePartial(msg);
-  if (message.member) { message.member = await cachePartial(message.member); }
-  if (message.author) { message.author = await cachePartial(message.author); }
-  if (message.channel) { message.channel = await cachePartial(message.channel); }
 
   // Run the message through the message delete listeners
   return client.messageDeletedListeners.forEach((listener) => listener(client, message));

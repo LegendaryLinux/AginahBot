@@ -2,7 +2,6 @@ const { dbQueryOne} = require('../lib');
 const tmp = require('tmp');
 const fs = require('fs');
 const Discord = require('discord.js');
-const {AuditLogEvent, PermissionsBitField} = require('discord.js');
 
 // Delete DB entries if role messages are deleted
 module.exports = async (client, message) => {
@@ -68,9 +67,6 @@ module.exports = async (client, message) => {
 
   if (files.length > 0) {
     messagePayload.files = files;
-    embed.addFields([
-      { name: 'Attachments', value: files.length.toString() }
-    ]);
   }
 
   await messageHistoryChannel.send(messagePayload);
