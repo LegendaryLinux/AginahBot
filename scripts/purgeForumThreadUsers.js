@@ -1,15 +1,27 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { createInterface } = require('node:readline/promises');
 const config = require('../config.json');
+const yargs = require('yargs/yargs');
+const {hideBin} = require('yargs/helpers');
 
-const guildId = process.argv[2] || null;
-const threadId = process.argv[3] || null;
+const argv = yargs(hideBin(process.argv)).argv;
+const guildId = argv.g || argv.guildId || null;
+const threadId = argv.t || argv.threadId || null;
+const days = argv.d || argv.days || 30;
+const noPurge = argv.noPurge;
 
 if (!guildId || !threadId) {
-  console.info('Usage: node purgeForumThreadUsers.js guildId threadId\n');
+  console.info('Usage: node purgeForumThreadUsers.js -g guildId -t threadId [-d days=30] [--noPurge]');
   return;
 }
 
-console.info('Logging into Discord...');
+console.info('The script will run with the following parameters:');
+console.info(`Guild ID:  ${guildId}`);
+console.info(`Thread ID: ${threadId}`);
+console.info(`Days of message history: ${days}`);
+console.info(noPurge ? 'Users will NOT be purged.' : 'Users will be purged.');
+
+console.info('\nLogging into Discord...');
 const client = new Client({
   partials: [ Partials.GuildMember, Partials.Message, Partials.Reaction ],
   intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages,
@@ -35,8 +47,14 @@ client.login(config.token).then(async () => {
     });
     console.info(thread.name);
 
-    // Fetch message history up to thirty days
-    const targetDate = Math.floor(new Date().getTime() - (30 * 24 * 60 * 60 * 1000));
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    await rl.question('\nIf all that looks good, press Enter to continue. Ctrl + C to exit.');
+
+    // Fetch message history
+    const targetDate = Math.floor(new Date().getTime() - (parseInt(days, 10) * 24 * 60 * 60 * 1000));
     console.info(`\nFetching messages since ${new Date(targetDate).toISOString()}`);
     const messages = await fetchMessagesSince(thread, targetDate);
     console.info(`Found ${messages.length} messages total`);
@@ -55,21 +73,29 @@ client.login(config.token).then(async () => {
 
     // Remove thread members who have not sent a message in thirty days
     console.info('Purging inactive members...');
+    let totalPurgedMembers = 0;
     for (let member of threadMembers) {
       if (!activeUsers.has(member.id)) {
         console.info(`Removing ${member.user.username}`);
-        await thread.members.remove(member.id);
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        if (!noPurge) {
+          console.debug('PURGE');
+          await thread.members.remove(member.id);
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          ++totalPurgedMembers;
+        }
       }
     }
+    console.info(`Purged ${totalPurgedMembers} users`);
     console.info('Done.');
 
   } catch (e) {
     console.error(e);
-    return client.destroy();
+    await client.destroy();
+    process.exit(1);
   }
 
-  return client.destroy();
+  await client.destroy();
+  process.exit(0);
 });
 
 const fetchMessagesSince = async (threadChannel, afterTimestamp, limit=100, messageCache=[]) => {
