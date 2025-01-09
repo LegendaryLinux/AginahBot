@@ -116,7 +116,7 @@ const fetchMessagesSince = async (threadChannel, oldestTimestamp, limit=100, mes
   msgArray.push(...messageCache);
 
   // If no more messages are available, return what was found
-  if (messages.size < limit) {
+  if (foundMessages.size < limit) {
     // Return messages
     return msgArray;
   }
