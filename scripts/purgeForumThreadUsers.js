@@ -138,7 +138,7 @@ const fetchMessagesSince = async (threadChannel, oldestTimestamp, limit=100, mes
 const fetchThreadMembers = async (threadChannel, limit=100, userCache=[]) => {
   const members = await threadChannel.members.fetch({
     limit,
-    after: userCache[0]?.id || null,
+    after: userCache[userCache.length-1]?.id || null,
     withMember: true,
   });
 
