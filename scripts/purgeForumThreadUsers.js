@@ -98,7 +98,7 @@ client.login(config.token).then(async () => {
   process.exit(0);
 });
 
-const fetchMessagesSince = async (threadChannel, afterTimestamp, limit=2, messageCache=[]) => {
+const fetchMessagesSince = async (threadChannel, afterTimestamp, limit=100, messageCache=[]) => {
   // Fetch messages prior to the oldest (first) message in the cache
   const messages = await threadChannel.messages.fetch({
     limit: limit,
