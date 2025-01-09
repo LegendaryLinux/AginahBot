@@ -79,9 +79,8 @@ client.login(config.token).then(async () => {
         console.info(`Removing ${member.user.username}`);
         ++totalPurgedMembers;
         if (!noPurge) {
-          console.debug('PURGE');
           await thread.members.remove(member.id);
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 600));
         }
       }
     }
