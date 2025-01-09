@@ -98,19 +98,18 @@ client.login(config.token).then(async () => {
   process.exit(0);
 });
 
-const fetchMessagesSince = async (threadChannel, afterTimestamp, limit=100, messageCache=[]) => {
+const fetchMessagesSince = async (threadChannel, oldestTimestamp, limit=100, messageCache=[]) => {
   // Fetch messages prior to the oldest (first) message in the cache
   const messages = await threadChannel.messages.fetch({
     limit: limit,
     before: messageCache[0]?.id || null,
   });
 
-  // Prepend newly fetched messages to the front of a working array. Ignore messages whose users are
-  // not members of the thread
+  // Prepend newly fetched messages to the front of a working array
   const msgArray = [];
   const foundMessages = messages.map((m) => m).reverse();
   for (let msg of foundMessages) {
-    if (msg.createdTimestamp > afterTimestamp) {
+    if (msg.createdTimestamp >= oldestTimestamp) {
       msgArray.push(msg);
     }
   }
@@ -123,13 +122,13 @@ const fetchMessagesSince = async (threadChannel, afterTimestamp, limit=100, mess
   }
 
   // Wait half a second to prevent rate-limiting
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 600));
 
   // Fetch more messages if the desired timestamp has not been reached
-  if (msgArray[0].createdTimestamp > afterTimestamp) {
+  if (parseInt(msgArray[0].createdTimestamp, 10) >= parseInt(oldestTimestamp, 10)) {
     console.info(`\n${new Date(msgArray[0].createdTimestamp).toISOString()}`);
     console.info(`Message count: ${msgArray.length}`);
-    return await fetchMessagesSince(threadChannel, afterTimestamp, limit, msgArray);
+    return await fetchMessagesSince(threadChannel, oldestTimestamp, limit, msgArray);
   }
 
   // Return messages
