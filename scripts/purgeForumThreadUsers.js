@@ -77,11 +77,11 @@ client.login(config.token).then(async () => {
     for (let member of threadMembers) {
       if (!activeUsers.has(member.id)) {
         console.info(`Removing ${member.user.username}`);
+        ++totalPurgedMembers;
         if (!noPurge) {
           console.debug('PURGE');
           await thread.members.remove(member.id);
           await new Promise((resolve) => setTimeout(resolve, 500));
-          ++totalPurgedMembers;
         }
       }
     }
