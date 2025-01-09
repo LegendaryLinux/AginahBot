@@ -125,7 +125,7 @@ const fetchMessagesSince = async (threadChannel, oldestTimestamp, limit=100, mes
   await new Promise((resolve) => setTimeout(resolve, 600));
 
   // Fetch more messages if the desired timestamp has not been reached
-  if (parseInt(msgArray[0].createdTimestamp, 10) >= parseInt(oldestTimestamp, 10)) {
+  if (foundMessages[0].createdTimestamp >= oldestTimestamp) {
     console.info(`\n${new Date(msgArray[0].createdTimestamp).toISOString()}`);
     console.info(`Message count: ${msgArray.length}`);
     return await fetchMessagesSince(threadChannel, oldestTimestamp, limit, msgArray);
