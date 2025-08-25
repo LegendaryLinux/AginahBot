@@ -25,6 +25,7 @@ client.channelDeletedListeners = [];
 client.reactionListeners = [];
 client.interactionListeners = [];
 client.voiceStateListeners = [];
+client.roleDeletedListeners = [];
 
 // Load routines and run them once per hour
 fs.readdirSync('./routines').filter((file) => file.endsWith('.js')).forEach((routineFile) => {
@@ -80,6 +81,12 @@ fs.readdirSync('./interactionListeners').filter((file) => file.endsWith('.js')).
   client.interactionListeners.push(listener);
 });
 
+// Load Role Deleted Listeners
+fs.readdirSync('./roleDeletedListeners').filter((file) => file.endsWith('.js')).forEach((listenerFile) => {
+  const listener = require(`./roleDeletedListeners/${listenerFile}`);
+  client.roleDeletedListeners.push(listener);
+});
+
 // Run messages through the listeners
 client.on(Events.MessageCreate, async (msg) => {
   // Fetch message if partial
@@ -121,19 +128,19 @@ client.on(Events.ChannelDelete, async (channel) => {
 client.on(Events.VoiceStateUpdate, async(oldState, newState) => {
   oldState.member = await cachePartial(oldState.member);
   newState.member = await cachePartial(newState.member);
-  client.voiceStateListeners.forEach((listener) => listener(client, oldState, newState));
+  return client.voiceStateListeners.forEach((listener) => listener(client, oldState, newState));
 });
 
 // Run the reaction updates through the listeners
 client.on(Events.MessageReactionAdd, async(messageReaction, user) => {
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
-  client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true));
+  return client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, true));
 });
 client.on(Events.MessageReactionRemove, async(messageReaction, user) => {
   messageReaction = await cachePartial(messageReaction);
   messageReaction.message = await cachePartial(messageReaction.message);
-  client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false));
+  return client.reactionListeners.forEach((listener) => listener(client, messageReaction, user, false));
 });
 
 // Run the interactions through the interactionListeners
@@ -154,7 +161,11 @@ client.on(Events.InteractionCreate, async(interaction) => {
   }
 
   // All other interactions are grouped together and handled independently
-  client.interactionListeners.forEach((listener) => listener(client, interaction));
+  return client.interactionListeners.forEach((listener) => listener(client, interaction));
+});
+
+client.on(Events.GuildRoleDelete, async(role) => {
+  return client.roleDeletedListeners.forEach((listener) => listener(client, role));
 });
 
 // Handle the bot being added to a new guild
