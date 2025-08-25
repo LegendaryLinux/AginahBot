@@ -9,7 +9,7 @@ module.exports = async (client, message) => {
                 AND se.messageId=?`;
   const eventMessage = await dbQueryOne(sql, [message.guild.id, message.id]);
 
-  // If there is no role_messages entry found, do nothing
+  // If there is no scheduled_events entry found, do nothing
   if (!eventMessage) { return; }
 
   await dbExecute('DELETE FROM scheduled_events WHERE id=?', [eventMessage.id]);
