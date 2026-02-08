@@ -9,18 +9,18 @@
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",
-    "axios": "^1.7.9",
-    "discord.js": "^14.17.3",
-    "form-data": "^4.0.1",
-    "moment-timezone": "^0.5.46",
-    "mysql2": "^3.12.0",
+    "axios": "^1.13.5",
+    "discord.js": "^14.25.1",
+    "form-data": "^4.0.5",
+    "moment-timezone": "^0.6.0",
+    "mysql2": "^3.16.3",
     "node-emoji": "^2.2.0",
-    "tmp": "^0.2.3",
+    "tmp": "^0.2.5",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "depcheck": "^1.4.7",
-    "eslint": "^9.17.0",
+    "eslint": "^9.39.2",
     "node-check-updates": "^0.1.9",
     "yargs": "^17.7.2"
   }
