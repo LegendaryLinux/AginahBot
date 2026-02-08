@@ -96,7 +96,7 @@ module.exports = async (client, interaction) => {
               .setPlaceholder('Choose an event')
               .addOptions(...[events.map((e) => (
                 new StringSelectMenuOptionBuilder()
-                  .setLabel(`[${e.eventCode}] ${e.title.substring(0, 91)}`)
+                  .setLabel(`[${e.eventCode}] ${(e?.title || 'Unknown Event Name').substring(0, 91)}`)
                   .setValue(e.eventCode)
               ))])
           ]),
