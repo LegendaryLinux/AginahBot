@@ -692,7 +692,17 @@ module.exports = {
           const existingBoard = await dbQueryOne(sql, [interaction.guildId, interaction.channel.id]);
           if (existingBoard) {
             // Fetch message object for existing schedule board
-            const existingMessage = await interaction.channel.messages.fetch(existingBoard.messageId);
+            let existingMessage = null;
+            try {
+              existingMessage = await interaction.channel.messages.fetch(existingBoard.messageId);
+            } catch (err) {
+              if (err.status !== 404) {
+                // Issues caused by permissions or other non-message-already-deleted errors should not
+                // delete database rows
+                throw err;
+              }
+            }
+
             // Schedule board already exists, and message is present in channel
             if (existingMessage) {
               return interaction.followUp({
