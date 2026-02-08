@@ -29,6 +29,47 @@ const retryableDbErrorCodes = new Set([
   'ETIMEDOUT', 'EPIPE',
 ]);
 
+const permissionFlagNames = new Map(
+  Object.entries(PermissionFlagsBits).map(([name, value]) => [value.toString(), name])
+);
+
+const normalizePermissionFlag = (permission) => {
+  if (typeof permission === 'bigint') { return permission; }
+  if (typeof permission === 'number') { return BigInt(permission); }
+
+  if (
+    typeof permission === 'string' &&
+    Object.prototype.hasOwnProperty.call(PermissionFlagsBits, permission)
+  ) {
+    return PermissionFlagsBits[permission];
+  }
+
+  return null;
+};
+
+const makeReadablePermissionFlagName = (permissionName) => permissionName.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+const getPermissionDisplayName = (permission) => {
+  if (
+    typeof permission === 'string' &&
+    Object.prototype.hasOwnProperty.call(PermissionFlagsBits, permission)
+  ) {
+    return makeReadablePermissionFlagName(permission);
+  }
+
+  const normalizedPermission = normalizePermissionFlag(permission);
+  if (normalizedPermission === null) {
+    return String(permission);
+  }
+
+  const permissionName = permissionFlagNames.get(normalizedPermission.toString());
+  if (!permissionName) {
+    return normalizedPermission.toString();
+  }
+
+  return makeReadablePermissionFlagName(permissionName);
+};
+
 const formatLogField = (value) => {
   let strValue = value;
 
@@ -117,6 +158,52 @@ module.exports = {
     if (!guildMember) { return false; }
     return guildMember.permissions.has(PermissionFlagsBits.Administrator);
   },
+
+  /**
+   * Verify bot permissions in a specific channel before any operation is attempted.
+   * @param channel
+   * @param requiredPermissions
+   * @returns {{ok: boolean, missingPermissions: string[]}}
+   */
+  verifyChannelPermissions: (channel, requiredPermissions = []) => {
+    if (!channel?.guild) {
+      return {
+        ok: false,
+        missingPermissions: requiredPermissions.map((permission) => getPermissionDisplayName(permission)),
+      };
+    }
+
+    const botMember = channel.guild.members.me || channel.guild.members.resolve(channel.client.user.id);
+    if (!botMember) {
+      return {
+        ok: false,
+        missingPermissions: requiredPermissions.map((permission) => getPermissionDisplayName(permission)),
+      };
+    }
+
+    const channelPermissions = channel.permissionsFor(botMember);
+    if (!channelPermissions) {
+      return {
+        ok: false,
+        missingPermissions: requiredPermissions.map((permission) => getPermissionDisplayName(permission)),
+      };
+    }
+
+    const missingPermissions = [];
+    for (const permission of requiredPermissions) {
+      const normalizedPermission = normalizePermissionFlag(permission);
+      if (normalizedPermission === null || !channelPermissions.has(normalizedPermission)) {
+        missingPermissions.push(getPermissionDisplayName(permission));
+      }
+    }
+
+    return {
+      ok: missingPermissions.length === 0,
+      missingPermissions,
+    };
+  },
+
+  formatPermissionList: (permissions = []) => permissions.join(', '),
 
   getModeratorRole: (guild) => new Promise(async (resolve) => {
     let modRole = null;
