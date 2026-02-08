@@ -459,6 +459,19 @@ module.exports = {
         continue;
       }
 
+      const boardPermissionCheck = module.exports.verifyChannelPermissions(boardChannel, [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.EmbedLinks,
+      ]);
+      if (!boardPermissionCheck.ok) {
+        console.warn(`Skipping schedule board ${board.id} in guild ${guild.id}: missing permissions in ` +
+          `#${boardChannel.name} (${boardChannel.id}): ` +
+          `${module.exports.formatPermissionList(boardPermissionCheck.missingPermissions)}.`);
+        continue;
+      }
+
       // Find board message, clean database if message has been deleted
       const boardMessage = await boardChannel.messages.fetch(board.messageId);
       if (!boardMessage) {
@@ -614,6 +627,19 @@ module.exports = {
 
       // Ensure boardChannel is non-null
       if (boardChannel === null) {
+        continue;
+      }
+
+      const boardPermissionCheck = module.exports.verifyChannelPermissions(boardChannel, [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.EmbedLinks,
+      ]);
+      if (!boardPermissionCheck.ok) {
+        console.warn(`Skipping schedule board ${board.id} in guild ${guild.id}: missing permissions in ` +
+          `#${boardChannel.name} (${boardChannel.id}): ` +
+          `${module.exports.formatPermissionList(boardPermissionCheck.missingPermissions)}.`);
         continue;
       }
 
