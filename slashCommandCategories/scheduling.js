@@ -702,7 +702,7 @@ module.exports = {
             }
 
             // Message object has been deleted. Remove its entry from schedule_boards
-            await dbExecute('DELETE FROM schedule_boards WHERE id=?', [existingMessage.id]);
+            await dbExecute('DELETE FROM schedule_boards WHERE id=?', [existingBoard.id]);
             await interaction.followUp({
               content: 'It appears a schedule board previously existed in this channel but was deleted without ' +
                 'my knowledge (I blame Discord). A new schedule board is being created.',
