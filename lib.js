@@ -4,6 +4,20 @@ const mysql = require('mysql2');
 const config = require('./config.json');
 const { generalErrorHandler } = require('./errorHandlers');
 
+const dbConnectionPool = mysql.createPool({
+  host: config.dbHost,
+  user: config.dbUser,
+  password: config.dbPass,
+  database: config.dbName,
+  supportBigNumbers: true,
+  bigNumberStrings: true,
+  waitForConnections: true,
+  connectionLimit: config.dbConnectionLimit,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+});
+
 module.exports = {
   // Function which returns a promise which will resolve to true or false
   verifyModeratorRole: (guildMember) => new Promise(async (resolve) => {
@@ -119,10 +133,18 @@ module.exports = {
   },
 
   verifyGuildSetups: async (client) => {
-    client.guilds.cache.each(async (guild) => {
+    for (const guild of client.guilds.cache.values()) {
       // Ensure guild_data exists
-      const guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
-      if (!guildData) { await module.exports.handleGuildCreate(client, guild); }
+      let guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
+      if (!guildData) {
+        await module.exports.handleGuildCreate(client, guild);
+        guildData = await module.exports.dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [guild.id]);
+      }
+
+      if (!guildData) {
+        console.warn(`Unable to verify guild setup for guild ${guild.id}. No guild_data entry found.`);
+        continue;
+      }
 
       // Ensure guild_options exists
       const guildOptions = await module.exports.dbQueryOne(
@@ -132,7 +154,7 @@ module.exports = {
       if (!guildOptions) {
         await module.exports.dbExecute('INSERT INTO guild_options (guildDataId) VALUES (?)', [guildData.id]);
       }
-    });
+    }
   },
 
   /**
@@ -161,40 +183,25 @@ module.exports = {
       .catch((error) => reject(error));
   }),
 
-  dbConnect: () => mysql.createConnection({
-    host: config.dbHost,
-    user: config.dbUser,
-    password: config.dbPass,
-    database: config.dbName,
-    supportBigNumbers: true,
-    bigNumberStrings: true,
-  }),
-
   dbQueryOne: (sql, args = []) => new Promise((resolve, reject) => {
-    const conn = module.exports.dbConnect();
-    conn.query(sql, args, (err, result) => {
+    dbConnectionPool.query(sql, args, (err, result) => {
       if (err) { reject(err); }
       else if (result.length > 1) { reject('More than one row returned'); }
       else { resolve(result.length === 1 ? result[0] : null); }
-      return conn.end();
     });
   }),
 
   dbQueryAll: (sql, args = []) => new Promise((resolve, reject) => {
-    const conn = module.exports.dbConnect();
-    conn.query(sql, args, (err, result) => {
+    dbConnectionPool.query(sql, args, (err, result) => {
       if (err) { reject(err); }
       else { resolve(result); }
-      return conn.end();
     });
   }),
 
   dbExecute: (sql, args = []) => new Promise((resolve, reject) => {
-    const conn = module.exports.dbConnect();
-    conn.execute(sql, args, (err) => {
+    dbConnectionPool.execute(sql, args, (err) => {
       if (err) { reject(err); }
       else { resolve(); }
-      return conn.end();
     });
   }),
 
