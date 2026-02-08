@@ -18,6 +18,40 @@ const dbConnectionPool = mysql.createPool({
   keepAliveInitialDelay: 0,
 });
 
+const formatLogField = (value) => {
+  let strValue = value;
+
+  if (typeof value !== 'string') {
+    try {
+      strValue = JSON.stringify(value);
+    } catch (err) {
+      strValue = '[unserializable]';
+    }
+  }
+
+  if (!strValue) { return ''; }
+  return strValue.replace(/\s+/g, ' ').trim();
+};
+
+const logDbError = (operation, sql, args, err) => {
+  console.error(`[mysql] ${operation} failed`, {
+    message: err.message,
+    code: err.code || null,
+    errno: err.errno || null,
+    sqlState: err.sqlState || null,
+    fatal: !!err.fatal,
+    syscall: err.syscall || null,
+    sql: formatLogField(sql),
+    args: formatLogField(args),
+  });
+};
+
+dbConnectionPool.on('connection', (connection) => {
+  connection.on('error', (err) => {
+    logDbError('connection', 'Unable to connect to database', [], err);
+  });
+});
+
 module.exports = {
   // Function which returns a promise which will resolve to true or false
   verifyModeratorRole: (guildMember) => new Promise(async (resolve) => {
@@ -185,7 +219,10 @@ module.exports = {
 
   dbQueryOne: (sql, args = []) => new Promise((resolve, reject) => {
     dbConnectionPool.query(sql, args, (err, result) => {
-      if (err) { reject(err); }
+      if (err) {
+        logDbError('queryOne', sql, args, err);
+        reject(err);
+      }
       else if (result.length > 1) { reject('More than one row returned'); }
       else { resolve(result.length === 1 ? result[0] : null); }
     });
@@ -193,14 +230,20 @@ module.exports = {
 
   dbQueryAll: (sql, args = []) => new Promise((resolve, reject) => {
     dbConnectionPool.query(sql, args, (err, result) => {
-      if (err) { reject(err); }
+      if (err) {
+        logDbError('queryAll', sql, args, err);
+        reject(err);
+      }
       else { resolve(result); }
     });
   }),
 
   dbExecute: (sql, args = []) => new Promise((resolve, reject) => {
     dbConnectionPool.execute(sql, args, (err) => {
-      if (err) { reject(err); }
+      if (err) {
+        logDbError('execute', sql, args, err);
+        reject(err);
+      }
       else { resolve(); }
     });
   }),
