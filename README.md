@@ -32,9 +32,16 @@ Example config:
   "dbUser": "database-username",
   "dbPass": "database-password",
   "dbName": "database-name",
+  "dbConnectionLimit": 10,
+  "dbRetryMaxAttempts": 3,
+  "dbRetryBaseDelay": 250,
+  "dbRetryMaxDelay": 4000,
+  "dbRetryJitter": 150,
   "moderatorRole": "Moderator"
 }
 ```
+
+`dbConnectionLimit` and `dbRetryMaxAttempts` must be greater than `0`.
 
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
 permissions granted by the permissions integer `293416987728`.

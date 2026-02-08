@@ -18,6 +18,17 @@ const dbConnectionPool = mysql.createPool({
   keepAliveInitialDelay: 0,
 });
 
+const DB_RETRY_MAX_ATTEMPTS = config.dbRetryMaxAttempts;
+const DB_RETRY_BASE_DELAY = config.dbRetryBaseDelay;
+const DB_RETRY_MAX_DELAY = config.dbRetryMaxDelay;
+const DB_RETRY_JITTER = config.dbRetryJitter;
+
+const retryableDbErrorCodes = new Set([
+  'PROTOCOL_CONNECTION_LOST', 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR', 'PROTOCOL_ENQUEUE_HANDSHAKE_TWICE',
+  'ER_CON_COUNT_ERROR', 'ER_LOCK_WAIT_TIMEOUT', 'ER_LOCK_DEADLOCK', 'ER_QUERY_TIMEOUT', 'ECONNRESET', 'ECONNREFUSED',
+  'ETIMEDOUT', 'EPIPE',
+]);
+
 const formatLogField = (value) => {
   let strValue = value;
 
@@ -33,17 +44,59 @@ const formatLogField = (value) => {
   return strValue.replace(/\s+/g, ' ').trim();
 };
 
-const logDbError = (operation, sql, args, err) => {
+const logDbError = (operation, sql, args, err, retryContext = null) => {
+  const dbError = (err && typeof err === 'object') ? err : { message: String(err) };
+
   console.error(`[mysql] ${operation} failed`, {
-    message: err.message,
-    code: err.code || null,
-    errno: err.errno || null,
-    sqlState: err.sqlState || null,
-    fatal: !!err.fatal,
-    syscall: err.syscall || null,
+    message: dbError.message || null,
+    code: dbError.code || null,
+    errno: dbError.errno || null,
+    sqlState: dbError.sqlState || null,
+    fatal: !!dbError.fatal,
+    syscall: dbError.syscall || null,
     sql: formatLogField(sql),
     args: formatLogField(args),
+    retryContext,
   });
+};
+
+const isRetryableDbError = (err) => {
+  if (!err || typeof err !== 'object') { return false; }
+  if (typeof err.code === 'string' && retryableDbErrorCodes.has(err.code)) { return true; }
+  return typeof err.sqlState === 'string' && err.sqlState.startsWith('08');
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRetryDelayMs = (attempt) => {
+  const exponentialDelay = Math.min(DB_RETRY_MAX_DELAY, DB_RETRY_BASE_DELAY * (2 ** (attempt - 1)));
+  const jitter = DB_RETRY_JITTER > 0
+    ? Math.floor(Math.random() * (DB_RETRY_JITTER + 1))
+    : 0;
+  return exponentialDelay + jitter;
+};
+
+const executeWithDbRetry = async (operation, sql, args, execute) => {
+  for (let attempt = 1; attempt <= DB_RETRY_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await execute();
+    } catch (err) {
+      const willRetry = isRetryableDbError(err) && attempt < DB_RETRY_MAX_ATTEMPTS;
+      const delayMs = willRetry ? getRetryDelayMs(attempt) : 0;
+
+      logDbError(operation, sql, args, err, {
+        attempt,
+        maxAttempts: DB_RETRY_MAX_ATTEMPTS,
+        willRetry,
+        delayMs,
+      });
+
+      if (!willRetry) { throw err; }
+      await sleep(delayMs);
+    }
+  }
+
+  throw new Error('[mysql] Retry loop ended unexpectedly');
 };
 
 dbConnectionPool.on('connection', (connection) => {
@@ -217,36 +270,27 @@ module.exports = {
       .catch((error) => reject(error));
   }),
 
-  dbQueryOne: (sql, args = []) => new Promise((resolve, reject) => {
+  dbQueryOne: (sql, args = []) => executeWithDbRetry('queryOne', sql, args, () => new Promise((resolve, reject) => {
     dbConnectionPool.query(sql, args, (err, result) => {
-      if (err) {
-        logDbError('queryOne', sql, args, err);
-        reject(err);
-      }
-      else if (result.length > 1) { reject('More than one row returned'); }
+      if (err) { reject(err); }
+      else if (result.length > 1) { reject(new Error('More than one row returned')); }
       else { resolve(result.length === 1 ? result[0] : null); }
     });
-  }),
+  })),
 
-  dbQueryAll: (sql, args = []) => new Promise((resolve, reject) => {
+  dbQueryAll: (sql, args = []) => executeWithDbRetry('queryAll', sql, args, () => new Promise((resolve, reject) => {
     dbConnectionPool.query(sql, args, (err, result) => {
-      if (err) {
-        logDbError('queryAll', sql, args, err);
-        reject(err);
-      }
+      if (err) { reject(err); }
       else { resolve(result); }
     });
-  }),
+  })),
 
-  dbExecute: (sql, args = []) => new Promise((resolve, reject) => {
+  dbExecute: (sql, args = []) => executeWithDbRetry('execute', sql, args, () => new Promise((resolve, reject) => {
     dbConnectionPool.execute(sql, args, (err) => {
-      if (err) {
-        logDbError('execute', sql, args, err);
-        reject(err);
-      }
+      if (err) { reject(err); }
       else { resolve(); }
     });
-  }),
+  })),
 
   parseArgs: (command) => {
     // Quotes with which arguments can be wrapped
