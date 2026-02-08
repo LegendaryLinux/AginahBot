@@ -1,4 +1,4 @@
-const {dbQueryOne, updateCategoryMessage} = require('../lib');
+const {dbQueryOne, updateCategoryMessage, dbExecute} = require('../lib');
 
 // Delete DB entries if role messages are deleted
 module.exports = async (client, deletedRole) => {
@@ -11,7 +11,7 @@ module.exports = async (client, deletedRole) => {
                 AND gd.guildId=?`;
   const roleData = await dbQueryOne(sql, [deletedRole.id, deletedRole.guild.id]);
   if (roleData) {
-    await dbQueryOne('DELETE FROM roles WHERE id=?', [roleData.id]);
+    await dbExecute('DELETE FROM roles WHERE id=?', [roleData.id]);
     const guild = await deletedRole.guild.fetch();
     await updateCategoryMessage(client, guild, roleData.messageId);
   }
