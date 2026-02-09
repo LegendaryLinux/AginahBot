@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { dbExecute, dbQueryOne, verifyModeratorRole, dbQueryAll} = require('../lib');
 
 module.exports = {
@@ -25,7 +25,7 @@ module.exports = {
         if (!channel.isTextBased() || channel.isVoiceBased()) {
           return interaction.reply({
             content: 'The given channel must be a text channel.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -33,7 +33,7 @@ module.exports = {
         if (!guildData) {
           return interaction.reply({
             content: 'Unable to process request. No guild data exists for this guild. Please submit a bug report.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -43,7 +43,7 @@ module.exports = {
 
         return interaction.reply({
           content: 'Permission granted.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       },
     },
@@ -69,7 +69,7 @@ module.exports = {
         if (!guildData) {
           return interaction.reply({
             content: 'Unable to process request. No guild data exists for this guild. Please submit a bug report.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -79,7 +79,7 @@ module.exports = {
 
         return interaction.reply({
           content: 'Permission revoked.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       },
     },
@@ -98,7 +98,7 @@ module.exports = {
         if (!permissions.has(PermissionsBitField.Flags.ManageMessages)) {
           return interaction.reply({
             content: 'Required permissions are missing for this command. (Manage Messages)',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -112,7 +112,7 @@ module.exports = {
         if (!guildData) {
           return interaction.reply({
             content: 'Unable to process request. No guild data exists for this guild. Please submit a bug report.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -121,7 +121,7 @@ module.exports = {
         if (!permission && !await verifyModeratorRole(interaction.member)) {
           return interaction.reply({
             content: 'You do not have permission to pin messages in this channel.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -131,19 +131,19 @@ module.exports = {
             await message.pin();
             return interaction.reply({
               content: 'Message pinned.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
           return interaction.reply({
             content: 'That message is already pinned.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         } catch (err) {
           if (err.status && err.status === 404) {
             return interaction.reply({
               content: 'No message with that ID could be found.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
@@ -166,7 +166,7 @@ module.exports = {
         if (!permissions.has(PermissionsBitField.Flags.ManageMessages)) {
           return interaction.reply({
             content: 'Required permissions are missing for this command. (Manage Messages)',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -180,7 +180,7 @@ module.exports = {
         if (!guildData) {
           return interaction.reply({
             content: 'Unable to process request. No guild data exists for this guild. Please submit a bug report.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -189,7 +189,7 @@ module.exports = {
         if (!permission && !await verifyModeratorRole(interaction.member)) {
           return interaction.reply({
             content: 'You do not have permission to unpin messages in this channel.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -199,19 +199,19 @@ module.exports = {
             await message.unpin();
             return interaction.reply({
               content: 'Message unpinned.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
           return interaction.reply({
             content: 'That message is not pinned.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         } catch (err) {
           if (err.status && err.status === 404) {
             return interaction.reply({
               content: 'No message with that ID could be found.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
@@ -236,7 +236,7 @@ module.exports = {
         if (!guildData) {
           return interaction.reply({
             content: 'Unable to process request. No guild data exists for this guild. Please submit a bug report.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -253,7 +253,7 @@ module.exports = {
         if (results.length === 0) {
           return interaction.reply({
             content: `No users are authorized to pin${channel ? ' in that channel.' : '.'}`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -262,7 +262,7 @@ module.exports = {
           content += `<@${row.userId}> is authorized to pin messages in <#${row.channelId}>.\n`;
         }
 
-        return interaction.reply({ content, ephemeral: true });
+        return interaction.reply({ content, flags: MessageFlags.Ephemeral });
       },
     },
   ],

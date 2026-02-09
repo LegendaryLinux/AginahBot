@@ -1,4 +1,5 @@
 const { verifyModeratorRole } = require('../lib');
+const { MessageFlags } = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for modal submissions
@@ -15,7 +16,7 @@ module.exports = async (client, interaction) => {
   if (interaction.member.id !== commandParts[2] && !await verifyModeratorRole(interaction.member)) {
     return interaction.reply({
       content: 'Only the event room owner or a moderator can perform actions.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -25,13 +26,13 @@ module.exports = async (client, interaction) => {
       await interaction.channel.setName(channelName);
       return interaction.reply({
         content: `Channel name updated to ${channelName}.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
 
     default:
       return interaction.reply({
         content: 'Unknown eventRoomModal interaction. Please contact an administrator.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
   }
 };

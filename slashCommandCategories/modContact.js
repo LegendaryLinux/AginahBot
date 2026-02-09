@@ -1,6 +1,7 @@
 const { dbQueryOne, dbExecute, getModeratorRole } = require('../lib');
 const { ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField, ActionRowBuilder,
-  SlashCommandBuilder, PermissionFlagsBits, Client, Guild, GuildMember, TextChannel } = require('discord.js');
+  SlashCommandBuilder, PermissionFlagsBits, Client, Guild, GuildMember, TextChannel,
+  MessageFlags } = require('discord.js');
 
 module.exports = {
   category: 'Mod Contact',
@@ -22,13 +23,13 @@ module.exports = {
         if (existing) {
           return interaction.reply({
             content: 'The Mod Contact feature is already enabled for this server!',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         // The bot will now make a few requests against the Discord API and write some information to the database.
         // This might take more than five seconds, so we now defer the reply. The followUp will also be ephemeral.
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
           // Create a category to contain the report channels
@@ -113,13 +114,13 @@ module.exports = {
         if (!modContact) {
           return interaction.reply({
             content: 'The Mod Contact feature is not enabled for this server.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         try{
           // This might take a few seconds
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           // Delete entries for previous mod contact events
           await dbExecute('DELETE FROM mod_contact_channels WHERE modContactId=?', [ modContact.id ]);
@@ -154,12 +155,12 @@ module.exports = {
 
         try{
           // This might take a few seconds
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           if (!await module.exports.modContactEnabled(interaction.guild)) {
             return interaction.followUp({
               content: 'The mod-contact feature is not enabled in this guild.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
@@ -171,7 +172,7 @@ module.exports = {
               const existingChannel = await interaction.guild.channels.fetch(existingChannelId);
               return interaction.followUp({
                 content: `A mod-contact is already open for this user: ${existingChannel}`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
               });
             } catch (e) {
               // The database claims this channel exists, but the Discord API disagrees. Set this mod contact as
@@ -189,7 +190,7 @@ module.exports = {
           const modContact = await module.exports.createModContact(interaction, user);
           return interaction.followUp({
             content: `Mod-contact created: ${modContact}`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
 
         } catch (e) {
@@ -211,7 +212,7 @@ module.exports = {
           if (!await module.exports.modContactEnabled(interaction.guild)) {
             return interaction.reply({
               content: 'The mod-contact system is not enabled on this server.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
@@ -227,7 +228,7 @@ module.exports = {
           if (!modContactExists) {
             return interaction.reply({
               content: 'This does not appear to be a mod-contact channel.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
@@ -343,4 +344,3 @@ module.exports = {
     return channel;
   },
 };
-

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const tmp = require('tmp');
 const fs = require('fs');
 const {dbExecute} = require('../lib');
@@ -27,13 +27,13 @@ module.exports = {
         if (limit < 1 || limit > 1000) {
           return interaction.reply({
             content: 'Limit argument must be an integer from 1 to 1000.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         try{
           // This might take a few seconds
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           while (logs.length < limit) {
             // Determine number of messages to be fetched this request
@@ -76,7 +76,7 @@ module.exports = {
           return tmp.file((err, tmpFilePath, fd, cleanupCallback) => {
             fs.writeFile(tmpFilePath, output, () => {
               return interaction.followUp({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `Saved a log of the previous ${limit} messages in this channel.`,
                 files: [
                   {
@@ -109,7 +109,7 @@ module.exports = {
         await dbExecute('UPDATE guild_data SET moderatorRoleId=? WHERE guildId=?', [role.id, interaction.guildId]);
         return interaction.reply({
           content: `Moderator role updated to ${role}`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     },

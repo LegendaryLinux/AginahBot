@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { dbQueryOne, dbExecute } = require('../lib');
 
 module.exports = {
@@ -11,7 +11,7 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {
@@ -22,7 +22,7 @@ module.exports = {
         await dbExecute('UPDATE guild_options SET roleWhitelist=1 WHERE guildDataId=?', [guildData.id]);
         return interaction.followUp({
           content: 'Role whitelist enabled for this server.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     },
@@ -33,7 +33,7 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {
@@ -45,7 +45,7 @@ module.exports = {
         await dbExecute('DELETE FROM pingable_roles WHERE guildDataId=?', [guildData.id]);
         return interaction.followUp({
           content: 'Role whitelist disabled for this server.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     },
@@ -61,7 +61,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const role = interaction.options.getRole('role', true);
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {
@@ -91,7 +91,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const role = interaction.options.getRole('role', true);
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
         const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guild.id]);
         if (!guildData) {

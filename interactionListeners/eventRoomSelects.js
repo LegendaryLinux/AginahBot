@@ -1,5 +1,5 @@
 const { verifyModeratorRole } = require('../lib');
-const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require('discord.js');
+const {ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags} = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for modal submissions
@@ -19,7 +19,7 @@ module.exports = async (client, interaction) => {
   if (interaction.member.id !== commandParts[2] && !await verifyModeratorRole(interaction.member)) {
     return interaction.reply({
       content: 'Only the event room owner or a moderator can perform actions.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -54,13 +54,12 @@ module.exports = async (client, interaction) => {
                 .setStyle(ButtonStyle.Danger)
             ]),
         ],
-        ephemeral: true,
       });
 
     default:
       return interaction.reply({
         content: 'Unknown eventRoomModal interaction. Please contact an administrator.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
   }
 };

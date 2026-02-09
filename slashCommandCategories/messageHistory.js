@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType, PermissionsBitField} = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionsBitField, MessageFlags } = require('discord.js');
 const {dbQueryOne, dbExecute, getModeratorRole} = require('../lib');
 
 module.exports = {
@@ -19,11 +19,11 @@ module.exports = {
         if (options?.messageHistoryChannelId) {
           return interaction.reply({
             content: `Message history is already enabled for this guild in <#${options.messageHistoryChannelId}>.`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
         const moderatorRole = await getModeratorRole(interaction.guild);
         const messageHistoryChannel = await interaction.guild.channels.create({
           name: 'message-history',
@@ -54,7 +54,7 @@ module.exports = {
 
         return interaction.followUp({
           content: `${messageHistoryChannel} has been created.`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     },
@@ -73,11 +73,11 @@ module.exports = {
         if (!options?.messageHistoryChannelId) {
           return interaction.reply({
             content: 'Message history is not enabled for this guild.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
         // Delete the message history channel
         await interaction.guild.channels.delete(options.messageHistoryChannelId);
@@ -90,7 +90,7 @@ module.exports = {
 
         return interaction.followUp({
           content: 'Message history channel deleted.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     }

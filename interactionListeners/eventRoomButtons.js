@@ -1,7 +1,7 @@
 const { verifyModeratorRole, buildControlMessagePayload, dbQueryAll, dbQueryOne, dbExecute, verifyChannelPermissions,
   formatPermissionList } = require('../lib');
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, UserSelectMenuBuilder,
-  StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits } = require('discord.js');
+  StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
@@ -28,7 +28,7 @@ module.exports = async (client, interaction) => {
   if (!channelData) {
     return interaction.reply({
       content: 'Unable to complete interaction.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -36,7 +36,7 @@ module.exports = async (client, interaction) => {
   if (interaction.member.id !== channelData.ownerUserId && !await verifyModeratorRole(interaction.member)) {
     return interaction.reply({
       content: 'Only the event room owner or a moderator can perform actions.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -83,7 +83,7 @@ module.exports = async (client, interaction) => {
       if (!events?.length) {
         return interaction.reply({
           content: 'No recently passed or soon upcoming events were found.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -101,7 +101,7 @@ module.exports = async (client, interaction) => {
               ))])
           ]),
         ],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
 
     case 'sendPingConfirm':
@@ -113,7 +113,7 @@ module.exports = async (client, interaction) => {
         return interaction.reply({
           content: `Required permissions are missing for this action. (` +
             `${formatPermissionList(pingPermissions.missingPermissions)})`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -127,7 +127,6 @@ module.exports = async (client, interaction) => {
       if (!event) {
         return interaction.update({
           content: 'Unable to send event ping. Please contact an administrator.',
-          ephemeral: true,
         });
       }
 
@@ -140,7 +139,6 @@ module.exports = async (client, interaction) => {
       return interaction.update({
         content: 'Event ping sent.',
         components: [],
-        ephemeral: true,
       });
 
     case 'transfer':
@@ -152,7 +150,7 @@ module.exports = async (client, interaction) => {
               .setCustomId(`eventRoom-transfer-${interaction.member.id}-${interaction.message.id}`),
           ]),
         ],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
 
     case 'transferConfirm':
@@ -165,7 +163,7 @@ module.exports = async (client, interaction) => {
         return interaction.reply({
           content: `Required permissions are missing for this action. (` +
             `${formatPermissionList(transferPermissions.missingPermissions)})`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -185,7 +183,6 @@ module.exports = async (client, interaction) => {
       return interaction.update({
         content: `Ownership transferred to ${newOwner}`,
         components: [],
-        ephemeral: true,
       });
 
     case 'close':
@@ -197,14 +194,13 @@ module.exports = async (client, interaction) => {
         return interaction.reply({
           content: `Required permissions are missing for this action. (` +
             `${formatPermissionList(closePermissions.missingPermissions)})`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
 
       await interaction.channel.setName(`${interaction.channel.name} (Closed)`);
       return interaction.reply({
         content: `${interaction.user} has closed the room.`,
-        ephemeral: false,
         allowedMentions: {}
       });
   }

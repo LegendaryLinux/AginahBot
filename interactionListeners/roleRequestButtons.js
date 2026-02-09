@@ -1,3 +1,5 @@
+const { MessageFlags } = require('discord.js');
+
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
   if (!interaction.isButton()) { return; }
@@ -15,20 +17,20 @@ module.exports = async (client, interaction) => {
     if (!interaction.member.roles.cache.has(roleId)) {
       await interaction.member.roles.add(role);
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Granted role: ${role}`,
       });
     } else {
       // Remove the role if the user has it already
       await interaction.member.roles.remove(role);
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Removed role: ${role}`,
       });
     }
   } catch (e) {
     return interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: 'Something went wrong and your roles could not be updated.\n' +
         'Please report this bug on [AginahBot\'s Discord](https://discord.gg/2EZNrAw9Ja)',
     });

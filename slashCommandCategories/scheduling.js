@@ -1,5 +1,7 @@
 const Discord = require('discord.js');
-const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder} = require('discord.js');
+const {
+  SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags
+} = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
 const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole, verifyChannelPermissions,
   formatPermissionList } = require('../lib');
@@ -172,7 +174,7 @@ module.exports = {
               .setColor('#6081cb')
               .setDescription('Schedule boards track all upcoming events, and update automatically.')
               .addFields(boardFields);
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
           }
         }
 
@@ -186,7 +188,7 @@ module.exports = {
         const events = await dbQueryAll(sql, [interaction.guildId, new Date().getTime()]);
 
         if (events.length === 0) {
-          return interaction.reply({ content: 'There are currently no events scheduled.', ephemeral: true });
+          return interaction.reply({ content: 'There are currently no events scheduled.', flags: MessageFlags.Ephemeral });
         }
 
         try{
@@ -222,7 +224,7 @@ module.exports = {
                 { name: 'Event Code', value: event.eventCode },
                 { name: 'Current RSVPs', value: rsvps.size.toString() },
               );
-            await interaction.followUp({ embeds: [embed], ephemeral: true });
+            await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
           }
         } catch(e) {
           console.error(e);
@@ -299,21 +301,21 @@ module.exports = {
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
             content: 'Permission to ping that role has not been granted.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         if (!(new RegExp(/\d{4}-\d{2}-\d{2}/).test(dateString))) {
           return interaction.reply({
             content: 'Invalid date format provided. Must be of format: YYYY-MM-DD.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         if (!(new RegExp(/\d{2}:\d{2}/).test(timeString))) {
           return interaction.reply({
             content: 'Invalid time format provided. Must be of format: HH:MM.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -328,18 +330,18 @@ module.exports = {
           if (isNaN(targetDate.getTime())) {
             return interaction.reply({
               content: 'The date you provided appears invalid.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
           if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
               content: 'You can\'t schedule an event in the past!',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
           await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
@@ -380,7 +382,7 @@ module.exports = {
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
             content: 'Permission to ping that role has not been granted.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -391,11 +393,11 @@ module.exports = {
           if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
               content: 'You can\'t schedule an event in the past!',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
           await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
@@ -441,7 +443,7 @@ module.exports = {
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
             content: 'Permission to ping that role has not been granted.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -452,11 +454,11 @@ module.exports = {
           if (targetDate.getTime() < currentDate.getTime()) {
             return interaction.reply({
               content: 'You can\'t schedule an event in the past!',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
           await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
@@ -514,7 +516,7 @@ module.exports = {
         if (!eventData) {
           return interaction.followUp({
             content: 'There is no upcoming event with that code.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -524,7 +526,7 @@ module.exports = {
           return interaction.followUp({
             content: 'This event can only be cancelled by the user who scheduled it ' +
               `(${schedulingUser.displayName}), or by an administrator.`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -615,7 +617,7 @@ module.exports = {
         if (!eventData) {
           return interaction.reply({
             content: 'There is no upcoming event with that code.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -623,7 +625,7 @@ module.exports = {
         if (!scheduleChannel) {
           return interaction.reply({
             content: 'Unable to locate scheduling channel for specified event.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -636,13 +638,13 @@ module.exports = {
           return interaction.reply({
             content: `Required permissions are missing for this command. (` +
               `${formatPermissionList(scheduleCancelPermissions.missingPermissions)})`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         try {
           // This potentially causes several requests to be made, and may take a few seconds
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           // If the user is not a moderator and not the scheduling user, deny the cancellation
           if ((interaction.user.id !== eventData.schedulingUserId) && !await verifyModeratorRole(interaction.member)) {
@@ -650,7 +652,7 @@ module.exports = {
             return interaction.followUp({
               content: 'This event can only be cancelled by the user who scheduled it ' +
                 `(${schedulingUser.displayName}), or by an administrator.`,
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
@@ -711,13 +713,13 @@ module.exports = {
           return interaction.reply({
             content: `Required permissions are missing for this command. (` +
               `${formatPermissionList(scheduleBoardPostPermissions.missingPermissions)})`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         try {
           // This function may make a few requests, which could take a few seconds
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           // Check for existing schedule board in this channel
           let sql = `SELECT sb.id, sb.messageId
@@ -743,7 +745,7 @@ module.exports = {
             if (existingMessage) {
               return interaction.followUp({
                 content: `This channel already has a schedule board, located here: \n${existingMessage.url}`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
               });
             }
 
@@ -752,7 +754,7 @@ module.exports = {
             await interaction.followUp({
               content: 'It appears a schedule board previously existed in this channel but was deleted without ' +
                 'my knowledge (I blame Discord). A new schedule board is being created.',
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
           }
 
@@ -787,7 +789,7 @@ module.exports = {
           return interaction.reply({
             content: `Required permissions are missing for this command. (` +
               `${formatPermissionList(scheduleBoardDeletePermissions.missingPermissions)})`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -801,12 +803,12 @@ module.exports = {
         if (!existingBoard) {
           return interaction.reply({
             content: 'No message board exists in this channel.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
         try {
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           // Delete schedule board message
           const board = await interaction.channel.messages.fetch(existingBoard.messageId);
@@ -833,7 +835,7 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const toggle = interaction.options.getBoolean('toggle', true);
 
         // Fetch guild data

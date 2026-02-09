@@ -1,4 +1,5 @@
 const { createModContact } = require('../slashCommandCategories/modContact');
+const { MessageFlags } = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for modal submissions
@@ -13,6 +14,6 @@ module.exports = async (client, interaction) => {
 
   return interaction.reply({
     content: `Mod contact channel opened: ${modContactChannel}`,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 };

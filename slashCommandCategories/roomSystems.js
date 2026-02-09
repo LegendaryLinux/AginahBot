@@ -1,5 +1,5 @@
 const { dbQueryOne, dbExecute } = require('../lib');
-const { ChannelType, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { ChannelType, SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 const VOICE_CHANNEL_NAME = 'Create Room';
 
@@ -26,7 +26,7 @@ module.exports = {
         ) {
           return interaction.reply({
             content: 'Required permissions are missing for this command. (Manage Channels, Manage Roles)',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -35,7 +35,7 @@ module.exports = {
 
         try {
           // Several requests are made, and it might take a few seconds
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           const category = await interaction.guild.channels.create({
             name: categoryName,
@@ -76,7 +76,7 @@ module.exports = {
         ) {
           return interaction.reply({
             content: 'Required permissions are missing for this command. (Manage Channels, Manage Roles)',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -84,7 +84,7 @@ module.exports = {
 
         try {
           // Several requests are made, and it might take a few seconds
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
           const guild = await interaction.guild.fetch();
           // Find a category whose name matches the argument

@@ -1,5 +1,6 @@
 const { dbQueryOne, dbExecute} = require('../lib');
 const {generalErrorHandler} = require('../errorHandlers');
+const { MessageFlags } = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
@@ -27,7 +28,7 @@ module.exports = async (client, interaction) => {
       if (!existingEvent) {
         return interaction.reply({
           content: 'Unable to find event.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -50,7 +51,7 @@ module.exports = async (client, interaction) => {
 
       return interaction.reply({
         content: 'RSVP Successful.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
 
     case 'rsvpCancel':
@@ -64,7 +65,7 @@ module.exports = async (client, interaction) => {
       if (!existingEvent) {
         return interaction.reply({
           content: 'Unable to find event.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -87,7 +88,7 @@ module.exports = async (client, interaction) => {
 
       return interaction.reply({
         content: 'RSVP Removed.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
   }
 };

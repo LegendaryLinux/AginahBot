@@ -1,5 +1,5 @@
 const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
   category: 'Message Tags',
@@ -29,7 +29,7 @@ module.exports = {
         if (tagName.search(/\W/) > -1) {
           return interaction.reply({
             content: 'Tag names may contain only letters, numbers, and underscores.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -40,7 +40,7 @@ module.exports = {
             content: 'Uh-oh. Something is weird in my database. Please report this bug at:\n' +
               'https://discord.gg/2EZNrAw9Ja.\n\nPaste this error message into the `#bug-reports` channel:\n' +
               `\`\`\`guild data is missing for guild with id ${interaction.guildId}\`\`\``,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -51,7 +51,7 @@ module.exports = {
 
         return interaction.reply({
           content: `Set content for tag \`${tagName.toLowerCase()}\`.`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       },
     },
@@ -75,7 +75,7 @@ module.exports = {
             content: 'Uh-oh. Something is weird in my database. Please report this bug at:\n' +
               'https://discord.gg/2EZNrAw9Ja.\n\nPaste this error message into the `#bug-reports` channel:\n' +
               `\`\`\`guild data is missing for guild with id ${interaction.guildId}\`\`\``,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -89,7 +89,7 @@ module.exports = {
         if (!existing) {
           return interaction.reply({
             content: 'That tag does not exist on this server.',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -100,7 +100,7 @@ module.exports = {
 
         return interaction.reply({
           content: `Deleted tag \`${tagName.toLowerCase()}\`.`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     },
