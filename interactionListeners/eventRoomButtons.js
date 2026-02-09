@@ -1,7 +1,7 @@
-const { verifyModeratorRole, buildControlMessagePayload, dbQueryAll, dbQueryOne, dbExecute} = require('../lib');
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder,
-  UserSelectMenuBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder
-} = require('discord.js');
+const { verifyModeratorRole, buildControlMessagePayload, dbQueryAll, dbQueryOne, dbExecute, verifyChannelPermissions,
+  formatPermissionList } = require('../lib');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, UserSelectMenuBuilder,
+  StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = async (client, interaction) => {
   // Only listen for button interactions
@@ -105,6 +105,18 @@ module.exports = async (client, interaction) => {
       });
 
     case 'sendPingConfirm':
+      const pingPermissions = verifyChannelPermissions(interaction.channel, [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+      ]);
+      if (!pingPermissions.ok) {
+        return interaction.reply({
+          content: `Required permissions are missing for this action. (` +
+            `${formatPermissionList(pingPermissions.missingPermissions)})`,
+          ephemeral: true,
+        });
+      }
+
       const eventCode = commandParts[2];
       sql = `SELECT se.id, se.channelId, se.messageId, se.title
                  FROM scheduled_events se
@@ -144,6 +156,19 @@ module.exports = async (client, interaction) => {
       });
 
     case 'transferConfirm':
+      const transferPermissions = verifyChannelPermissions(interaction.channel, [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.SendMessages,
+      ]);
+      if (!transferPermissions.ok) {
+        return interaction.reply({
+          content: `Required permissions are missing for this action. (` +
+            `${formatPermissionList(transferPermissions.missingPermissions)})`,
+          ephemeral: true,
+        });
+      }
+
       const newOwner = await interaction.guild.members.fetch(commandParts[2]);
       console.log(newOwner.id);
 
@@ -164,6 +189,18 @@ module.exports = async (client, interaction) => {
       });
 
     case 'close':
+      const closePermissions = verifyChannelPermissions(interaction.channel, [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.ManageChannels,
+      ]);
+      if (!closePermissions.ok) {
+        return interaction.reply({
+          content: `Required permissions are missing for this action. (` +
+            `${formatPermissionList(closePermissions.missingPermissions)})`,
+          ephemeral: true,
+        });
+      }
+
       await interaction.channel.setName(`${interaction.channel.name} (Closed)`);
       return interaction.reply({
         content: `${interaction.user} has closed the room.`,

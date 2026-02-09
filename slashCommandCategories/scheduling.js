@@ -1,7 +1,8 @@
 const Discord = require('discord.js');
 const { SlashCommandBuilder, PermissionFlagsBits, ButtonBuilder, ButtonStyle, ActionRowBuilder} = require('discord.js');
 const { generalErrorHandler } = require('../errorHandlers');
-const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole} = require('../lib');
+const { dbQueryOne, dbQueryAll, dbExecute, updateScheduleBoard, verifyModeratorRole, verifyChannelPermissions,
+  formatPermissionList } = require('../lib');
 const forbiddenWords = require('../assets/forbiddenWords.json');
 
 const isRolePingable = async (guildId, role) => {
@@ -618,6 +619,27 @@ module.exports = {
           });
         }
 
+        const scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
+        if (!scheduleChannel) {
+          return interaction.reply({
+            content: 'Unable to locate scheduling channel for specified event.',
+            ephemeral: true,
+          });
+        }
+
+        const scheduleCancelPermissions = verifyChannelPermissions(scheduleChannel, [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.ManageMessages,
+        ]);
+        if (!scheduleCancelPermissions.ok) {
+          return interaction.reply({
+            content: `Required permissions are missing for this command. (` +
+              `${formatPermissionList(scheduleCancelPermissions.missingPermissions)})`,
+            ephemeral: true,
+          });
+        }
+
         try {
           // This potentially causes several requests to be made, and may take a few seconds
           await interaction.deferReply({ ephemeral: true });
@@ -634,7 +656,6 @@ module.exports = {
 
           try{
             // The event is to be cancelled. Replace the schedule message with a cancellation notice
-            const scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
             const scheduleMsg = await scheduleChannel.messages.fetch(eventData.messageId);
             await scheduleMsg.edit({
               content: `This event has been cancelled by ${interaction.user}.`,
@@ -679,6 +700,21 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
+        const scheduleBoardPostPermissions = verifyChannelPermissions(interaction.channel, [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.EmbedLinks,
+          PermissionFlagsBits.ManageMessages,
+        ]);
+        if (!scheduleBoardPostPermissions.ok) {
+          return interaction.reply({
+            content: `Required permissions are missing for this command. (` +
+              `${formatPermissionList(scheduleBoardPostPermissions.missingPermissions)})`,
+            ephemeral: true,
+          });
+        }
+
         try {
           // This function may make a few requests, which could take a few seconds
           await interaction.deferReply({ ephemeral: true });
@@ -742,6 +778,19 @@ module.exports = {
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
+        const scheduleBoardDeletePermissions = verifyChannelPermissions(interaction.channel, [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.ManageMessages,
+        ]);
+        if (!scheduleBoardDeletePermissions.ok) {
+          return interaction.reply({
+            content: `Required permissions are missing for this command. (` +
+              `${formatPermissionList(scheduleBoardDeletePermissions.missingPermissions)})`,
+            ephemeral: true,
+          });
+        }
+
         // Check for existing schedule board in this channel
         let sql = `SELECT sb.id, sb.messageId
                    FROM schedule_boards sb
