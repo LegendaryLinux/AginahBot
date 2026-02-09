@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, InteractionContextType } = require('discord.js');
 const { dbQueryOne, dbExecute } = require('../lib');
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
       commandBuilder: new SlashCommandBuilder()
         .setName('role-whitelist-enable')
         .setDescription('Enable the whitelist system for role pings on scheduled events')
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         await interaction.deferReply({flags: MessageFlags.Ephemeral});
@@ -30,7 +30,7 @@ module.exports = {
       commandBuilder: new SlashCommandBuilder()
         .setName('role-whitelist-disable')
         .setDescription('Disable the whitelist system for role pings on scheduled events')
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         await interaction.deferReply({flags: MessageFlags.Ephemeral});
@@ -57,7 +57,7 @@ module.exports = {
           .setName('role')
           .setDescription('The role to be whitelisted')
           .setRequired(true))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const role = interaction.options.getRole('role', true);
@@ -87,7 +87,7 @@ module.exports = {
           .setName('role')
           .setDescription('The role to be removed from the whitelist')
           .setRequired(true))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
       async execute(interaction) {
         const role = interaction.options.getRole('role', true);

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, InteractionContextType } = require('discord.js');
 const tmp = require('tmp');
 const fs = require('fs');
 const {dbExecute} = require('../lib');
@@ -14,7 +14,7 @@ module.exports = {
           .setName('limit')
           .setDescription('Number of messages to save. Min 1, max 1000, default 100')
           .setRequired(false))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const limit = interaction.options.getInteger('limit') ?? 100;
@@ -102,7 +102,7 @@ module.exports = {
           .setName('role')
           .setDescription('New moderator role')
           .setRequired(true))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
         const role = interaction.options.getRole('role', true);

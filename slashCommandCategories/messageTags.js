@@ -1,5 +1,5 @@
 const { dbQueryOne, dbQueryAll, dbExecute } = require('../lib');
-const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, InteractionContextType } = require('discord.js');
 
 module.exports = {
   category: 'Message Tags',
@@ -19,7 +19,7 @@ module.exports = {
           .setName('content')
           .setDescription('The text which will be displayed when a tag is found in a message')
           .setRequired(true))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const tagName = interaction.options.getString('tag-name');
@@ -63,7 +63,7 @@ module.exports = {
           .setName('tag-name')
           .setDescription('Name of the tag to be removed.')
           .setRequired(true))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const tagName = interaction.options.getString('tag-name');
@@ -108,7 +108,7 @@ module.exports = {
       commandBuilder: new SlashCommandBuilder()
         .setName('tag-list')
         .setDescription('List all &tags available on this server.')
-        .setDMPermission(false),
+        .setContexts(InteractionContextType.Guild),
       async execute(interaction) {
         // Fetch guild tags
         let sql = `SELECT mt.tagName

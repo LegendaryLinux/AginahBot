@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits, MessageFlags, InteractionContextType } = require('discord.js');
 const { dbExecute, dbQueryOne, verifyModeratorRole, dbQueryAll} = require('../lib');
 
 module.exports = {
@@ -16,7 +16,7 @@ module.exports = {
           .setName('channel')
           .setDescription('Channel to grant pin permissions in. Defaults to the current channel')
           .setRequired(false))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const channel = interaction.options.getChannel('channel', false) ?? interaction.channel;
@@ -59,7 +59,7 @@ module.exports = {
           .setName('channel')
           .setDescription('Channel to revoke pin permissions in. Defaults to the current channel')
           .setRequired(false))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const channel = interaction.options.getChannel('channel', false) ?? interaction.channel;
@@ -92,7 +92,7 @@ module.exports = {
           .setDescription('The ID of or link to the message to pin.')
           .setMaxLength(512)
           .setRequired(true))
-        .setDMPermission(false),
+        .setContexts(InteractionContextType.Guild),
       async execute(interaction) {
         const permissions = interaction.channel.permissionsFor(interaction.client.user);
         if (!permissions.has(PermissionsBitField.Flags.ManageMessages)) {
@@ -160,7 +160,7 @@ module.exports = {
           .setDescription('The ID of or link to the message to unpin.')
           .setMaxLength(512)
           .setRequired(true))
-        .setDMPermission(false),
+        .setContexts(InteractionContextType.Guild),
       async execute(interaction) {
         const permissions = interaction.channel.permissionsFor(interaction.client.user);
         if (!permissions.has(PermissionsBitField.Flags.ManageMessages)) {
@@ -227,7 +227,7 @@ module.exports = {
           .setName('channel')
           .setDescription('Channel for which pin grants will be displayed. Defaults to current channel.')
           .setRequired(false))
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
       async execute(interaction) {
         const channel = interaction.options.getChannel('channel') ?? interaction.channel;

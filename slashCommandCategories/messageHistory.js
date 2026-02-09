@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType, PermissionsBitField, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionsBitField, MessageFlags, InteractionContextType } = require('discord.js');
 const {dbQueryOne, dbExecute, getModeratorRole} = require('../lib');
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
       commandBuilder: new SlashCommandBuilder()
         .setName('message-history-enable')
         .setDescription('Create a channel to log edited and deleted messages.')
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
         let sql = `SELECT go.id, go.messageHistoryChannelId
@@ -62,7 +62,7 @@ module.exports = {
       commandBuilder: new SlashCommandBuilder()
         .setName('message-history-disable')
         .setDescription('Delete an existing message history channel.')
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .setDefaultMemberPermissions(0),
       async execute(interaction) {
         let sql = `SELECT go.id, go.messageHistoryChannelId
