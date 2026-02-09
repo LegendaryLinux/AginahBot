@@ -58,7 +58,7 @@ const scheduledEvents = `CREATE TABLE IF NOT EXISTS scheduled_events (
     duration BIGINT UNSIGNED
 )`;
 
-const eventRspv = `CREATE TABLE IF NOT EXISTS aginah_test.event_rsvp (
+const eventRspv = `CREATE TABLE IF NOT EXISTS event_rsvp (
     id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
     eventId BIGINT UNSIGNED NOT NULL,
     userId VARCHAR(64) NOT NULL,

@@ -41,8 +41,6 @@ Example config:
 }
 ```
 
-`dbConnectionLimit` and `dbRetryMaxAttempts` must be greater than `0`.
-
 If you intend to create your own bot on Discord using the code in this repository, your bot will need
 permissions granted by the permissions integer `293416987728`.
 
