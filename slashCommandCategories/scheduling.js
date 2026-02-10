@@ -52,6 +52,36 @@ const generateEventCode = () => {
   return code;
 };
 
+const verifyScheduleNewPermissions = async (interaction, pingRole = null) => {
+  const requiredPermissions = [
+    PermissionFlagsBits.ViewChannel,
+    PermissionFlagsBits.SendMessages,
+    PermissionFlagsBits.EmbedLinks,
+  ];
+
+  if (pingRole) {
+    requiredPermissions.push(PermissionFlagsBits.MentionEveryone);
+  }
+
+  // If this is a guild text channel and the guild has thread creation enabled, additional permissions are needed
+  if (interaction.channel.type === Discord.ChannelType.GuildText) {
+    const sql = `SELECT 1
+                 FROM guild_options go
+                 JOIN guild_data gd ON go.guildDataId = gd.id
+                 WHERE gd.guildId=?
+                    AND go.eventThreads=1`;
+    const threadsEnabled = await dbQueryOne(sql, [interaction.guildId]);
+    if (threadsEnabled) {
+      requiredPermissions.push(
+          PermissionFlagsBits.CreatePublicThreads,
+          PermissionFlagsBits.SendMessagesInThreads,
+      );
+    }
+  }
+
+  return verifyChannelPermissions(interaction.channel, requiredPermissions);
+};
+
 const sendScheduleMessage = async (interaction, targetDate, title = null, pingRole = null, duration = null) => {
   // Fetch guild data
   const guildData = await dbQueryOne('SELECT id FROM guild_data WHERE guildId=?', [interaction.guildId]);
@@ -306,6 +336,15 @@ module.exports = {
           });
         }
 
+        const scheduleNewPermissions = await verifyScheduleNewPermissions(interaction, pingRole);
+        if (!scheduleNewPermissions.ok) {
+          return interaction.reply({
+            content: `Required permissions are missing for this command. (` +
+              `${formatPermissionList(scheduleNewPermissions.missingPermissions)})`,
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
         if (!(new RegExp(/\d{4}-\d{2}-\d{2}/).test(dateString))) {
           return interaction.reply({
             content: 'Invalid date format provided. Must be of format: YYYY-MM-DD.',
@@ -387,6 +426,15 @@ module.exports = {
           });
         }
 
+        const scheduleNewTSPermissions = await verifyScheduleNewPermissions(interaction, pingRole);
+        if (!scheduleNewTSPermissions.ok) {
+          return interaction.reply({
+            content: `Required permissions are missing for this command. (` +
+              `${formatPermissionList(scheduleNewTSPermissions.missingPermissions)})`,
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
         try{
           const currentDate = new Date();
           const targetDate = new Date(timestamp);
@@ -444,6 +492,15 @@ module.exports = {
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
           return interaction.reply({
             content: 'Permission to ping that role has not been granted.',
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        const scheduleNewRelativePermissions = await verifyScheduleNewPermissions(interaction, pingRole);
+        if (!scheduleNewRelativePermissions.ok) {
+          return interaction.reply({
+            content: `Required permissions are missing for this command. (` +
+              `${formatPermissionList(scheduleNewRelativePermissions.missingPermissions)})`,
             flags: MessageFlags.Ephemeral,
           });
         }
