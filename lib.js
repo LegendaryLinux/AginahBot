@@ -117,6 +117,10 @@ const getRetryDelayMs = (attempt) => {
   return exponentialDelay + jitter;
 };
 
+const getBotGuildMember = (guild, client = null) => (
+  guild?.members?.me || (client?.user ? guild.members.resolve(client.user.id) : null)
+);
+
 const executeWithDbRetry = async (operation, sql, args, execute) => {
   for (let attempt = 1; attempt <= DB_RETRY_MAX_ATTEMPTS; attempt++) {
     try {
@@ -252,13 +256,24 @@ module.exports = {
     // Find this guild's moderator role id
     let moderatorRole = await module.exports.getModeratorRole(guild);
     if (!moderatorRole) {
+      const botMember = getBotGuildMember(guild, client);
+      const canManageRoles = !!botMember?.permissions?.has(PermissionFlagsBits.ManageRoles);
+      if (!canManageRoles) {
+        console.warn(`Unable to initialize guild setup for guild ${guild.id}: missing Manage Roles ` +
+          `permission to create required role "${config.moderatorRole}".`);
+        return;
+      }
+
       return guild.roles.create({
         name: config.moderatorRole,
         reason: `AginahBot requires a ${config.moderatorRole} role.`
       }).then(async (moderatorRole) => {
         let sql = 'INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)';
         await module.exports.dbExecute(sql, [guild.id, moderatorRole.id]);
-      }).catch((err) => generalErrorHandler(err));
+      }).catch((err) => {
+        console.warn(`Unable to create moderator role for guild ${guild.id} while initializing setup.`);
+        generalErrorHandler(err);
+      });
     }
 
     // Create guild data
@@ -316,7 +331,13 @@ module.exports = {
       }
 
       if (!guildData) {
-        console.warn(`Unable to verify guild setup for guild ${guild.id}. No guild_data entry found.`);
+        const botMember = getBotGuildMember(guild, client);
+        const canManageRoles = !!botMember?.permissions?.has(PermissionFlagsBits.ManageRoles);
+        const discoveredModeratorRole = await module.exports.discoverModeratorRole(guild);
+
+        console.warn(`Unable to verify guild setup for guild ${guild.id}. No guild_data entry found after ` +
+          `setup attempt. Diagnostics: botMemberResolved=${!!botMember}, canManageRoles=${canManageRoles}, ` +
+          `moderatorRoleFoundByName=${!!discoveredModeratorRole}.`);
         continue;
       }
 
