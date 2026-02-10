@@ -55,11 +55,15 @@ module.exports = {
               });
             });
 
+            // If no more messages are available, stop fetching. Also guards against empty fetches to
+            // avoid reading logs[-1]
+            if (messages.size === 0) { break; }
+
             // Begin fetching from the earliest message
             lastMessageId = logs[logs.length - 1].id;
 
             // If no more messages are available, stop fetching
-            if (messages.size <= fetchLimit) { break; }
+            if (messages.size < fetchLimit) { break; }
           }
 
           // Reverse the array so the oldest messages occur first, and will therefore be printed earlier
