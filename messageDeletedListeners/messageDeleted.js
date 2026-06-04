@@ -33,7 +33,7 @@ module.exports = async (client, message) => {
         inline: true,
       },
       { name: ' ', value: ' ', inline: true },
-      { name: 'Author ID', value: message.member.id, inline: true },
+      { name: 'Author ID', value: message.member?.id || message.author.id, inline: true },
     );
 
   const files = [];
