@@ -150,6 +150,11 @@ const sendScheduleMessage = async (interaction, targetDate, title = null, pingRo
     await threadChannel.send(
       `${interaction.user} has been granted pin permissions in this channel. Use \`/pin\` and \`/unpin\`.`
     );
+  } else if (options?.eventThreads) {
+    await interaction.channel.send(
+      'Event thread was not created because Discord only supports this feature in standard text channels.\n' +
+      'To use automatic event threads, schedule the event from a standard text channel.'
+    );
   }
 
   // Save scheduled event to database
@@ -329,8 +334,10 @@ module.exports = {
         const utcOffset = interaction.options.getInteger('timezone');
         const duration = interaction.options.getInteger('duration');
 
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
-          return interaction.reply({
+          return interaction.followUp({
             content: 'Permission to ping that role has not been granted.',
             flags: MessageFlags.Ephemeral,
           });
@@ -338,7 +345,7 @@ module.exports = {
 
         const scheduleNewPermissions = await verifyScheduleNewPermissions(interaction, pingRole);
         if (!scheduleNewPermissions.ok) {
-          return interaction.reply({
+          return interaction.followUp({
             content: `Required permissions are missing for this command. (` +
               `${formatPermissionList(scheduleNewPermissions.missingPermissions)})`,
             flags: MessageFlags.Ephemeral,
@@ -346,14 +353,14 @@ module.exports = {
         }
 
         if (!(new RegExp(/\d{4}-\d{2}-\d{2}/).test(dateString))) {
-          return interaction.reply({
+          return interaction.followUp({
             content: 'Invalid date format provided. Must be of format: YYYY-MM-DD.',
             flags: MessageFlags.Ephemeral,
           });
         }
 
         if (!(new RegExp(/\d{2}:\d{2}/).test(timeString))) {
-          return interaction.reply({
+          return interaction.followUp({
             content: 'Invalid time format provided. Must be of format: HH:MM.',
             flags: MessageFlags.Ephemeral,
           });
@@ -368,20 +375,19 @@ module.exports = {
           const targetDate = new Date(dateTimeString);
 
           if (isNaN(targetDate.getTime())) {
-            return interaction.reply({
+            return interaction.followUp({
               content: 'The date you provided appears invalid.',
               flags: MessageFlags.Ephemeral,
             });
           }
 
           if (targetDate.getTime() < currentDate.getTime()) {
-            return interaction.reply({
+            return interaction.followUp({
               content: 'You can\'t schedule an event in the past!',
               flags: MessageFlags.Ephemeral,
             });
           }
 
-          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
           await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
@@ -419,8 +425,10 @@ module.exports = {
         const timestamp = Math.floor(interaction.options.getNumber('unix-timestamp')) * 1000;
         const duration = interaction.options.getInteger('duration');
 
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
-          return interaction.reply({
+          return interaction.followUp({
             content: 'Permission to ping that role has not been granted.',
             flags: MessageFlags.Ephemeral,
           });
@@ -428,7 +436,7 @@ module.exports = {
 
         const scheduleNewTSPermissions = await verifyScheduleNewPermissions(interaction, pingRole);
         if (!scheduleNewTSPermissions.ok) {
-          return interaction.reply({
+          return interaction.followUp({
             content: `Required permissions are missing for this command. (` +
               `${formatPermissionList(scheduleNewTSPermissions.missingPermissions)})`,
             flags: MessageFlags.Ephemeral,
@@ -440,13 +448,12 @@ module.exports = {
           const targetDate = new Date(timestamp);
 
           if (targetDate.getTime() < currentDate.getTime()) {
-            return interaction.reply({
+            return interaction.followUp({
               content: 'You can\'t schedule an event in the past!',
               flags: MessageFlags.Ephemeral,
             });
           }
 
-          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
           await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
@@ -489,8 +496,10 @@ module.exports = {
         const minutes = interaction.options.getInteger('minutes');
         const duration = interaction.options.getInteger('duration');
 
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
         if (pingRole && !await isRolePingable(interaction.guild.id, pingRole)) {
-          return interaction.reply({
+          return interaction.followUp({
             content: 'Permission to ping that role has not been granted.',
             flags: MessageFlags.Ephemeral,
           });
@@ -498,7 +507,7 @@ module.exports = {
 
         const scheduleNewRelativePermissions = await verifyScheduleNewPermissions(interaction, pingRole);
         if (!scheduleNewRelativePermissions.ok) {
-          return interaction.reply({
+          return interaction.followUp({
             content: `Required permissions are missing for this command. (` +
               `${formatPermissionList(scheduleNewRelativePermissions.missingPermissions)})`,
             flags: MessageFlags.Ephemeral,
@@ -510,13 +519,12 @@ module.exports = {
           const targetDate = new Date(new Date().getTime() + (hours * 60 * 60 * 1000) + (minutes * 60 * 1000));
 
           if (targetDate.getTime() < currentDate.getTime()) {
-            return interaction.reply({
+            return interaction.followUp({
               content: 'You can\'t schedule an event in the past!',
               flags: MessageFlags.Ephemeral,
             });
           }
 
-          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
           await sendScheduleMessage(interaction, targetDate, title, pingRole, duration);
           return interaction.followUp('New event created.');
         } catch (e) {
@@ -661,48 +669,27 @@ module.exports = {
       async execute(interaction) {
         const eventCode = interaction.options.getString('event-code');
 
-        let sql = `SELECT se.id, se.channelId, se.messageId, se.threadId, se.schedulingUserId
-                   FROM scheduled_events se
-                   JOIN guild_data gd ON se.guildDataId = gd.id
-                   WHERE gd.guildId=?
-                     AND se.eventCode=?
-                     AND timestamp > ?`;
-        const eventData = await dbQueryOne(sql, [
-          interaction.guildId, eventCode.toUpperCase(), new Date().getTime(),
-        ]);
-
-        // If no event is found, notify the user
-        if (!eventData) {
-          return interaction.reply({
-            content: 'There is no upcoming event with that code.',
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        const scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
-        if (!scheduleChannel) {
-          return interaction.reply({
-            content: 'Unable to locate scheduling channel for specified event.',
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        const scheduleCancelPermissions = verifyChannelPermissions(scheduleChannel, [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.ManageMessages,
-        ]);
-        if (!scheduleCancelPermissions.ok) {
-          return interaction.reply({
-            content: `Required permissions are missing for this command. (` +
-              `${formatPermissionList(scheduleCancelPermissions.missingPermissions)})`,
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
         try {
           // This potentially causes several requests to be made, and may take a few seconds
           await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+          let sql = `SELECT se.id, se.channelId, se.messageId, se.threadId, se.schedulingUserId
+                     FROM scheduled_events se
+                     JOIN guild_data gd ON se.guildDataId = gd.id
+                     WHERE gd.guildId=?
+                       AND se.eventCode=?
+                       AND timestamp > ?`;
+          const eventData = await dbQueryOne(sql, [
+            interaction.guildId, eventCode.toUpperCase(), new Date().getTime(),
+          ]);
+
+          // If no event is found, notify the user
+          if (!eventData) {
+            return interaction.followUp({
+              content: 'There is no upcoming event with that code.',
+              flags: MessageFlags.Ephemeral,
+            });
+          }
 
           // If the user is not a moderator and not the scheduling user, deny the cancellation
           if ((interaction.user.id !== eventData.schedulingUserId) && !await verifyModeratorRole(interaction.member)) {
@@ -714,28 +701,50 @@ module.exports = {
             });
           }
 
-          try{
-            // The event is to be cancelled. Replace the schedule message with a cancellation notice
-            const scheduleMsg = await scheduleChannel.messages.fetch(eventData.messageId);
-            await scheduleMsg.edit({
-              content: `This event has been cancelled by ${interaction.user}.`,
-              embeds: [],
-              components: [],
-            });
+          let scheduleChannel = null;
+          try {
+            scheduleChannel = await interaction.guild.channels.fetch(eventData.channelId);
+          } catch (err) {
+            if (err.status !== 404 && err.code !== 10003) { throw err; }
+          }
 
-            // Remove all reactions from the message
-            await scheduleMsg.reactions.removeAll();
-
-            // Close and lock the thread if one exists
-            if (eventData.threadId) {
-              const thread = await interaction.guild.channels.fetch(eventData.threadId);
-              await thread.setLocked(true);
-              await thread.setArchived(true);
+          if (scheduleChannel) {
+            const scheduleCancelPermissions = verifyChannelPermissions(scheduleChannel, [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.ManageMessages,
+            ]);
+            if (!scheduleCancelPermissions.ok) {
+              return interaction.followUp({
+                content: `Required permissions are missing for this command. (` +
+                  `${formatPermissionList(scheduleCancelPermissions.missingPermissions)})`,
+                flags: MessageFlags.Ephemeral,
+              });
             }
-          } catch(err) {
-            // Handle non-404 errors normally. If the error was a 404, it means the message was manually deleted
-            // and no action is necessary
-            if (err.status !== 404) { generalErrorHandler(err); }
+
+            try{
+              // The event is to be cancelled. Replace the schedule message with a cancellation notice
+              const scheduleMsg = await scheduleChannel.messages.fetch(eventData.messageId);
+              await scheduleMsg.edit({
+                content: `This event has been cancelled by ${interaction.user}.`,
+                embeds: [],
+                components: [],
+              });
+
+              // Remove all reactions from the message
+              await scheduleMsg.reactions.removeAll();
+
+              // Close and lock the thread if one exists
+              if (eventData.threadId) {
+                const thread = await interaction.guild.channels.fetch(eventData.threadId);
+                await thread.setLocked(true);
+                await thread.setArchived(true);
+              }
+            } catch(err) {
+              // Handle non-404 errors normally. If the error was a 404, the message or thread was manually deleted
+              // and no action is necessary.
+              if (err.status !== 404 && err.code !== 10003) { generalErrorHandler(err); }
+            }
           }
 
           // Remove the event's entry from the database
