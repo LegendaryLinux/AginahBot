@@ -112,11 +112,8 @@ client.on(Events.MessageUpdate, async (oldMsg, newMsg) => {
 });
 
 client.on(Events.MessageDelete, async (msg) => {
-  // Fetch message if partial
-  const message = await cachePartial(msg);
-
   // Run the message through the message delete listeners
-  return client.messageDeletedListeners.forEach((listener) => listener(client, message));
+  return client.messageDeletedListeners.forEach((listener) => listener(client, msg));
 });
 
 // Run channel deleted events through the channel deleted listeners

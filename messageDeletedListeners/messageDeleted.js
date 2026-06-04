@@ -1,4 +1,4 @@
-const { dbQueryOne} = require('../lib');
+const { dbQueryOne, cachePartial} = require('../lib');
 const tmp = require('tmp');
 const fs = require('fs');
 const Discord = require('discord.js');
@@ -15,6 +15,13 @@ module.exports = async (client, message) => {
   // Do nothing if the message was deleted from a message history channel
   if (!options?.messageHistoryChannelId || message.channel.id === options.messageHistoryChannelId) {
     return;
+  }
+
+  try {
+    message = await cachePartial(message);
+  } catch (err) {
+    if (err.code === 10008) { return; }
+    throw err;
   }
 
   const messageHistoryChannel = await message.guild.channels.fetch(options.messageHistoryChannelId);
