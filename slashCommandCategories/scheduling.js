@@ -912,7 +912,9 @@ module.exports = {
           throw new Error(`Unable to find guildData entry for guild with id ${interaction.guild.id}`);
         }
 
-        await dbExecute('UPDATE guild_options SET eventThreads=? WHERE guildDataId=?', [toggle ? 1 : 0, guildData.id]);
+        let sql = `INSERT INTO guild_options (guildDataId, eventThreads) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE eventThreads = VALUES(eventThreads)`;
+        await dbExecute(sql, [guildData.id, toggle ? 1 : 0]);
         return interaction.followUp(toggle ? 'Event threads enabled.' : 'Event threads disabled.');
       }
     },

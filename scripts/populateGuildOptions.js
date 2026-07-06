@@ -23,7 +23,7 @@ client.login(config.token).then(async () => {
       throw new Error(`No guildData entry found for ${guild.name} (${guild.id}).`);
     }
 
-    const guildOptions = await dbQueryOne('SELECT 1 FROM guild_options WHERE guildDataId=?', guildData.id);
+    const guildOptions = await dbQueryOne('SELECT 1 FROM guild_options WHERE guildDataId=?', [guildData.id]);
     if (!guildOptions) {
       await dbExecute('INSERT INTO guild_options (guildDataId) VALUES (?)', [guildData.id]);
       console.log('Guild options not found. They have been created.');

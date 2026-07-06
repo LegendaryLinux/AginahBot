@@ -264,16 +264,19 @@ module.exports = {
         return;
       }
 
-      return guild.roles.create({
-        name: config.moderatorRole,
-        reason: `AginahBot requires a ${config.moderatorRole} role.`
-      }).then(async (moderatorRole) => {
-        let sql = 'INSERT INTO guild_data (guildId, moderatorRoleId) VALUES (?, ?)';
-        await module.exports.dbExecute(sql, [guild.id, moderatorRole.id]);
-      }).catch((err) => {
+      try{
+        moderatorRole = await guild.roles.create({
+          name: config.moderatorRole,
+          reason: `AginahBot requires a ${config.moderatorRole} role.`
+        });
+      } catch (err) {
         console.warn(`Unable to create moderator role for guild ${guild.id} while initializing setup.`);
         generalErrorHandler(err);
-      });
+      }
+
+      if (!moderatorRole) {
+        return;
+      }
     }
 
     // Create guild data
