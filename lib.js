@@ -597,7 +597,7 @@ module.exports = {
             `${event.duration ? ` about ${event.duration} hours` : ' an undisclosed amount of time'}`
           )
           .setColor(`#${embedColors.pop()}`)
-          .setAuthor({ name: schedulingUser.displayName })
+          .setAuthor({ name: schedulingUser?.displayName || 'Unknown User' })
           .setURL(eventMessage.url)
           .setThumbnail(schedulingUser.displayAvatarURL())
           .addFields(
