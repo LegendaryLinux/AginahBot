@@ -13,6 +13,10 @@ module.exports = async (client, deletedRole) => {
   if (roleData) {
     await dbExecute('DELETE FROM roles WHERE id=?', [roleData.id]);
     const guild = await deletedRole.guild.fetch();
-    await updateCategoryMessage(client, guild, roleData.messageId);
+    try {
+      await updateCategoryMessage(client, guild, roleData.messageId);
+    } catch (e) {
+      if (e.message !== 'Unable to update category message. Role category could not be found.') { throw e; }
+    }
   }
 };
