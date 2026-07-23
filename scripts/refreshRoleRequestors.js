@@ -95,10 +95,7 @@ const updateCategoryMessage = async (client, guild, messageId) => {
   const roleRequestChannel = guild.channels.resolve(roleCategory.roleRequestChannelId);
   const categoryMessage = await roleRequestChannel.messages.fetch(messageId);
 
-  const messageData = { content: null, embeds: [roleInfoEmbed] };
-  if (actionRows.length > 0) {
-    messageData.components = actionRows;
-  }
+  const messageData = { content: null, embeds: [roleInfoEmbed], components: actionRows };
 
   await categoryMessage.edit(messageData);
   await categoryMessage.reactions.removeAll();

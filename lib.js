@@ -889,10 +889,7 @@ module.exports = {
     const roleRequestChannel = guild.channels.resolve(roleCategory.roleRequestChannelId);
     const categoryMessage = await roleRequestChannel.messages.fetch(messageId);
 
-    const messageData = { content: null, embeds: [roleInfoEmbed] };
-    if (actionRows.length > 0) {
-      messageData.components = actionRows;
-    }
+    const messageData = { content: null, embeds: [roleInfoEmbed], components: actionRows };
 
     await categoryMessage.edit(messageData);
   },
