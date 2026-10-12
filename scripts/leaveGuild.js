@@ -11,9 +11,7 @@ if (!guildId || !/^\d+$/.test(guildId)) {
 console.debug('Logging into Discord...');
 const client = new Client({
   partials: [ Partials.GuildMember, Partials.Message, Partials.Reaction ],
-  intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.MessageContent],
+  intents: [ GatewayIntentBits.Guilds ],
 });
 client.login(config.token).then(async () => {
   console.debug('Connected.');
